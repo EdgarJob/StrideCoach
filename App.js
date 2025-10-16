@@ -12,8 +12,9 @@ import ChatScreen from './src/screens/ChatScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import AuthScreen from './src/screens/AuthScreen';
 
-// Import auth context
+// Import contexts
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { AICoachProvider } from './src/contexts/AICoachContext';
 
 // Create the tab navigator
 const Tab = createBottomTabNavigator();
@@ -101,11 +102,13 @@ function AppNavigator() {
   );
 }
 
-// Main App Component with Auth Provider
+// Main App Component with Providers
 export default function App() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <AICoachProvider>
+        <AppNavigator />
+      </AICoachProvider>
     </AuthProvider>
   );
 }

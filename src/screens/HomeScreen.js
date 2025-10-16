@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useAICoach } from '../contexts/AICoachContext';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { signOut } = useAuth();
+  const { dailyMotivation } = useAICoach();
 
   const handleQuickAction = (action) => {
     switch (action) {
@@ -191,12 +193,15 @@ export default function HomeScreen() {
         <View style={styles.coachContainer}>
           <View style={styles.coachMessage}>
             <Text style={styles.coachText}>
-              "The only bad workout is the one that didn't happen. You've got this! 💪"
+              "{dailyMotivation || "The only bad workout is the one that didn't happen. You've got this! 💪"}"
             </Text>
             <Text style={styles.coachAuthor}>- Your AI Coach</Text>
           </View>
           <View style={styles.coachActions}>
-            <TouchableOpacity style={styles.coachButton}>
+            <TouchableOpacity 
+              style={styles.coachButton}
+              onPress={() => navigation.navigate('Chat')}
+            >
               <Ionicons name="chatbubble" size={16} color="#4F46E5" />
               <Text style={styles.coachButtonText}>Ask Question</Text>
             </TouchableOpacity>
