@@ -62,9 +62,13 @@ CREATE TABLE health_daily (
 CREATE TABLE workout_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(user_id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
-  plan JSONB NOT NULL, -- The full workout plan structure
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'paused', 'cancelled')),
+  preferences JSONB, -- User preferences for the plan
+  weeks JSONB NOT NULL, -- The full workout plan structure with weeks
   version INTEGER DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -259,9 +259,21 @@ export class PlanService {
   // Save plan to database
   async savePlan(plan) {
     try {
+      // Transform the plan to match database schema
+      const planData = {
+        user_id: plan.user_id,
+        title: plan.title,
+        description: plan.description,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        status: plan.status,
+        preferences: plan.preferences,
+        weeks: plan.weeks
+      };
+
       const { data, error } = await supabase
         .from('workout_plans')
-        .insert([plan])
+        .insert([planData])
         .select()
         .single();
 
