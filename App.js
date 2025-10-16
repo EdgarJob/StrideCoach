@@ -8,6 +8,7 @@ import { View, ActivityIndicator, Text } from 'react-native';
 // Import our screens
 import HomeScreen from './src/screens/HomeScreen';
 import ProgressScreen from './src/screens/ProgressScreen';
+import PlansScreen from './src/screens/PlansScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import AuthScreen from './src/screens/AuthScreen';
@@ -15,6 +16,7 @@ import AuthScreen from './src/screens/AuthScreen';
 // Import contexts
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AICoachProvider } from './src/contexts/AICoachContext';
+import { PlanProvider } from './src/contexts/PlanContext';
 
 // Create the tab navigator
 const Tab = createBottomTabNavigator();
@@ -56,6 +58,8 @@ function AppNavigator() {
 
             if (route.name === 'Home') {
               iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Plans') {
+              iconName = focused ? 'calendar' : 'calendar-outline';
             } else if (route.name === 'Progress') {
               iconName = focused ? 'bar-chart' : 'bar-chart-outline';
             } else if (route.name === 'Chat') {
@@ -83,6 +87,11 @@ function AppNavigator() {
           options={{ title: 'StrideCoach' }}
         />
         <Tab.Screen 
+          name="Plans" 
+          component={PlansScreen} 
+          options={{ title: 'Plans' }}
+        />
+        <Tab.Screen 
           name="Progress" 
           component={ProgressScreen} 
           options={{ title: 'Progress' }}
@@ -107,7 +116,9 @@ export default function App() {
   return (
     <AuthProvider>
       <AICoachProvider>
-        <AppNavigator />
+        <PlanProvider>
+          <AppNavigator />
+        </PlanProvider>
       </AICoachProvider>
     </AuthProvider>
   );

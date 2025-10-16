@@ -4,11 +4,13 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
+import { usePlan } from '../contexts/PlanContext';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { signOut } = useAuth();
   const { dailyMotivation } = useAICoach();
+  const { currentPlan, getTodaysWorkout, getPlanProgress } = usePlan();
 
   const handleQuickAction = (action) => {
     switch (action) {
@@ -87,6 +89,74 @@ export default function HomeScreen() {
           </View>
         </View>
       </View>
+
+      {/* Current Plan */}
+      {currentPlan ? (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar" size={24} color="#4F46E5" />
+            <Text style={styles.cardTitle}>Current Plan</Text>
+            <TouchableOpacity 
+              style={styles.viewAllButton}
+              onPress={() => navigation.navigate('Plans')}
+            >
+              <Text style={styles.viewAllText}>View All</Text>
+              <Ionicons name="chevron-forward" size={16} color="#4F46E5" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.planContent}>
+            <Text style={styles.planTitle}>{currentPlan.title}</Text>
+            <Text style={styles.planDescription}>{currentPlan.description}</Text>
+            
+            {(() => {
+              const progress = getPlanProgress();
+              const todaysWorkout = getTodaysWorkout();
+              
+              return (
+                <View style={styles.planProgress}>
+                  <View style={styles.planProgressBar}>
+                    <View style={[styles.planProgressFill, { width: `${progress.percentage}%` }]} />
+                  </View>
+                  <Text style={styles.planProgressText}>
+                    {progress.completed} of {progress.total} workouts completed ({progress.percentage}%)
+                  </Text>
+                  
+                  {todaysWorkout && (
+                    <View style={styles.todaysWorkout}>
+                      <Text style={styles.todaysWorkoutTitle}>Today's Workout</Text>
+                      <Text style={styles.todaysWorkoutType}>
+                        {todaysWorkout.workout.type} • {todaysWorkout.workout.duration_minutes} min
+                      </Text>
+                      <Text style={styles.todaysWorkoutDifficulty}>
+                        {todaysWorkout.workout.difficulty} • Week {todaysWorkout.weekNumber}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
+          </View>
+        </View>
+      ) : (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar" size={24} color="#4F46E5" />
+            <Text style={styles.cardTitle}>No Active Plan</Text>
+          </View>
+          <View style={styles.noPlanContent}>
+            <Text style={styles.noPlanText}>
+              Start your fitness journey with a personalized 4-week plan!
+            </Text>
+            <TouchableOpacity 
+              style={styles.createPlanButton}
+              onPress={() => navigation.navigate('Plans')}
+            >
+              <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+              <Text style={styles.createPlanButtonText}>Create Plan</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Today's Health Snapshot */}
       <View style={styles.card}>
@@ -518,5 +588,97 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#4F46E5',
     fontWeight: '500',
+  },
+  // Plan Styles
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: '#4F46E5',
+    fontWeight: '500',
+    marginRight: 4,
+  },
+  planContent: {
+    marginTop: 12,
+  },
+  planTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  planDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+  planProgress: {
+    marginTop: 8,
+  },
+  planProgressBar: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  planProgressFill: {
+    height: '100%',
+    backgroundColor: '#4F46E5',
+    borderRadius: 4,
+  },
+  planProgressText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  todaysWorkout: {
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4F46E5',
+  },
+  todaysWorkoutTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  todaysWorkoutType: {
+    fontSize: 14,
+    color: '#4F46E5',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  todaysWorkoutDifficulty: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  noPlanContent: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  noPlanText: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 24,
+  },
+  createPlanButton: {
+    backgroundColor: '#4F46E5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  createPlanButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
