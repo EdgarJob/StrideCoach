@@ -26,13 +26,13 @@ export const AICoachProvider = ({ children }) => {
     }
   }, [profile]);
 
-  // Load daily motivation
-  const loadDailyMotivation = async () => {
+  // Load daily motivation with progress data
+  const loadDailyMotivation = async (progressData = null) => {
     if (!profile) return;
     
     try {
       setIsLoading(true);
-      const result = await aiCoach.getDailyMotivation(profile);
+      const result = await aiCoach.getDailyMotivation(profile, progressData);
       
       if (result.success) {
         setDailyMotivation(result.motivation);
@@ -127,9 +127,9 @@ export const AICoachProvider = ({ children }) => {
     aiCoach.clearHistory();
   };
 
-  // Refresh daily motivation
-  const refreshMotivation = () => {
-    loadDailyMotivation();
+  // Refresh daily motivation with optional progress data
+  const refreshMotivation = (progressData = null) => {
+    loadDailyMotivation(progressData);
   };
 
   const value = {
@@ -140,7 +140,8 @@ export const AICoachProvider = ({ children }) => {
     sendMessage,
     generateWorkoutPlan,
     clearConversation,
-    refreshMotivation
+    refreshMotivation,
+    loadDailyMotivation // Export for direct use with progress data
   };
 
   return (

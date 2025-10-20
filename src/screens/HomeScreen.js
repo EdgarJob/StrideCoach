@@ -1,16 +1,36 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
+import WorkoutCalendar from '../components/WorkoutCalendar';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { signOut } = useAuth();
-  const { dailyMotivation } = useAICoach();
+  const { dailyMotivation, loadDailyMotivation } = useAICoach();
   const { currentPlan, getTodaysWorkout, getPlanProgress } = usePlan();
+
+  // Load AI motivation with real progress data when component mounts or plan changes
+  useEffect(() => {
+    if (currentPlan) {
+      // Calculate real progress data
+      const progressData = {
+        completedWorkouts: 4, // TODO: Get from getPlanProgress() or actual completed workouts
+        totalWorkouts: 5,
+        streak: 6, // TODO: Get from actual streak calculation
+        weekNumber: 1, // TODO: Get from currentPlan week calculation
+        lastWorkoutDate: 'Yesterday' // TODO: Get from actual last workout
+      };
+      
+      loadDailyMotivation(progressData);
+    } else {
+      // Load without progress data if no plan exists
+      loadDailyMotivation();
+    }
+  }, [currentPlan]);
 
   const handleQuickAction = (action) => {
     switch (action) {
@@ -88,54 +108,40 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+        
+        {/* AI Coach Motivation Message */}
+        <View style={styles.coachMotivation}>
+          <View style={styles.coachMessageBubble}>
+            <Ionicons name="chatbubble-ellipses" size={20} color="#4F46E5" />
+            <Text style={styles.coachMotivationText}>
+              "{dailyMotivation || "The only bad workout is the one that didn't happen. You've got this! 💪"}"
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.askCoachButton}
+            onPress={() => navigation.navigate('Chat')}
+          >
+            <Ionicons name="chatbubble" size={16} color="#FFFFFF" />
+            <Text style={styles.askCoachButtonText}>Let's chat about your progress</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Current Plan */}
+      {/* Workout Calendar */}
       {currentPlan ? (
-        <View style={styles.card}>
+        <View style={styles.calendarCard}>
           <View style={styles.cardHeader}>
             <Ionicons name="calendar" size={24} color="#4F46E5" />
-            <Text style={styles.cardTitle}>Current Plan</Text>
+            <Text style={styles.cardTitle}>Your Workout Calendar</Text>
             <TouchableOpacity 
               style={styles.viewAllButton}
               onPress={() => navigation.navigate('Plans')}
             >
-              <Text style={styles.viewAllText}>View All</Text>
+              <Text style={styles.viewAllText}>View Full Plan</Text>
               <Ionicons name="chevron-forward" size={16} color="#4F46E5" />
             </TouchableOpacity>
           </View>
-          <View style={styles.planContent}>
-            <Text style={styles.planTitle}>{currentPlan.title}</Text>
-            <Text style={styles.planDescription}>{currentPlan.description}</Text>
-            
-            {(() => {
-              const progress = getPlanProgress();
-              const todaysWorkout = getTodaysWorkout();
-              
-              return (
-                <View style={styles.planProgress}>
-                  <View style={styles.planProgressBar}>
-                    <View style={[styles.planProgressFill, { width: `${progress.percentage}%` }]} />
-                  </View>
-                  <Text style={styles.planProgressText}>
-                    {progress.completed} of {progress.total} workouts completed ({progress.percentage}%)
-                  </Text>
-                  
-                  {todaysWorkout && (
-                    <View style={styles.todaysWorkout}>
-                      <Text style={styles.todaysWorkoutTitle}>Today's Workout</Text>
-                      <Text style={styles.todaysWorkoutType}>
-                        {todaysWorkout.workout.type} • {todaysWorkout.workout.duration_minutes} min
-                      </Text>
-                      <Text style={styles.todaysWorkoutDifficulty}>
-                        {todaysWorkout.workout.difficulty} • Week {todaysWorkout.weekNumber}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              );
-            })()}
-          </View>
+          <WorkoutCalendar plan={currentPlan} />
         </View>
       ) : (
         <View style={styles.card}>
@@ -192,115 +198,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Today's Workout Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="walk" size={24} color="#4F46E5" />
-          <Text style={styles.cardTitle}>Today's Workout</Text>
-        </View>
-        <Text style={styles.workoutDescription}>
-          🚶‍♂️ 60-minute brisk walk
-        </Text>
-        <Text style={styles.workoutTime}>
-          Target: Zone 2 heart rate (120-140 bpm)
-        </Text>
-        <View style={styles.workoutDetails}>
-          <View style={styles.workoutDetail}>
-            <Ionicons name="time" size={16} color="#6B7280" />
-            <Text style={styles.workoutDetailText}>5:00 PM</Text>
-          </View>
-          <View style={styles.workoutDetail}>
-            <Ionicons name="location" size={16} color="#6B7280" />
-            <Text style={styles.workoutDetailText}>Outdoor</Text>
-          </View>
-          <View style={styles.workoutDetail}>
-            <Ionicons name="thermometer" size={16} color="#6B7280" />
-            <Text style={styles.workoutDetailText}>72°F</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.startButton}>
-          <Text style={styles.startButtonText}>Start Workout</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Upcoming Workouts */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="calendar" size={24} color="#F59E0B" />
-          <Text style={styles.cardTitle}>Upcoming Workouts</Text>
-        </View>
-        <View style={styles.upcomingList}>
-          <View style={styles.upcomingItem}>
-            <View style={styles.upcomingIcon}>
-              <Ionicons name="fitness" size={20} color="#4F46E5" />
-            </View>
-            <View style={styles.upcomingContent}>
-              <Text style={styles.upcomingTitle}>30-min Strength</Text>
-              <Text style={styles.upcomingDate}>Tomorrow, 6:00 PM</Text>
-            </View>
-            <Text style={styles.upcomingType}>Strength</Text>
-          </View>
-          
-          <View style={styles.upcomingItem}>
-            <View style={styles.upcomingIcon}>
-              <Ionicons name="walk" size={20} color="#10B981" />
-            </View>
-            <View style={styles.upcomingContent}>
-              <Text style={styles.upcomingTitle}>45-min Walk</Text>
-              <Text style={styles.upcomingDate}>Friday, 5:30 PM</Text>
-            </View>
-            <Text style={styles.upcomingType}>Walk</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* AI Coach & Motivation */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="chatbubble-ellipses" size={24} color="#4F46E5" />
-          <Text style={styles.cardTitle}>AI Coach</Text>
-        </View>
-        <View style={styles.coachContainer}>
-          <View style={styles.coachMessage}>
-            <Text style={styles.coachText}>
-              "{dailyMotivation || "The only bad workout is the one that didn't happen. You've got this! 💪"}"
-            </Text>
-            <Text style={styles.coachAuthor}>- Your AI Coach</Text>
-          </View>
-          <View style={styles.coachActions}>
-            <TouchableOpacity 
-              style={styles.coachButton}
-              onPress={() => navigation.navigate('Chat')}
-            >
-              <Ionicons name="chatbubble" size={16} color="#4F46E5" />
-              <Text style={styles.coachButtonText}>Ask Question</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.coachButton}>
-              <Ionicons name="refresh" size={16} color="#4F46E5" />
-              <Text style={styles.coachButtonText}>New Tip</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Quick Actions</Text>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleQuickAction('progress')}>
-            <Ionicons name="bar-chart" size={20} color="#4F46E5" />
-            <Text style={styles.actionButtonText}>View Progress</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleQuickAction('settings')}>
-            <Ionicons name="settings" size={20} color="#4F46E5" />
-            <Text style={styles.actionButtonText}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleQuickAction('plan')}>
-            <Ionicons name="fitness" size={20} color="#4F46E5" />
-            <Text style={styles.actionButtonText}>Workout Plan</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </ScrollView>
   );
 }
@@ -348,6 +245,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     margin: 16,
     padding: 20,
+    borderRadius: 12,
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    elevation: 5,
+  },
+  calendarCard: {
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
     borderRadius: 12,
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 5,
@@ -680,5 +587,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  // AI Coach Motivation in Progress Card
+  coachMotivation: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  coachMessageBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#EEF2FF',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  coachMotivationText: {
+    flex: 1,
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#4F46E5',
+    lineHeight: 20,
+  },
+  askCoachButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4F46E5',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 6,
+  },
+  askCoachButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

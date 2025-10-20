@@ -123,13 +123,38 @@ export class AICoachService {
   }
 
   // Get daily motivation and tips
-  async getDailyMotivation(userProfile) {
+  // Generate daily motivation based on actual progress data
+  async getDailyMotivation(userProfile, progressData = {}) {
     try {
-      const prompt = `Provide a brief, encouraging daily motivation message for a fitness enthusiast. 
-      User profile: ${userProfile?.display_name || 'User'}, 
-      Goal: ${userProfile?.goal?.type || 'general fitness'}, 
-      Current focus: walking and strength training. 
-      Keep it under 100 words and make it personal and motivating.`;
+      // Extract progress metrics
+      const completedWorkouts = progressData.completedWorkouts || 0;
+      const totalWorkouts = progressData.totalWorkouts || 5;
+      const completionRate = totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0;
+      const streak = progressData.streak || 0;
+      const weekNumber = progressData.weekNumber || 1;
+      const lastWorkoutDate = progressData.lastWorkoutDate || 'Not yet';
+      
+      const prompt = `You are a direct, results-focused fitness coach analyzing this week's performance.
+
+User: ${userProfile?.display_name || 'User'}
+Goal: ${userProfile?.goal?.type || 'general fitness'}
+
+ACTUAL PROGRESS DATA THIS WEEK:
+- Workouts Completed: ${completedWorkouts} out of ${totalWorkouts} scheduled
+- Completion Rate: ${completionRate}%
+- Current Streak: ${streak} days
+- Week: ${weekNumber} of 4
+- Last Workout: ${lastWorkoutDate}
+
+Provide a SHORT, NO-NONSENSE feedback message (2-3 sentences max, under 80 words) that:
+1. States the facts about their performance (good or bad)
+2. Gives specific, actionable feedback based on their completion rate:
+   - If 80-100%: Acknowledge strong performance and push for consistency
+   - If 50-79%: Point out the gap and motivate to close it
+   - If below 50%: Be direct about underperformance and need for commitment
+3. Include ONE specific action they should take this week
+
+Be honest, direct, and motivating. No fluff or generic platitudes. Base everything on their actual numbers.`;
 
       const model = this.getModelForFunction('chat');
       const response = await openai.chat.completions.create({
@@ -137,15 +162,15 @@ export class AICoachService {
         messages: [
           {
             role: "system",
-            content: "You are StrideCoach, a motivational fitness AI coach. Provide encouraging, personalized daily motivation."
+            content: "You are StrideCoach, a direct, data-driven fitness coach. Give honest, specific feedback based on actual performance metrics. No generic motivation - only fact-based analysis."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        max_tokens: 200,
-        temperature: 0.9
+        max_tokens: 150,
+        temperature: 0.7 // Lower temperature for more consistent, factual responses
       });
 
       return {
