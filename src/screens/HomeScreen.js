@@ -66,7 +66,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header with Profile and Sign Out Icons */}
+      {/* Enhanced Header with Modern Buttons */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Good morning! 👋</Text>
@@ -74,39 +74,84 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity 
-            style={styles.headerButton} 
+            style={styles.modernHeaderButton} 
             onPress={() => navigation.navigate('Profile')}
           >
-            <Ionicons name="person-circle" size={28} color="#FFFFFF" />
+            <View style={styles.iconCircle}>
+              <Ionicons name="person" size={20} color="#4F46E5" />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.headerButton} 
+            style={styles.modernHeaderButton} 
             onPress={handleSignOut}
           >
-            <Ionicons name="log-out-outline" size={28} color="#FFFFFF" />
+            <View style={styles.iconCircle}>
+              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            </View>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Weekly Progress Ring */}
-      <View style={styles.card}>
+      {/* Modern Progress Dashboard */}
+      <View style={styles.progressCard}>
         <View style={styles.cardHeader}>
-          <Ionicons name="trending-up" size={24} color="#10B981" />
-          <Text style={styles.cardTitle}>This Week's Progress</Text>
-        </View>
-        <View style={styles.progressRingContainer}>
-          <View style={styles.progressRing}>
-            <Text style={styles.progressNumber}>4/5</Text>
-            <Text style={styles.progressLabel}>Workouts</Text>
+          <View style={styles.headerTitleGroup}>
+            <Ionicons name="analytics" size={24} color="#4F46E5" />
+            <Text style={styles.cardTitle}>This Week's Progress</Text>
           </View>
-          <View style={styles.progressDetails}>
-            <Text style={styles.progressTitle}>You're crushing it! 🔥</Text>
-            <Text style={styles.progressSubtitle}>80% completion rate</Text>
-            <View style={styles.streakContainer}>
-              <Ionicons name="flame" size={16} color="#F59E0B" />
-              <Text style={styles.streakText}>6-day streak</Text>
+          <View style={styles.weekBadge}>
+            <Text style={styles.weekBadgeText}>Week 1</Text>
+          </View>
+        </View>
+
+        {/* Visual Progress Bar with Stats */}
+        <View style={styles.progressVisualization}>
+          {/* Circular Progress Indicator */}
+          <View style={styles.circularProgress}>
+            <View style={styles.progressCircleOuter}>
+              <View style={styles.progressCircleInner}>
+                <Text style={styles.bigPercentage}>80%</Text>
+                <Text style={styles.percentageLabel}>Complete</Text>
+              </View>
+            </View>
+            {/* Animated dots around circle */}
+            <View style={styles.progressDot1} />
+            <View style={styles.progressDot2} />
+            <View style={styles.progressDot3} />
+          </View>
+
+          {/* Stats Grid */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+              </View>
+              <Text style={styles.statNumber}>4/5</Text>
+              <Text style={styles.statLabel}>Completed</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="flame" size={24} color="#F59E0B" />
+              </View>
+              <Text style={styles.statNumber}>6</Text>
+              <Text style={styles.statLabel}>Day Streak</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="trophy" size={24} color="#8B5CF6" />
+              </View>
+              <Text style={styles.statNumber}>1</Text>
+              <Text style={styles.statLabel}>Left</Text>
             </View>
           </View>
+        </View>
+
+        {/* Progress Bar */}
+        <View style={styles.linearProgressContainer}>
+          <View style={styles.linearProgressBackground}>
+            <View style={[styles.linearProgressFill, { width: '80%' }]} />
+          </View>
+          <Text style={styles.progressPercentText}>80% to weekly goal</Text>
         </View>
         
         {/* AI Coach Motivation Message */}
@@ -222,10 +267,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  headerButton: {
-    padding: 8,
+  modernHeaderButton: {
+    padding: 4,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   welcomeSection: {
     padding: 20,
@@ -248,6 +304,142 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 5,
+  },
+  // Modern Progress Card Styles
+  progressCard: {
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    padding: 20,
+    borderRadius: 16,
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+    elevation: 6,
+  },
+  headerTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  weekBadge: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  weekBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4F46E5',
+  },
+  // Progress Visualization Styles
+  progressVisualization: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 20,
+  },
+  circularProgress: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  progressCircleOuter: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F0F9FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 8,
+    borderColor: '#4F46E5',
+  },
+  progressCircleInner: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bigPercentage: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#4F46E5',
+  },
+  percentageLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  progressDot1: {
+    position: 'absolute',
+    top: 10,
+    right: 20,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  progressDot2: {
+    position: 'absolute',
+    bottom: 10,
+    left: 20,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#F59E0B',
+  },
+  progressDot3: {
+    position: 'absolute',
+    top: 50,
+    left: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#8B5CF6',
+  },
+  statsGrid: {
+    flex: 1,
+    gap: 10,
+  },
+  statCard: {
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 3,
+    borderLeftColor: '#4F46E5',
+  },
+  statIconContainer: {
+    marginRight: 12,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginRight: 8,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  // Linear Progress Bar Styles
+  linearProgressContainer: {
+    marginBottom: 20,
+  },
+  linearProgressBackground: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  linearProgressFill: {
+    height: '100%',
+    backgroundColor: '#4F46E5',
+    borderRadius: 4,
+  },
+  progressPercentText: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   calendarCard: {
     backgroundColor: '#FFFFFF',
