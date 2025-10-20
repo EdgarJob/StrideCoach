@@ -74,6 +74,7 @@ export const PlanProvider = ({ children }) => {
         
         if (saveResult.success) {
           setCurrentPlan(saveResult.plan);
+          // No longer persisting plan preferences to profile; preferences are managed in Plans only
           return { success: true, plan: saveResult.plan };
         } else {
           throw new Error(saveResult.error);

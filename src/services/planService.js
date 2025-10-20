@@ -6,52 +6,25 @@ export class PlanService {
     this.currentPlan = null;
   }
 
-  // Generate a 4-week workout plan using AI
+  // Generate a 4-week workout plan using preferences (AI optional)
   async generatePlan(userProfile, preferences = {}) {
     try {
       console.log('Generating 4-week plan for user:', userProfile);
-      
-      const planPrompt = `Create a comprehensive 4-week fitness plan for a user with the following profile:
-      
-      User Profile:
-      - Age: ${userProfile.age}
-      - Gender: ${userProfile.sex}
-      - Height: ${userProfile.height_cm}cm
-      - Weight: ${userProfile.weight_kg}kg
-      - Fitness Level: ${userProfile.fitness_level || 'beginner'}
-      - Goals: ${userProfile.goals || 'general fitness'}
-      - Available Equipment: ${preferences.equipment || 'bodyweight only'}
-      - Time per session: ${preferences.sessionDuration || '30-45 minutes'}
-      - Days per week: ${preferences.daysPerWeek || '3-4 days'}
-      
-      Please create a structured 4-week plan with:
-      1. Week-by-week progression
-      2. Specific exercises for each day
-      3. Sets, reps, and duration
-      4. Rest days
-      5. Progression guidelines
-      6. Modifications for different fitness levels
-      
-      Format the response as a detailed JSON structure that can be stored in a database.`;
 
-      const response = await aiCoach.chatWithCoach(planPrompt, userProfile);
-      
-      if (response.success) {
-        // Parse the AI response and structure it as a plan
-        const plan = this.parsePlanResponse(response.message, userProfile, preferences);
-        return {
-          success: true,
-          plan: plan
-        };
-      } else {
-        throw new Error(response.error);
-      }
+      // Build the plan locally to guarantee preferences are enforced
+      const plan = this.parsePlanResponse('', userProfile, preferences);
+
+      // Optionally, you could call the AI plan generator here to enrich details
+      // const aiResult = await aiCoach.generateWorkoutPlan(userProfile, preferences);
+      // You can merge AI suggestions into the local structure if desired.
+
+      return {
+        success: true,
+        plan
+      };
     } catch (error) {
       console.error('Error generating plan:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      return { success: false, error: error.message };
     }
   }
 
@@ -80,14 +53,28 @@ export class PlanService {
   // Generate the weekly structure for the plan
   generateWeeklyStructure(userProfile, preferences) {
     const weeks = [];
-    const daysPerWeek = preferences.daysPerWeek || 4;
-    const sessionDuration = preferences.sessionDuration || 30;
+    // Derive from preferences
+    const availableDays = preferences.availableDays || {};
+    const dayOrder = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+    const selectedDayIndexes = dayOrder
+      .map((d, idx) => (availableDays[d] ? idx : -1))
+      .filter(idx => idx >= 0);
+
+    const daysPerWeek = selectedDayIndexes.length > 0 ? selectedDayIndexes.length : 3;
+    const sessionDuration = preferences.workoutDuration || 30;
     
     for (let week = 1; week <= 4; week++) {
       const weekData = {
         week_number: week,
         focus: this.getWeekFocus(week),
-        days: this.generateWeekDays(week, daysPerWeek, sessionDuration, userProfile, preferences)
+        days: this.generateWeekDays(
+          week,
+          daysPerWeek,
+          sessionDuration,
+          userProfile,
+          preferences,
+          selectedDayIndexes
+        )
       };
       weeks.push(weekData);
     }
@@ -107,12 +94,14 @@ export class PlanService {
   }
 
   // Generate workout days for a week
-  generateWeekDays(week, daysPerWeek, sessionDuration, userProfile, preferences) {
+  generateWeekDays(week, daysPerWeek, sessionDuration, userProfile, preferences, selectedDayIndexes) {
     const days = [];
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     
-    // Determine workout days based on preferences
-    const workoutDays = this.getWorkoutDays(daysPerWeek);
+    // Determine workout days based on explicit user selection where possible
+    const workoutDays = (selectedDayIndexes && selectedDayIndexes.length > 0)
+      ? selectedDayIndexes
+      : this.getWorkoutDays(daysPerWeek);
     
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const isWorkoutDay = workoutDays.includes(dayIndex);
@@ -144,8 +133,25 @@ export class PlanService {
 
   // Generate a specific workout for a day
   generateWorkout(week, dayIndex, sessionDuration, userProfile, preferences) {
-    const workoutTypes = ['Cardio', 'Strength', 'Mixed', 'Recovery'];
-    const workoutType = workoutTypes[dayIndex % workoutTypes.length];
+    // Choose workout type based on user preferences, cycle through selected types
+    const prefTypes = preferences.workoutTypes || {};
+    const preferredList = Object.keys(prefTypes).filter(k => prefTypes[k]);
+
+    // Map preference keys to displayed types
+    const mapType = (t) => {
+      switch (t) {
+        case 'walking': return 'Cardio';
+        case 'running': return 'Cardio';
+        case 'strength': return 'Strength';
+        case 'yoga': return 'Recovery';
+        case 'cycling': return 'Cardio';
+        case 'swimming': return 'Cardio';
+        default: return 'Mixed';
+      }
+    };
+
+    const typesCycle = preferredList.length > 0 ? preferredList.map(mapType) : ['Cardio','Strength','Mixed','Recovery'];
+    const workoutType = typesCycle[dayIndex % typesCycle.length];
     
     return {
       type: workoutType,
@@ -256,19 +262,39 @@ export class PlanService {
     return difficulties[week - 1] || 'Beginner';
   }
 
+  // Get equipment list from preferences
+  getEquipmentList(equipmentPrefs) {
+    if (!equipmentPrefs || typeof equipmentPrefs !== 'object') {
+      return 'bodyweight only';
+    }
+
+    const equipmentList = [];
+    if (equipmentPrefs.none) equipmentList.push('bodyweight');
+    if (equipmentPrefs.dumbbells) equipmentList.push('dumbbells');
+    if (equipmentPrefs.resistance_bands) equipmentList.push('resistance bands');
+    if (equipmentPrefs.yoga_mat) equipmentList.push('yoga mat');
+    if (equipmentPrefs.treadmill) equipmentList.push('treadmill');
+    if (equipmentPrefs.bike) equipmentList.push('stationary bike');
+
+    return equipmentList.length > 0 ? equipmentList.join(', ') : 'bodyweight only';
+  }
+
   // Save plan to database
   async savePlan(plan) {
     try {
+      // Sanitize the plan data to avoid circular references
+      const sanitizedPlan = this.sanitizePlanData(plan);
+      
       // Transform the plan to match database schema
       const planData = {
-        user_id: plan.user_id,
-        title: plan.title,
-        description: plan.description,
-        start_date: plan.start_date,
-        end_date: plan.end_date,
-        status: plan.status,
-        preferences: plan.preferences,
-        weeks: plan.weeks
+        user_id: sanitizedPlan.user_id,
+        title: sanitizedPlan.title,
+        description: sanitizedPlan.description,
+        start_date: sanitizedPlan.start_date,
+        end_date: sanitizedPlan.end_date,
+        status: sanitizedPlan.status,
+        preferences: sanitizedPlan.preferences,
+        weeks: sanitizedPlan.weeks
       };
 
       const { data, error } = await supabase
@@ -291,6 +317,91 @@ export class PlanService {
         error: error.message
       };
     }
+  }
+
+  // Sanitize plan data to remove circular references
+  sanitizePlanData(plan) {
+    try {
+      // Create a clean copy of the plan data
+      const sanitized = {
+        user_id: plan.user_id,
+        title: plan.title || 'My Workout Plan',
+        description: plan.description || 'A personalized fitness plan',
+        start_date: plan.start_date || new Date().toISOString(),
+        end_date: plan.end_date || new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+        status: plan.status || 'active',
+        preferences: this.sanitizePreferences(plan.preferences || {}),
+        weeks: this.sanitizeWeeks(plan.weeks || [])
+      };
+      
+      return sanitized;
+    } catch (error) {
+      console.error('Error sanitizing plan data:', error);
+      // Return a minimal safe structure
+      return {
+        user_id: plan.user_id,
+        title: 'My Workout Plan',
+        description: 'A personalized fitness plan',
+        start_date: new Date().toISOString(),
+        end_date: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active',
+        preferences: {},
+        weeks: []
+      };
+    }
+  }
+
+  // Sanitize preferences object
+  sanitizePreferences(preferences) {
+    if (!preferences || typeof preferences !== 'object') {
+      return {};
+    }
+
+    const sanitized = {};
+    
+    // Safely copy known preference properties
+    const allowedKeys = [
+      'workoutTypes', 'availableDays', 'workoutDuration', 'difficultyLevel',
+      'primaryGoal', 'hasEquipment', 'preferredTime', 'experienceLevel',
+      'fitnessGoals', 'limitations', 'customNotes'
+    ];
+
+    for (const key of allowedKeys) {
+      if (preferences.hasOwnProperty(key)) {
+        try {
+          // Test if the value can be JSON stringified
+          JSON.stringify(preferences[key]);
+          sanitized[key] = preferences[key];
+        } catch (error) {
+          console.warn(`Skipping circular reference in preferences.${key}`);
+          sanitized[key] = null;
+        }
+      }
+    }
+
+    return sanitized;
+  }
+
+  // Sanitize weeks array
+  sanitizeWeeks(weeks) {
+    if (!Array.isArray(weeks)) {
+      return [];
+    }
+
+    return weeks.map(week => {
+      try {
+        // Test if the week can be JSON stringified
+        JSON.stringify(week);
+        return week;
+      } catch (error) {
+        console.warn('Skipping circular reference in week data');
+        return {
+          weekNumber: week.weekNumber || 1,
+          focus: week.focus || 'General Fitness',
+          days: []
+        };
+      }
+    });
   }
 
   // Get user's current plan

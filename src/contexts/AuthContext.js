@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Loading profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('user_id, display_name, sex, age, height_cm, weight_kg, workout_preferences')
         .eq('user_id', userId)
         .single();
 

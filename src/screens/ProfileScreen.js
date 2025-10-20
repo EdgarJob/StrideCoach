@@ -125,25 +125,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Workout Preferences */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Workout Preferences</Text>
-        
-        <View style={styles.preferenceItem}>
-          <Text style={styles.preferenceLabel}>Mode</Text>
-          <Text style={styles.preferenceValue}>Walk + Strength</Text>
-        </View>
-        
-        <View style={styles.preferenceItem}>
-          <Text style={styles.preferenceLabel}>Days</Text>
-          <Text style={styles.preferenceValue}>Mon, Wed, Fri</Text>
-        </View>
-        
-        <View style={styles.preferenceItem}>
-          <Text style={styles.preferenceLabel}>Equipment</Text>
-          <Text style={styles.preferenceValue}>None (Bodyweight)</Text>
-        </View>
-      </View>
+      {/* Removed workout preferences summary to keep preferences managed only from Plans */}
 
       {/* App Info */}
       <View style={styles.card}>

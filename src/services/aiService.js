@@ -10,15 +10,45 @@ const openai = new OpenAI({
 export class AICoachService {
   constructor() {
     this.conversationHistory = [];
+    // Configure allowed models
+    this.models = {
+      plan: 'gpt-4.1-mini',      // For plan generation
+      chat: 'gpt-4o-mini',       // For chat and motivation
+      fallback: 'gpt-4o-mini'    // Fallback if specific model fails
+    };
+  }
+
+  // Get model for specific function
+  getModelForFunction(functionType) {
+    const envModel = process.env.EXPO_PUBLIC_OPENAI_MODEL;
+    if (envModel) {
+      // Validate that environment model is in allowed list
+      const allowedModels = Object.values(this.models);
+      if (allowedModels.includes(envModel)) {
+        console.log(`Using model from environment: ${envModel}`);
+        return envModel;
+      } else {
+        console.warn(`Environment model ${envModel} not in allowed list. Using fallback.`);
+      }
+    }
+    const model = this.models[functionType] || this.models.fallback;
+    console.log(`Using ${functionType} model: ${model}`);
+    return model;
+  }
+
+  // Get list of allowed models
+  getAllowedModels() {
+    return Object.values(this.models);
   }
 
   // Generate a personalized workout plan
   async generateWorkoutPlan(userProfile, preferences) {
     try {
       const prompt = this.buildWorkoutPlanPrompt(userProfile, preferences);
+      const model = this.getModelForFunction('plan');
       
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: model,
         messages: [
           {
             role: "system",
@@ -56,8 +86,9 @@ export class AICoachService {
         content: message
       });
 
+      const model = this.getModelForFunction('chat');
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: model,
         messages: [
           {
             role: "system",
@@ -100,8 +131,9 @@ export class AICoachService {
       Current focus: walking and strength training. 
       Keep it under 100 words and make it personal and motivating.`;
 
+      const model = this.getModelForFunction('chat');
       const response = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: model,
         messages: [
           {
             role: "system",

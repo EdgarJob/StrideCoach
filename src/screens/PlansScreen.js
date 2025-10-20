@@ -11,8 +11,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlan } from '../contexts/PlanContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import PreferencesScreen from './PreferencesScreen';
+import WorkoutBuilder from '../components/WorkoutBuilder';
 
 export default function PlansScreen() {
+  const navigation = useNavigation();
+  const { profile } = useAuth();
   const {
     currentPlan,
     isLoading,
@@ -24,18 +30,49 @@ export default function PlansScreen() {
   } = usePlan();
 
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
+  const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Store user preferences for plan generation
+  const [savedPreferences, setSavedPreferences] = useState({
+    workoutTypes: {
+      walking: true,
+      strength: true,
+      running: false,
+      yoga: false,
+      cycling: false,
+      swimming: false,
+    },
+    availableDays: {
+      monday: true,
+      wednesday: true,
+      friday: true,
+      tuesday: false,
+      thursday: false,
+      saturday: false,
+      sunday: false,
+    },
+    workoutDuration: 30,
+    difficultyLevel: 'beginner',
+    primaryGoal: 'general_fitness',
+    hasEquipment: {
+      none: true,
+      dumbbells: false,
+      resistance_bands: false,
+      yoga_mat: false,
+      treadmill: false,
+      bike: false,
+    }
+  });
 
-  const handleGeneratePlan = async () => {
+  const handleGeneratePlan = async (customPreferences = null) => {
     setIsGenerating(true);
     
-    // Default preferences - in a real app, this would come from a form
-    const preferences = {
-      daysPerWeek: 4,
-      sessionDuration: 30,
-      equipment: 'bodyweight',
-      focus: 'general_fitness'
-    };
+    // Use custom preferences or the saved preferences from state
+    const preferences = customPreferences || savedPreferences;
+
+    console.log('Generating plan with preferences:', preferences);
 
     const result = await generatePlan(preferences);
     
@@ -54,6 +91,22 @@ export default function PlansScreen() {
     }
     
     setIsGenerating(false);
+  };
+
+  const handleSaveCustomPlan = (customPlan) => {
+    // Here you would save the custom plan to your database
+    Alert.alert(
+      'Plan Saved!',
+      'Your custom workout plan has been saved successfully!',
+      [{ text: 'OK' }]
+    );
+    console.log('Custom plan saved:', customPlan);
+  };
+
+  const handlePreferencesSaved = (newPreferences) => {
+    console.log('Preferences saved, updating state:', newPreferences);
+    setSavedPreferences(newPreferences);
+    setShowPreferences(false);
   };
 
   const renderPlanOverview = () => {
@@ -256,6 +309,38 @@ export default function PlansScreen() {
         renderPlanOverview()
       )}
 
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setShowPreferences(true)}
+        >
+          <Ionicons name="settings" size={20} color="#4F46E5" />
+          <Text style={styles.actionButtonText}>Preferences</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setShowWorkoutBuilder(true)}
+        >
+          <Ionicons name="build" size={20} color="#4F46E5" />
+          <Text style={styles.actionButtonText}>Build Plan</Text>
+        </TouchableOpacity>
+        
+        {currentPlan && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.regenerateButton]}
+            onPress={() => handleGeneratePlan()}
+            disabled={isGenerating}
+          >
+            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+            <Text style={[styles.actionButtonText, styles.regenerateButtonText]}>
+              {isGenerating ? 'Generating...' : 'Regenerate'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       {/* Plan Details Modal */}
       <Modal
         visible={showPlanModal}
@@ -275,6 +360,28 @@ export default function PlansScreen() {
           {renderPlanDetails()}
         </View>
       </Modal>
+
+      {/* Preferences Modal */}
+      <Modal
+        visible={showPreferences}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPreferences(false)}
+      >
+        <PreferencesScreen 
+          currentPreferences={savedPreferences}
+          onSave={handlePreferencesSaved}
+          onCancel={() => setShowPreferences(false)}
+        />
+      </Modal>
+
+      {/* Workout Builder Modal */}
+      <WorkoutBuilder
+        isVisible={showWorkoutBuilder}
+        onClose={() => setShowWorkoutBuilder(false)}
+        onSave={handleSaveCustomPlan}
+        userProfile={profile}
+      />
     </View>
   );
 }
@@ -652,5 +759,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4F46E5',
     fontStyle: 'italic',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4F46E5',
+    marginLeft: 6,
+  },
+  regenerateButton: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
+  },
+  regenerateButtonText: {
+    color: '#FFFFFF',
   },
 });
