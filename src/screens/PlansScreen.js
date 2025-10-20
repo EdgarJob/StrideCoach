@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import PreferencesScreen from './PreferencesScreen';
 import WorkoutBuilder from '../components/WorkoutBuilder';
+import WorkoutCalendar from '../components/WorkoutCalendar';
 
 export default function PlansScreen() {
   const navigation = useNavigation();
@@ -140,7 +141,7 @@ export default function PlansScreen() {
     const isCompleted = isPlanCompleted();
 
     return (
-      <View style={styles.planContainer}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.planContainer}>
         {/* Plan Header */}
         <View style={styles.planHeader}>
           <View style={styles.planTitleContainer}>
@@ -213,7 +214,16 @@ export default function PlansScreen() {
             </TouchableOpacity>
           )}
         </View>
-      </View>
+
+        {/* Workout Calendar - Shows the plan in a visual calendar format */}
+        <View style={styles.calendarSection}>
+          <View style={styles.calendarHeader}>
+            <Ionicons name="calendar" size={24} color="#4F46E5" />
+            <Text style={styles.calendarTitle}>Your Workout Calendar</Text>
+          </View>
+          <WorkoutCalendar plan={currentPlan} />
+        </View>
+      </ScrollView>
     );
   };
 
@@ -479,9 +489,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  planContainer: {
+  scrollContainer: {
     flex: 1,
+  },
+  planContainer: {
     padding: 16,
+    paddingBottom: 32,
   },
   planHeader: {
     flexDirection: 'row',
@@ -793,5 +806,22 @@ const styles = StyleSheet.create({
   },
   regenerateButtonText: {
     color: '#FFFFFF',
+  },
+  calendarSection: {
+    marginTop: 20,
+    paddingBottom: 20,
+    width: '100%',
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  calendarTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
   },
 });
