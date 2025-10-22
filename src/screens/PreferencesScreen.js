@@ -139,36 +139,44 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
     </View>
   );
 
-  const renderAvailableDays = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Available Days</Text>
-      <Text style={styles.sectionSubtitle}>Select the days you can work out</Text>
-      {Object.entries(preferences.availableDays).map(([day, selected]) => (
-        <TouchableOpacity
-          key={day}
-          style={styles.optionRow}
-          onPress={() => updatePreference('availableDays', day, !selected)}
-        >
-          <View style={styles.optionContent}>
-            <Ionicons 
-              name="calendar" 
-              size={24} 
-              color={selected ? '#4F46E5' : '#9CA3AF'} 
-            />
-            <Text style={[styles.optionText, selected && styles.selectedText]}>
-              {day.charAt(0).toUpperCase() + day.slice(1)}
-            </Text>
-          </View>
-          <Switch
-            value={selected}
-            onValueChange={(value) => updatePreference('availableDays', day, value)}
-            trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-            thumbColor={selected ? '#4F46E5' : '#F3F4F6'}
-          />
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+  const renderAvailableDays = () => {
+    // Define days in proper chronological order (Monday to Sunday)
+    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Available Days</Text>
+        <Text style={styles.sectionSubtitle}>Select the days you can work out</Text>
+        {dayOrder.map((day) => {
+          const selected = preferences.availableDays[day];
+          return (
+            <TouchableOpacity
+              key={day}
+              style={styles.optionRow}
+              onPress={() => updatePreference('availableDays', day, !selected)}
+            >
+              <View style={styles.optionContent}>
+                <Ionicons 
+                  name="calendar" 
+                  size={24} 
+                  color={selected ? '#4F46E5' : '#9CA3AF'} 
+                />
+                <Text style={[styles.optionText, selected && styles.selectedText]}>
+                  {day.charAt(0).toUpperCase() + day.slice(1)}
+                </Text>
+              </View>
+              <Switch
+                value={selected}
+                onValueChange={(value) => updatePreference('availableDays', day, value)}
+                trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
+                thumbColor={selected ? '#4F46E5' : '#F3F4F6'}
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
 
   const renderWorkoutSettings = () => (
     <View style={styles.section}>
