@@ -1,8 +1,11 @@
 import OpenAI from 'openai';
 
 // Initialize OpenAI client
+const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY || 'your-openai-api-key-here';
+console.log('🔑 API Key being used:', apiKey.substring(0, 10) + '...');
+
 const openai = new OpenAI({
-  apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY || 'your-openai-api-key-here',
+  apiKey: apiKey,
   dangerouslyAllowBrowser: true // Only for development - use server-side in production
 });
 
