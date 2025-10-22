@@ -17,20 +17,120 @@ export default function HomeScreen() {
   useEffect(() => {
     if (currentPlan) {
       // Calculate real progress data
-      const progressData = {
-        completedWorkouts: 4, // TODO: Get from getPlanProgress() or actual completed workouts
-        totalWorkouts: 5,
-        streak: 6, // TODO: Get from actual streak calculation
-        weekNumber: 1, // TODO: Get from currentPlan week calculation
-        lastWorkoutDate: 'Yesterday' // TODO: Get from actual last workout
-      };
-      
+      const progressData = calculateRealProgressData();
       loadDailyMotivation(progressData);
     } else {
       // Load without progress data if no plan exists
       loadDailyMotivation();
     }
   }, [currentPlan]);
+
+  // Calculate real progress data from current plan
+  const calculateRealProgressData = () => {
+    if (!currentPlan) {
+      return {
+        completedWorkouts: 0,
+        totalWorkouts: 0,
+        streak: 0,
+        weekNumber: 1,
+        lastWorkoutDate: 'Not yet'
+      };
+    }
+
+    // Get plan progress using existing function
+    const planProgress = getPlanProgress();
+    
+    // Calculate current week number
+    const today = new Date();
+    const startDate = new Date(currentPlan.start_date);
+    const daysDiff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+    const currentWeekNumber = Math.min(Math.floor(daysDiff / 7) + 1, 4);
+    
+    // Calculate streak (consecutive completed workouts from most recent)
+    const streak = calculateStreak();
+    
+    // Get last workout date
+    const lastWorkoutDate = getLastWorkoutDate();
+    
+    return {
+      completedWorkouts: planProgress.completed,
+      totalWorkouts: planProgress.total,
+      streak: streak,
+      weekNumber: currentWeekNumber,
+      lastWorkoutDate: lastWorkoutDate
+    };
+  };
+
+  // Calculate consecutive completed workouts streak
+  const calculateStreak = () => {
+    if (!currentPlan) return 0;
+    
+    let streak = 0;
+    const today = new Date();
+    const startDate = new Date(currentPlan.start_date);
+    const daysDiff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+    
+    // Check backwards from today to find consecutive completed workouts
+    for (let i = daysDiff; i >= 0; i--) {
+      const checkDate = new Date(startDate);
+      checkDate.setDate(checkDate.getDate() + i);
+      
+      const weekNumber = Math.floor(i / 7) + 1;
+      const dayNumber = (i % 7) + 1;
+      
+      if (weekNumber > 4) continue; // Plan completed
+      
+      const week = currentPlan.weeks[weekNumber - 1];
+      if (!week) continue;
+      
+      const day = week.days[dayNumber - 1];
+      if (!day || !day.is_workout_day) continue;
+      
+      if (day.progress && day.progress.completed) {
+        streak++;
+      } else {
+        break; // Streak broken
+      }
+    }
+    
+    return streak;
+  };
+
+  // Get the last workout date
+  const getLastWorkoutDate = () => {
+    if (!currentPlan) return 'Not yet';
+    
+    const today = new Date();
+    const startDate = new Date(currentPlan.start_date);
+    const daysDiff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+    
+    // Look backwards from today to find the last completed workout
+    for (let i = daysDiff; i >= 0; i--) {
+      const checkDate = new Date(startDate);
+      checkDate.setDate(checkDate.getDate() + i);
+      
+      const weekNumber = Math.floor(i / 7) + 1;
+      const dayNumber = (i % 7) + 1;
+      
+      if (weekNumber > 4) continue;
+      
+      const week = currentPlan.weeks[weekNumber - 1];
+      if (!week) continue;
+      
+      const day = week.days[dayNumber - 1];
+      if (!day || !day.is_workout_day) continue;
+      
+      if (day.progress && day.progress.completed) {
+        const daysAgo = daysDiff - i;
+        if (daysAgo === 0) return 'Today';
+        if (daysAgo === 1) return 'Yesterday';
+        if (daysAgo < 7) return `${daysAgo} days ago`;
+        return checkDate.toLocaleDateString();
+      }
+    }
+    
+    return 'Not yet';
+  };
 
   const handleQuickAction = (action) => {
     switch (action) {
@@ -63,6 +163,9 @@ export default function HomeScreen() {
       }
     }
   };
+
+  // Calculate real progress data for display
+  const progressData = calculateRealProgressData();
 
   return (
     <ScrollView style={styles.container}>
@@ -100,7 +203,7 @@ export default function HomeScreen() {
             <Text style={styles.cardTitle}>This Week's Progress</Text>
           </View>
           <View style={styles.weekBadge}>
-            <Text style={styles.weekBadgeText}>Week 1</Text>
+            <Text style={styles.weekBadgeText}>Week {progressData.weekNumber}</Text>
           </View>
         </View>
 
@@ -110,7 +213,7 @@ export default function HomeScreen() {
           <View style={styles.circularProgress}>
             <View style={styles.progressCircleOuter}>
               <View style={styles.progressCircleInner}>
-                <Text style={styles.bigPercentage}>80%</Text>
+                <Text style={styles.bigPercentage}>{progressData.totalWorkouts > 0 ? Math.round((progressData.completedWorkouts / progressData.totalWorkouts) * 100) : 0}%</Text>
                 <Text style={styles.percentageLabel}>Complete</Text>
               </View>
             </View>
@@ -126,21 +229,21 @@ export default function HomeScreen() {
               <View style={styles.statIconContainer}>
                 <Ionicons name="checkmark-circle" size={24} color="#10B981" />
               </View>
-              <Text style={styles.statNumber}>4/5</Text>
+              <Text style={styles.statNumber}>{progressData.completedWorkouts}/{progressData.totalWorkouts}</Text>
               <Text style={styles.statLabel}>Completed</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
                 <Ionicons name="flame" size={24} color="#F59E0B" />
               </View>
-              <Text style={styles.statNumber}>6</Text>
+              <Text style={styles.statNumber}>{progressData.streak}</Text>
               <Text style={styles.statLabel}>Day Streak</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
                 <Ionicons name="trophy" size={24} color="#8B5CF6" />
               </View>
-              <Text style={styles.statNumber}>1</Text>
+              <Text style={styles.statNumber}>{Math.max(0, progressData.totalWorkouts - progressData.completedWorkouts)}</Text>
               <Text style={styles.statLabel}>Left</Text>
             </View>
           </View>
@@ -149,9 +252,13 @@ export default function HomeScreen() {
         {/* Progress Bar */}
         <View style={styles.linearProgressContainer}>
           <View style={styles.linearProgressBackground}>
-            <View style={[styles.linearProgressFill, { width: '80%' }]} />
+            <View style={[styles.linearProgressFill, { 
+              width: progressData.totalWorkouts > 0 ? `${Math.round((progressData.completedWorkouts / progressData.totalWorkouts) * 100)}%` : '0%' 
+            }]} />
           </View>
-          <Text style={styles.progressPercentText}>80% to weekly goal</Text>
+          <Text style={styles.progressPercentText}>
+            {progressData.totalWorkouts > 0 ? Math.round((progressData.completedWorkouts / progressData.totalWorkouts) * 100) : 0}% to weekly goal
+          </Text>
         </View>
         
         {/* AI Coach Motivation Message */}
