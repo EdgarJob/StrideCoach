@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import { usePlan } from '../contexts/PlanContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import PreferencesScreen from './PreferencesScreen';
-import WorkoutBuilder from '../components/WorkoutBuilder';
 import WorkoutCalendar from '../components/WorkoutCalendar';
 
 export default function PlansScreen() {
@@ -32,9 +31,17 @@ export default function PlansScreen() {
 
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
-  const [showWorkoutBuilder, setShowWorkoutBuilder] = useState(false);
+  const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   
+  // Check if user is new (no preferences set) and show modal
+  useEffect(() => {
+    if (profile && !profile.workout_preferences) {
+      // User has no preferences set, show new user modal
+      setShowNewUserModal(true);
+    }
+  }, [profile]);
+
   // Store user preferences for plan generation
   const [savedPreferences, setSavedPreferences] = useState({
     workoutTypes: {
@@ -104,10 +111,16 @@ export default function PlansScreen() {
     console.log('Custom plan saved:', customPlan);
   };
 
-  const handlePreferencesSaved = (newPreferences) => {
+  const handlePreferencesSaved = async (newPreferences) => {
     console.log('Preferences saved, updating state:', newPreferences);
     setSavedPreferences(newPreferences);
     setShowPreferences(false);
+    
+    // If this is a new user (modal was showing), auto-generate plan
+    if (showNewUserModal) {
+      setShowNewUserModal(false);
+      await handleGeneratePlan(newPreferences);
+    }
   };
 
   const renderPlanOverview = () => {
@@ -203,16 +216,6 @@ export default function PlansScreen() {
             <Text style={styles.primaryButtonText}>View Plan</Text>
           </TouchableOpacity>
           
-          {!isCompleted && (
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={handleGeneratePlan}
-              disabled={isGenerating}
-            >
-              <Ionicons name="refresh" size={20} color="#4F46E5" />
-              <Text style={styles.secondaryButtonText}>Regenerate</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Workout Calendar - Shows the plan in a visual calendar format */}
@@ -329,26 +332,6 @@ export default function PlansScreen() {
           <Text style={styles.actionButtonText}>Preferences</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => setShowWorkoutBuilder(true)}
-        >
-          <Ionicons name="build" size={20} color="#4F46E5" />
-          <Text style={styles.actionButtonText}>Build Plan</Text>
-        </TouchableOpacity>
-        
-        {currentPlan && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.regenerateButton]}
-            onPress={() => handleGeneratePlan()}
-            disabled={isGenerating}
-          >
-            <Ionicons name="refresh" size={20} color="#FFFFFF" />
-            <Text style={[styles.actionButtonText, styles.regenerateButtonText]}>
-              {isGenerating ? 'Generating...' : 'Regenerate'}
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Plan Details Modal */}
@@ -385,13 +368,58 @@ export default function PlansScreen() {
         />
       </Modal>
 
-      {/* Workout Builder Modal */}
-      <WorkoutBuilder
-        isVisible={showWorkoutBuilder}
-        onClose={() => setShowWorkoutBuilder(false)}
-        onSave={handleSaveCustomPlan}
-        userProfile={profile}
-      />
+      {/* New User Welcome Modal */}
+      <Modal
+        visible={showNewUserModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowNewUserModal(false)}
+      >
+        <View style={styles.newUserModalContainer}>
+          <View style={styles.newUserHeader}>
+            <Ionicons name="sparkles" size={48} color="#4F46E5" />
+            <Text style={styles.newUserTitle}>Welcome to StrideCoach!</Text>
+            <Text style={styles.newUserSubtitle}>
+              Let's set up your personalized workout preferences to create your perfect fitness plan.
+            </Text>
+          </View>
+          
+          <View style={styles.newUserContent}>
+            <View style={styles.featureList}>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.featureText}>Customized workout types</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.featureText}>Flexible schedule options</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.featureText}>AI-powered plan generation</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.featureText}>Progress tracking</Text>
+              </View>
+            </View>
+          </View>
+          
+          <View style={styles.newUserActions}>
+            <TouchableOpacity
+              style={styles.newUserButton}
+              onPress={() => {
+                setShowNewUserModal(false);
+                setShowPreferences(true);
+              }}
+            >
+              <Ionicons name="settings" size={20} color="#FFFFFF" />
+              <Text style={styles.newUserButtonText}>Set My Preferences</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -800,13 +828,6 @@ const styles = StyleSheet.create({
     color: '#4F46E5',
     marginLeft: 6,
   },
-  regenerateButton: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
-  },
-  regenerateButtonText: {
-    color: '#FFFFFF',
-  },
   calendarSection: {
     marginTop: 20,
     paddingBottom: 20,
@@ -823,5 +844,72 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#1F2937',
+  },
+  // New User Modal Styles
+  newUserModalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  newUserHeader: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  newUserTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginTop: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  newUserSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  newUserContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  featureList: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 20,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  featureText: {
+    fontSize: 16,
+    color: '#374151',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  newUserActions: {
+    paddingTop: 20,
+  },
+  newUserButton: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+  },
+  newUserButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
