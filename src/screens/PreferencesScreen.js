@@ -83,26 +83,16 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
     }));
   };
 
-  const savePreferences = async () => {
+  const generatePlan = async () => {
     setIsLoading(true);
     try {
-      // Call the onSave callback with the preferences
+      // Call the onSave callback with the preferences (this will save and generate plan)
       if (onSave) {
         onSave(preferences);
       }
-      
-      Alert.alert(
-        'Success', 
-        'Your preferences have been saved!',
-        [
-          {
-            text: 'OK'
-          }
-        ]
-      );
     } catch (error) {
-      console.error('Error saving preferences:', error);
-      Alert.alert('Error', `Failed to save preferences. ${error.message || ''}`.trim());
+      console.error('Error generating plan:', error);
+      Alert.alert('Error', `Failed to generate plan. ${error.message || ''}`.trim());
     } finally {
       setIsLoading(false);
     }
@@ -340,11 +330,14 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Workout Preferences</Text>
         <TouchableOpacity
-          style={styles.saveButton}
-          onPress={savePreferences}
+          style={styles.generateButton}
+          onPress={generatePlan}
           disabled={isLoading}
         >
-          <Text style={styles.saveButtonText}>Save</Text>
+          <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+          <Text style={styles.generateButtonText}>
+            {isLoading ? 'Generating...' : 'Generate Plan'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -434,15 +427,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1F2937',
   },
-  saveButton: {
+  generateButton: {
     backgroundColor: '#4F46E5',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  saveButtonText: {
+  generateButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
+    fontSize: 16,
   },
   content: {
     flex: 1,
