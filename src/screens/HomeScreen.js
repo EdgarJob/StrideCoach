@@ -21,9 +21,9 @@ export default function HomeScreen() {
       loadDailyMotivation(progressData);
     } else {
       // Load without progress data if no plan exists
-      loadDailyMotivation();
+      loadDailyMotivation({});
     }
-  }, [currentPlan]);
+  }, [currentPlan, loadDailyMotivation]);
 
   // Calculate real progress data from current plan
   const calculateRealProgressData = () => {

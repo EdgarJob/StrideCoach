@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Loading profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, display_name, sex, age, height_cm, weight_kg, workout_preferences')
+        .select('*')
         .eq('user_id', userId)
         .single();
 
@@ -124,6 +124,12 @@ export const AuthProvider = ({ children }) => {
 
       if (error) {
         console.error('Error creating basic profile:', error);
+        // If it's a duplicate key error (409), try to load the existing profile
+        if (error.code === '23505' || error.status === 409) {
+          console.log('Profile already exists, loading it...');
+          await loadUserProfile(userId);
+          return;
+        }
         // Set a default profile even if creation fails
         setProfile({
           user_id: userId,

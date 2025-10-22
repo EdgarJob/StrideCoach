@@ -126,6 +126,11 @@ export class AICoachService {
   // Generate daily motivation based on actual progress data
   async getDailyMotivation(userProfile, progressData = {}) {
     try {
+      // Ensure progressData is not null
+      if (!progressData || typeof progressData !== 'object') {
+        progressData = {};
+      }
+      
       // Extract progress metrics
       const completedWorkouts = progressData.completedWorkouts || 0;
       const totalWorkouts = progressData.totalWorkouts || 5;
