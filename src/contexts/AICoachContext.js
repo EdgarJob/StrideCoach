@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { aiCoach } from '../services/aiService';
 import { useAuth } from './AuthContext';
 
@@ -19,15 +19,8 @@ export const AICoachProvider = ({ children }) => {
   const [conversationHistory, setConversationHistory] = useState([]);
   const [workoutPlan, setWorkoutPlan] = useState(null);
 
-  // Load daily motivation on app start
-  useEffect(() => {
-    if (profile) {
-      loadDailyMotivation();
-    }
-  }, [profile]);
-
-  // Load daily motivation with progress data
-  const loadDailyMotivation = async (progressData = null) => {
+  // Load daily motivation with progress data (memoized to prevent re-renders)
+  const loadDailyMotivation = useCallback(async (progressData = null) => {
     if (!profile) return;
     
     try {
@@ -46,7 +39,7 @@ export const AICoachProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [profile]);
 
   // Send message to AI coach
   const sendMessage = async (message) => {

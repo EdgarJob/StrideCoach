@@ -23,7 +23,7 @@ export default function HomeScreen() {
       // Load without progress data if no plan exists
       loadDailyMotivation({});
     }
-  }, [currentPlan, loadDailyMotivation]);
+  }, [currentPlan]); // Removed loadDailyMotivation from dependencies since it's now memoized
 
   // Calculate real progress data from current plan
   const calculateRealProgressData = () => {
