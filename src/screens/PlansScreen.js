@@ -75,6 +75,7 @@ export default function PlansScreen() {
   });
 
   const handleGeneratePlan = async (customPreferences = null) => {
+    console.log('🚀 Starting plan generation...');
     setIsGenerating(true);
     
     // Use custom preferences or the saved preferences from state
@@ -84,13 +85,17 @@ export default function PlansScreen() {
 
     const result = await generatePlan(preferences);
     
+    console.log('Plan generation result:', result);
+    
     if (result.success) {
+      console.log('✅ Plan generated successfully!');
       Alert.alert(
         'Plan Generated!',
         'Your personalized 4-week fitness plan has been created successfully!',
         [{ text: 'OK', onPress: () => setShowPlanModal(true) }]
       );
     } else {
+      console.log('❌ Plan generation failed:', result.error);
       Alert.alert(
         'Error',
         `Failed to generate plan: ${result.error}`,
@@ -116,11 +121,13 @@ export default function PlansScreen() {
     setSavedPreferences(newPreferences);
     setShowPreferences(false);
     
-    // If this is a new user (modal was showing), auto-generate plan
+    // Always generate a plan when preferences are saved
     if (showNewUserModal) {
       setShowNewUserModal(false);
-      await handleGeneratePlan(newPreferences);
     }
+    
+    // Generate plan with the new preferences
+    await handleGeneratePlan(newPreferences);
   };
 
   const renderPlanOverview = () => {
