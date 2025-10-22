@@ -355,10 +355,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     overflow: 'hidden',
     height: 520,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.15)',
     elevation: 5,
   },
   dayHeader: {
