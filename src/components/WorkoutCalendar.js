@@ -212,12 +212,23 @@ ${exerciseList}
                   // Otherwise, build from duration or reps
                   else if (exercise.duration_minutes && exercise.duration_minutes > 0) {
                     // Don't show duration if it's already in the name
-                    if (!exercise.name?.toLowerCase().includes('min')) {
+                    if (!exercise.name?.toLowerCase().includes('min') && 
+                        !exercise.name?.toLowerCase().includes('sec')) {
                       detailsText = `${exercise.duration_minutes} min`;
                     }
-                  } else if (exercise.reps && exercise.reps > 0) {
-                    // Don't show reps if it's already in the name
-                    if (!exercise.name?.toLowerCase().includes(' x ')) {
+                  } 
+                  // ✅ FIX: Only show reps for NON-CARDIO exercises
+                  // Don't show reps for running/walking/cardio exercises (they use distance/time)
+                  else if (exercise.reps && exercise.reps > 0) {
+                    const isCardio = exercise.name?.toLowerCase().includes('km') || 
+                                    exercise.name?.toLowerCase().includes('run') ||
+                                    exercise.name?.toLowerCase().includes('walk') ||
+                                    exercise.name?.toLowerCase().includes('jog') ||
+                                    exercise.name?.toLowerCase().includes('rest') ||
+                                    exercise.name?.toLowerCase().includes('pace');
+                    
+                    // Only show reps for strength/non-cardio exercises
+                    if (!isCardio && !exercise.name?.toLowerCase().includes(' x ')) {
                       detailsText = `${exercise.reps} reps`;
                     }
                   }

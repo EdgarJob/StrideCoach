@@ -221,31 +221,40 @@ export class PlanService {
       console.log(`📝 ${dayName} content length: ${workoutContent.length}`);
       console.log(`📝 ${dayName} first 150 chars:`, workoutContent.substring(0, 150));
       
-      // ✅ FIX: Extract workout type from content (check more specific types first!)
+      // ✅ FIX: Use workout type from USER PREFERENCES, not from parsing content
+      // This ensures the card shows what the user actually selected
       let workoutType = 'Mixed';
-      const contentLower = workoutContent.toLowerCase();
       
-      // Check for specific workout types first (more specific before more general)
-      if (contentLower.includes('running') || contentLower.includes('run at') || contentLower.includes('tempo run') || contentLower.includes('interval run')) {
-        workoutType = 'Running';
-      } else if (contentLower.includes('cycling') || contentLower.includes('cycle') || contentLower.includes('bike')) {
-        workoutType = 'Cycling';
-      } else if (contentLower.includes('yoga')) {
-        workoutType = 'Yoga';
-      } else if (contentLower.includes('strength') || contentLower.includes('bodyweight')) {
-        workoutType = 'Strength';
-      } else if (contentLower.includes('cardio')) {
-        workoutType = 'Cardio';
-      } else if (contentLower.includes('walking') || contentLower.includes('walk at')) {
-        workoutType = 'Walking';
-      } else if (contentLower.includes('walk') && contentLower.includes('strength')) {
-        workoutType = 'Mixed';
-      } else if (contentLower.includes('run')) {
-        // Fallback for generic "run" mentions
-        workoutType = 'Running';
-      } else if (contentLower.includes('walk')) {
-        // Fallback for generic "walk" mentions
-        workoutType = 'Walking';
+      // Get selected workout types from preferences
+      const selectedWorkoutTypes = preferences.workoutTypes || {};
+      const activeTypes = Object.entries(selectedWorkoutTypes)
+        .filter(([type, selected]) => selected)
+        .map(([type]) => type.charAt(0).toUpperCase() + type.slice(1));
+      
+      // If user selected workout types, use those
+      if (activeTypes.length > 0) {
+        if (activeTypes.length === 1) {
+          workoutType = activeTypes[0]; // Single type: "Running", "Walking", etc.
+        } else if (activeTypes.length === 2) {
+          workoutType = `${activeTypes[0]} + ${activeTypes[1]}`; // "Running + Strength"
+        } else {
+          workoutType = 'Mixed'; // 3+ types: "Mixed"
+        }
+      } 
+      // Fallback: Parse from content if preferences not available
+      else {
+        const contentLower = workoutContent.toLowerCase();
+        if (contentLower.includes('running') || contentLower.includes('run at') || contentLower.includes('tempo run')) {
+          workoutType = 'Running';
+        } else if (contentLower.includes('walking') || contentLower.includes('walk at')) {
+          workoutType = 'Walking';
+        } else if (contentLower.includes('strength') || contentLower.includes('bodyweight')) {
+          workoutType = 'Strength';
+        } else if (contentLower.includes('yoga')) {
+          workoutType = 'Yoga';
+        } else if (contentLower.includes('cycling') || contentLower.includes('cycle')) {
+          workoutType = 'Cycling';
+        }
       }
       
       // Extract duration - look for patterns like "40 min", "(30 min)", "25 minutes"
