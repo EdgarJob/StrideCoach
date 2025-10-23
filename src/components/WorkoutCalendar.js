@@ -24,20 +24,8 @@ export default function WorkoutCalendar({ plan }) {
   // State to track which week is currently being displayed
   const [selectedWeek, setSelectedWeek] = useState(0);
 
-  // ✅ DEBUG: Log the plan object to see what we're getting
-  console.log('🔍 WorkoutCalendar received plan:', {
-    plan,
-    planType: typeof plan,
-    planIsNull: plan === null,
-    planIsUndefined: plan === undefined,
-    planWeeks: plan?.weeks,
-    planWeeksLength: plan?.weeks?.length,
-    planKeys: plan ? Object.keys(plan) : 'N/A'
-  });
-
   // If no plan exists, show a message
   if (!plan || !plan.weeks || plan.weeks.length === 0) {
-    console.log('🚫 WorkoutCalendar: No plan data, showing no data message');
     return (
       <View style={styles.container}>
         <Text style={styles.noDataText}>No workout plan available</Text>
@@ -206,19 +194,9 @@ ${exerciseList}
 
                   // If it's a section header, render it differently
                   if (isSection) {
-                    // ✅ Filter out invalid section names
+                    // Filter out invalid section names
                     const sectionName = (exercise.name || exercise.exercise || '').trim();
-                    
-                    console.log('📌 SECTION HEADER:', {
-                      idx,
-                      sectionName,
-                      sectionNameLength: sectionName.length,
-                      isRepeatGroup,
-                      fullExercise: exercise
-                    });
-                    
                     if (!sectionName || sectionName === '.' || sectionName.length === 0) {
-                      console.warn('❌ SKIPPED SECTION:', sectionName);
                       return null; // Skip invalid sections
                     }
                     
@@ -244,11 +222,10 @@ ${exerciseList}
                   let detailsText = '';
                   
                   // Prioritize description field (which contains full details)
-                  // ✅ FIX: Validate description is not just punctuation
                   if (exercise.description && 
                       exercise.description !== exercise.name &&
                       exercise.description.trim().length > 1 &&
-                      !/^[\s\.\,\;\:]+$/.test(exercise.description)) {
+                      !/^[\s\.\,\;\:\!\?\-\_]+$/.test(exercise.description)) {
                     detailsText = exercise.description;
                   } 
                   // Otherwise, build from duration or reps
@@ -275,54 +252,14 @@ ${exerciseList}
                     }
                   }
 
-                  // ✅ ULTRA DEBUG: Log the RAW exercise object BEFORE trimming
-                  console.log('🔎 RAW EXERCISE BEFORE PROCESSING:', {
-                    idx,
-                    rawName: exercise.name,
-                    rawExercise: exercise.exercise,
-                    rawDescription: exercise.description,
-                    fullRawObject: exercise
-                  });
-                  
                   // Regular exercise item
                   const exerciseName = (exercise.name || exercise.exercise || '').trim();
                   
-                  // ✅ COMPREHENSIVE: Skip if invalid (empty, period, whitespace, or other punctuation)
+                  // Skip if invalid (empty, period, whitespace, or other punctuation)
                   if (!exerciseName || 
                       exerciseName.length === 0 || 
                       exerciseName === '.' || 
-                      exerciseName === ',' ||
-                      exerciseName === ';' ||
-                      exerciseName === ':' ||
-                      /^[\s\.\,\;\:]+$/.test(exerciseName)) {  // Only punctuation/whitespace
-                    console.log('⚠️ Skipping invalid exercise:', exercise);
-                    return null;
-                  }
-                  
-                  // ✅ DEBUG: Log EVERYTHING about this exercise
-                  console.log('🔍 Rendering exercise:', {
-                    idx,
-                    exerciseName,
-                    exerciseNameLength: exerciseName.length,
-                    exerciseNameCharCodes: Array.from(exerciseName).map(c => c.charCodeAt(0)),
-                    detailsText,
-                    detailsTextLength: detailsText?.length || 0,
-                    fullExercise: exercise
-                  });
-                  
-                  // ✅ NUCLEAR OPTION: If exerciseName contains ONLY punctuation/whitespace, skip it
-                  if (!exerciseName || exerciseName.trim().length === 0 || /^[\s\.\,\;\:\!\?\-\_]+$/.test(exerciseName)) {
-                    console.warn('❌ SKIPPED: Exercise name is invalid:', exerciseName);
-                    return null;
-                  }
-                  
-                  // ✅ FINAL SAFETY CHECK: Ensure exerciseName is a valid string with actual content
-                  const safeExerciseName = exerciseName && typeof exerciseName === 'string' && exerciseName.trim().length > 1 && !/^[\.\,\;\:\!\?\-\_]+$/.test(exerciseName.trim()) 
-                    ? exerciseName 
-                    : null;
-                  
-                  if (!safeExerciseName) {
-                    console.error('🚨 BLOCKED: Invalid exercise name would cause text node error:', exerciseName);
+                      /^[\s\.\,\;\:\!\?\-\_]+$/.test(exerciseName)) {
                     return null;
                   }
                   
@@ -330,7 +267,7 @@ ${exerciseList}
                     <View key={idx} style={styles.exerciseItem}>
                       <View style={styles.exerciseDetails}>
                         <Text style={styles.exerciseName} numberOfLines={3}>
-                          {safeExerciseName}
+                          {exerciseName}
                         </Text>
                         {detailsText && detailsText.trim().length > 1 && !/^[\s\.\,\;\:\!\?\-\_]+$/.test(detailsText) && (
                           <Text style={styles.exerciseInfo}>{detailsText}</Text>
