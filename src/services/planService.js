@@ -23,12 +23,12 @@ export class PlanService {
           plan
         };
       } else {
-        console.log('⚠️ AI failed, using fallback plan');
-        // Fallback to generated plan if AI fails
-        const plan = this.parsePlanResponse('', userProfile, preferences);
-        return {
-          success: true,
-          plan
+        console.log('❌ AI failed to generate plan');
+        // ✅ FIX: Return failure instead of generating fallback exercises
+        // User requirement: Display ONLY AI model exercises
+        return { 
+          success: false, 
+          error: aiResult.error || 'AI failed to generate workout plan. Please try again.' 
         };
       }
     } catch (error) {
@@ -44,14 +44,23 @@ export class PlanService {
     
     console.log('🤖 Parsing AI response:', aiResponse.substring(0, 200) + '...');
     
-    // Try to parse the AI response, fallback to generated structure
+    // Try to parse the AI response
     let weeks;
     try {
       weeks = this.parseAIResponse(aiResponse, userProfile, preferences);
-      console.log('✅ Successfully parsed AI response');
+      
+      // ✅ FIX: Check if parsing returned empty weeks (parsing failed)
+      if (!weeks || weeks.length === 0) {
+        console.log('❌ Parsing returned no weeks - AI response format issue');
+        throw new Error('Failed to parse AI response: No workout weeks found');
+      }
+      
+      console.log('✅ Successfully parsed AI response with', weeks.length, 'weeks');
     } catch (error) {
-      console.log('⚠️ Failed to parse AI response, using generated structure:', error.message);
-      weeks = this.generateWeeklyStructure(userProfile, preferences);
+      console.log('❌ Failed to parse AI response:', error.message);
+      // ✅ FIX: Don't generate fallback structure, throw error instead
+      // User requirement: Display ONLY AI model exercises
+      throw error;
     }
     
     // Create a structured 4-week plan
@@ -131,23 +140,11 @@ export class PlanService {
           });
         });
       } else {
-        console.log('⚠️ No week sections found at all, creating structured weeks...');
-        
-        // Fallback: Create 4 weeks with AI-inspired content
-        const availableDays = preferences.availableDays || {};
-        const selectedDays = Object.entries(availableDays)
-          .filter(([day, selected]) => selected)
-          .map(([day]) => day.toLowerCase());
-        
-        const workoutDays = selectedDays.length > 0 ? selectedDays : ['monday', 'wednesday', 'friday'];
-        
-        for (let week = 1; week <= 4; week++) {
-          weeks.push({
-            week_number: week,
-            focus: this.getWeekFocus(week),
-            days: this.createWeekDays(week, workoutDays, userProfile, preferences, aiResponse)
-          });
-        }
+        console.log('❌ No week sections found in AI response - parsing failed');
+        // ✅ FIX: Don't create fallback weeks with generated exercises
+        // Return empty array to signal parsing failure
+        // User requirement: Display ONLY AI model exercises
+        return [];
       }
     }
     

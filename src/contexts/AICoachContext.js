@@ -23,12 +23,24 @@ export const AICoachProvider = ({ children }) => {
   const loadDailyMotivation = useCallback(async (progressData = null) => {
     if (!profile) return;
     
+    // ✅ FIX: Check if we already loaded motivation today
+    const today = new Date().toDateString();
+    const lastMotivationDate = localStorage.getItem('lastMotivationDate');
+    
+    if (lastMotivationDate === today && dailyMotivation) {
+      console.log('📅 Daily motivation already loaded today, skipping...');
+      return;
+    }
+    
     try {
       setIsLoading(true);
       const result = await aiCoach.getDailyMotivation(profile, progressData);
       
       if (result.success) {
         setDailyMotivation(result.motivation);
+        // ✅ FIX: Store today's date to prevent multiple loads
+        localStorage.setItem('lastMotivationDate', today);
+        console.log('✅ Daily motivation loaded for', today);
       } else {
         console.error('Failed to load daily motivation:', result.error);
         setDailyMotivation("Ready to make today count? Every step brings you closer to your goals! 💪");
@@ -39,7 +51,7 @@ export const AICoachProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [profile]);
+  }, [profile, dailyMotivation]);
 
   // Send message to AI coach
   const sendMessage = async (message) => {
