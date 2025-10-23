@@ -315,6 +315,7 @@ export class PlanService {
     
     // Split by lines and process each line
     const lines = workoutText.split('\n');
+    let currentSection = null;
     
     for (const line of lines) {
       const trimmedLine = line.trim();
@@ -323,18 +324,35 @@ export class PlanService {
       if (!trimmedLine || trimmedLine.length < 3) continue;
       
       // ✅ NEW: Check for section headers and ADD them as exercises
-      // Matches: "- Warm-Up:", "- Main Workout:", "- Cool Down:", "- Main Workout (Repeat x3):"
-      const sectionHeaderMatch = trimmedLine.match(/^[-•*]\s*(Warm[-\s]?Up|Main\s+Workout|Cool\s+Down)(\s*\([^)]+\))?:\s*$/i);
+      // Matches: "- Warm-Up:", "- Main Workout:", "- Cool Down:", "- Main Workout: 4 Rounds:"
+      const sectionHeaderMatch = trimmedLine.match(/^[-•*]\s*(Warm[-\s]?Up|Main\s+Workout|Cool\s+Down):\s*(.*)$/i);
       if (sectionHeaderMatch) {
-        const sectionName = sectionHeaderMatch[1].trim() + (sectionHeaderMatch[2] || '');
+        const sectionName = sectionHeaderMatch[1].trim();
+        const sectionDetails = sectionHeaderMatch[2].trim();
+        currentSection = sectionName;
+        
         exercises.push({
           name: sectionName,
           sets: 0,
           reps: null,
           duration_minutes: null,
-          description: sectionName,
+          description: sectionDetails || sectionName,
           isSection: true  // Mark as section header
         });
+        
+        // ✅ NEW: Parse inline section content (e.g., "- Warm-Up: 5 min walk + leg swings")
+        if (sectionDetails) {
+          // Split by '+' to handle multi-activity descriptions
+          const activities = sectionDetails.split('+').map(a => a.trim());
+          for (const activity of activities) {
+            if (activity.length > 3) {
+              const parsedExercise = this.parseSingleExercise(activity);
+              if (parsedExercise) {
+                exercises.push(parsedExercise);
+              }
+            }
+          }
+        }
         continue;
       }
       
@@ -451,13 +469,34 @@ export class PlanService {
         // Pattern: Just exercise name (no reps or duration specified)
         // Only add if it looks like an exercise (not a description or header)
         if (exerciseText.length >= 5 && !exerciseText.toLowerCase().includes('week')) {
-          exercises.push({
-            name: exerciseText,
-            sets: 1,
-            reps: 10, // Default reps
-            duration_minutes: null,
-            description: exerciseText
-          });
+          const parsedExercise = this.parseSingleExercise(exerciseText);
+          if (parsedExercise) {
+            exercises.push(parsedExercise);
+          }
+        }
+      } else {
+        // ✅ NEW: Handle non-bullet lines (e.g., "Total running distance approx 1.6km")
+        // These might be important workout notes or follow-up instructions
+        if (trimmedLine.length > 10 && 
+            !trimmedLine.toLowerCase().includes('week') &&
+            !trimmedLine.startsWith('###') &&
+            !trimmedLine.startsWith('##')) {
+          
+          // Check if it's a follow-up instruction (e.g., "Followed by 10 minutes easy jog")
+          const followedByMatch = trimmedLine.match(/followed\s+by\s+(.+)/i);
+          if (followedByMatch) {
+            const parsedExercise = this.parseSingleExercise(followedByMatch[1]);
+            if (parsedExercise) {
+              exercises.push(parsedExercise);
+            }
+            continue;
+          }
+          
+          // Check if it's a distance/time summary we should parse
+          const parsedExercise = this.parseSingleExercise(trimmedLine);
+          if (parsedExercise && parsedExercise.name.length < 100) {
+            exercises.push(parsedExercise);
+          }
         }
       }
     }
@@ -468,6 +507,105 @@ export class PlanService {
     }
     
     return exercises;
+  }
+  
+  // ✅ NEW: Parse a single exercise text into an exercise object
+  parseSingleExercise(text) {
+    if (!text || text.trim().length < 3) return null;
+    
+    const trimmed = text.trim();
+    
+    // Pattern 1: "N minutes/seconds activity"
+    const durationFirstMatch = trimmed.match(/^(\d+)\s+(minutes?|mins?|seconds?|secs?)\s+(.+)/i);
+    if (durationFirstMatch) {
+      const durationValue = parseInt(durationFirstMatch[1]);
+      const unit = durationFirstMatch[2].toLowerCase();
+      const activityName = durationFirstMatch[3].trim();
+      const durationInMin = (unit.startsWith('sec')) 
+        ? Math.ceil(durationValue / 60) 
+        : durationValue;
+      
+      return {
+        name: activityName,
+        sets: 1,
+        reps: null,
+        duration_minutes: durationInMin,
+        description: `${durationValue} ${durationFirstMatch[2]} ${activityName}`
+      };
+    }
+    
+    // Pattern 2: "N km/m at pace" (distance-based cardio)
+    const distanceMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*(km|m|miles?)\s+at\s+(.+)/i);
+    if (distanceMatch) {
+      const distance = parseFloat(distanceMatch[1]);
+      const unit = distanceMatch[2].toLowerCase();
+      const pace = distanceMatch[3].trim();
+      
+      return {
+        name: `${distance}${unit} at ${pace}`,
+        sets: 1,
+        reps: null,
+        duration_minutes: null,
+        description: pace.includes('(') ? pace.match(/\(([^)]+)\)/)?.[1] || pace : pace
+      };
+    }
+    
+    // Pattern 3: "Exercise name x reps"
+    const repsMatch = trimmed.match(/^(.+?)\s+x\s*(\d+)\s*(?:reps?|each\s+leg|each\s+side)?/i);
+    if (repsMatch) {
+      return {
+        name: repsMatch[1].trim(),
+        sets: 1,
+        reps: parseInt(repsMatch[2]),
+        duration_minutes: null,
+        description: repsMatch[1].trim()
+      };
+    }
+    
+    // Pattern 4: "Exercise: duration"
+    const durationMatch = trimmed.match(/^(.+?):\s*(\d+)\s*(min|sec)/i);
+    if (durationMatch) {
+      const durationInMin = durationMatch[3].toLowerCase() === 'sec' 
+        ? Math.ceil(parseInt(durationMatch[2]) / 60) 
+        : parseInt(durationMatch[2]);
+      return {
+        name: durationMatch[1].trim(),
+        sets: 1,
+        reps: null,
+        duration_minutes: durationInMin,
+        description: durationMatch[1].trim()
+      };
+    }
+    
+    // Pattern 5: "Run/Walk N distance"
+    const runWalkMatch = trimmed.match(/^(run|walk|jog)\s+(\d+(?:\.\d+)?)\s*(km|m|miles?)/i);
+    if (runWalkMatch) {
+      const action = runWalkMatch[1];
+      const distance = runWalkMatch[2];
+      const unit = runWalkMatch[3];
+      return {
+        name: `${action} ${distance}${unit}`,
+        sets: 1,
+        reps: null,
+        duration_minutes: null,
+        description: trimmed
+      };
+    }
+    
+    // Default: Return as a generic exercise if it looks like one
+    if (trimmed.length >= 5 && 
+        !trimmed.toLowerCase().includes('total') &&
+        !trimmed.toLowerCase().includes('approx')) {
+      return {
+        name: trimmed,
+        sets: 1,
+        reps: null,
+        duration_minutes: null,
+        description: trimmed
+      };
+    }
+    
+    return null;
   }
   
   // Get default exercises based on workout type
