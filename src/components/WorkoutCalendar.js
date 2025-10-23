@@ -252,8 +252,15 @@ ${exerciseList}
                   // Regular exercise item
                   const exerciseName = (exercise.name || exercise.exercise || '').trim();
                   
-                  // Skip if the exercise name is empty or just punctuation
-                  if (!exerciseName || exerciseName === '.' || exerciseName.length === 0) {
+                  // ✅ COMPREHENSIVE: Skip if invalid (empty, period, whitespace, or other punctuation)
+                  if (!exerciseName || 
+                      exerciseName.length === 0 || 
+                      exerciseName === '.' || 
+                      exerciseName === ',' ||
+                      exerciseName === ';' ||
+                      exerciseName === ':' ||
+                      /^[\s\.\,\;\:]+$/.test(exerciseName)) {  // Only punctuation/whitespace
+                    console.log('⚠️ Skipping invalid exercise:', exercise);
                     return null;
                   }
                   
