@@ -194,6 +194,12 @@ ${exerciseList}
 
                   // If it's a section header, render it differently
                   if (isSection) {
+                    // ✅ Filter out invalid section names
+                    const sectionName = (exercise.name || exercise.exercise || '').trim();
+                    if (!sectionName || sectionName === '.' || sectionName.length === 0) {
+                      return null; // Skip invalid sections
+                    }
+                    
                     // ✅ NEW: Different styling for repeat groups (e.g., "4 Rounds")
                     const headerStyle = isRepeatGroup 
                       ? styles.repeatGroupHeader 
@@ -206,7 +212,7 @@ ${exerciseList}
                       <View key={idx} style={headerStyle}>
                         <Text style={titleStyle}>
                           {isRepeatGroup && '🔁 '}
-                          {exercise.name || exercise.exercise}
+                          {sectionName}
                         </Text>
                       </View>
                     );
