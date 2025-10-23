@@ -221,33 +221,96 @@ Guidelines:
 
   // Build workout plan prompt
   buildWorkoutPlanPrompt(userProfile, preferences) {
+    // Extract selected workout types
+    const selectedWorkoutTypes = Object.entries(preferences?.workoutTypes || {})
+      .filter(([type, selected]) => selected)
+      .map(([type]) => type.charAt(0).toUpperCase() + type.slice(1))
+      .join(', ');
+
+    // Extract selected available days
+    const selectedDays = Object.entries(preferences?.availableDays || {})
+      .filter(([day, selected]) => selected)
+      .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1))
+      .join(', ');
+
+    // Extract selected equipment
+    const selectedEquipment = Object.entries(preferences?.hasEquipment || {})
+      .filter(([equipment, selected]) => selected)
+      .map(([equipment]) => equipment.replace(/_/g, ' ').charAt(0).toUpperCase() + equipment.replace(/_/g, ' ').slice(1))
+      .join(', ');
+
+    // Get workout duration from preferences
+    const workoutDuration = preferences?.workoutDuration ? `${preferences.workoutDuration} minutes` : '30-45 minutes';
+    
+    // Get difficulty level from preferences
+    const difficultyLevel = preferences?.difficultyLevel ? 
+      preferences.difficultyLevel.charAt(0).toUpperCase() + preferences.difficultyLevel.slice(1) : 
+      'Moderate';
+
+    // Get primary goal from preferences
+    const primaryGoal = preferences?.primaryGoal ? 
+      preferences.primaryGoal.replace(/_/g, ' ').charAt(0).toUpperCase() + preferences.primaryGoal.replace(/_/g, ' ').slice(1) : 
+      'General fitness';
+
+    // Get preferred time from preferences
+    const preferredTime = preferences?.preferredTime ? 
+      preferences.preferredTime.charAt(0).toUpperCase() + preferences.preferredTime.slice(1) : 
+      'Not specified';
+
     return `Create a 4-week personalized workout plan for:
 
 User Details:
-- Name: ${userProfile?.display_name || 'User'}
-- Age: ${userProfile?.age || 'Not specified'}
-- Height: ${userProfile?.height_cm || 'Not specified'} cm
-- Weight: ${userProfile?.weight_kg || 'Not specified'} kg
-- Goal: ${userProfile?.goal?.type || 'General fitness'}
-- Target Weight: ${userProfile?.goal?.target_weight || 'Not specified'} kg
-- Available Days: ${userProfile?.schedule?.days?.join(', ') || 'Monday, Wednesday, Friday'}
-- Preferred Time: ${userProfile?.schedule?.time || 'Not specified'}
-- Equipment: ${userProfile?.equipment?.join(', ') || 'None (Bodyweight only)'}
+- Name: ${userProfile?.display_name || 'New User'}
+- Age: ${userProfile?.age || 25}
+- Height: ${userProfile?.height_cm || 175} cm
+- Weight: ${userProfile?.weight_kg || 70} kg
+- Goal: ${primaryGoal}
+- Target Weight: ${userProfile?.goal_weight_kg || 65} kg
+- Available Days: ${selectedDays || 'Monday, Wednesday, Friday'}
+- Preferred Time: ${preferredTime}
+- Equipment: ${selectedEquipment || 'None'}
 
 Preferences:
-- Workout Duration: ${preferences?.duration || '30-45 minutes'}
-- Intensity Level: ${preferences?.intensity || 'Moderate'}
-- Focus Areas: ${preferences?.focusAreas || 'General fitness'}
+- Workout Duration: ${workoutDuration}
+- Intensity Level: ${difficultyLevel}
+- Focus Areas: ${primaryGoal}
 
-Please create a structured 4-week plan that includes:
-1. Weekly overview
-2. Daily workout breakdowns
-3. Walking routes/suggestions
-4. Strength exercises with progressions
-5. Rest day recommendations
-6. Weekly goals and milestones
+IMPORTANT: 
+1. ONLY schedule workouts on these days: ${selectedDays || 'Monday, Wednesday, Friday'}
+2. Each workout should be approximately ${workoutDuration}
+3. Focus on these workout types: ${selectedWorkoutTypes || 'Walking, Strength Training'}
+4. Difficulty should match: ${difficultyLevel}
 
-Format the response in a clear, easy-to-follow structure.`;
+Please create a structured 4-week plan using this EXACT format:
+
+## Daily Workout Breakdown
+
+### Week 1
+
+**Monday**
+- Warm-up: [description]
+- Main: [detailed workout with specific exercises, sets, reps, and durations]
+- Cool-down: [description]
+
+**Wednesday**
+- [Same format]
+
+**Friday**
+- [Same format]
+
+### Week 2
+
+**Monday**
+- [Same format]
+
+[Continue for all 4 weeks]
+
+Make sure to:
+1. Include specific exercise names, sets, reps, and durations
+2. List exercises with bullet points (-)
+3. Use format: "- Exercise name x reps" or "- Exercise name: duration"
+4. Progressively increase intensity across weeks
+5. Include rest day recommendations for non-workout days`;
   }
 
   // Clear conversation history

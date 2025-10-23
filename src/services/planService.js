@@ -76,19 +76,29 @@ export class PlanService {
     const weeks = [];
     
     console.log('🔍 Starting to parse AI response...');
+    console.log('📄 AI Response length:', aiResponse.length);
+    console.log('📄 First 500 chars:', aiResponse.substring(0, 500));
     
-    // Extract week sections from the AI response
-    const weekPattern = /### Week (\d+)[^#]*(?=### Week \d+|##|$)/gs;
+    // Improved regex to match the actual AI format:
+    // ### Week X
+    // **Monday**
+    // - content
+    // We need to capture from ### Week X until the next ### Week or end of string
+    const weekPattern = /### Week (\d+)\s*([\s\S]*?)(?=### Week \d+|$)/g;
     const weekMatches = [...aiResponse.matchAll(weekPattern)];
+    
+    console.log(`🔍 Week pattern matches found: ${weekMatches.length}`);
     
     if (weekMatches.length > 0) {
       console.log(`📅 Found ${weekMatches.length} week sections in AI response`);
       
       weekMatches.forEach((match, index) => {
         const weekNumber = parseInt(match[1]);
-        const weekText = match[0];
+        const weekText = match[2]; // The content after "### Week X"
         
         console.log(`📝 Parsing Week ${weekNumber}...`);
+        console.log(`📝 Week ${weekNumber} text length: ${weekText.length}`);
+        console.log(`📝 Week ${weekNumber} first 200 chars:`, weekText.substring(0, 200));
         
         weeks.push({
           week_number: weekNumber,
@@ -97,22 +107,47 @@ export class PlanService {
         });
       });
     } else {
-      console.log('⚠️ No week sections found, creating structured weeks...');
+      console.log('⚠️ No week sections found with improved regex, trying alternative approach...');
       
-      // Fallback: Create 4 weeks with AI-inspired content
-      const availableDays = preferences.availableDays || {};
-      const selectedDays = Object.entries(availableDays)
-        .filter(([day, selected]) => selected)
-        .map(([day]) => day.toLowerCase());
+      // Try to find any "Week X" pattern (even without ###)
+      const alternativePattern = /Week (\d+)[:\s]*([\s\S]*?)(?=Week \d+|$)/gi;
+      const altMatches = [...aiResponse.matchAll(alternativePattern)];
       
-      const workoutDays = selectedDays.length > 0 ? selectedDays : ['monday', 'wednesday', 'friday'];
+      console.log(`🔍 Alternative pattern matches: ${altMatches.length}`);
       
-      for (let week = 1; week <= 4; week++) {
-        weeks.push({
-          week_number: week,
-          focus: this.getWeekFocus(week),
-          days: this.createWeekDays(week, workoutDays, userProfile, preferences, aiResponse)
+      if (altMatches.length > 0) {
+        console.log(`📅 Found ${altMatches.length} week sections using alternative pattern`);
+        
+        altMatches.forEach((match) => {
+          const weekNumber = parseInt(match[1]);
+          const weekText = match[2];
+          
+          console.log(`📝 Parsing Week ${weekNumber} (alt)...`);
+          
+          weeks.push({
+            week_number: weekNumber,
+            focus: this.extractWeekFocus(weekText) || this.getWeekFocus(weekNumber),
+            days: this.extractDaysFromWeek(weekText, preferences)
+          });
         });
+      } else {
+        console.log('⚠️ No week sections found at all, creating structured weeks...');
+        
+        // Fallback: Create 4 weeks with AI-inspired content
+        const availableDays = preferences.availableDays || {};
+        const selectedDays = Object.entries(availableDays)
+          .filter(([day, selected]) => selected)
+          .map(([day]) => day.toLowerCase());
+        
+        const workoutDays = selectedDays.length > 0 ? selectedDays : ['monday', 'wednesday', 'friday'];
+        
+        for (let week = 1; week <= 4; week++) {
+          weeks.push({
+            week_number: week,
+            focus: this.getWeekFocus(week),
+            days: this.createWeekDays(week, workoutDays, userProfile, preferences, aiResponse)
+          });
+        }
       }
     }
     
@@ -165,52 +200,78 @@ export class PlanService {
   
   // Extract workout details for a specific day
   extractWorkoutForDay(weekText, dayName, preferences) {
-    // Look for day section in the format: **Monday: Walk + Strength (40 min)**
-    const dayPattern = new RegExp(`\\*\\*${dayName}[:\\s]+([^\\*]+)\\*\\*([^\\*]+?)(?=\\*\\*\\w+day:|$)`, 'is');
-    const dayMatch = weekText.match(dayPattern);
+    console.log(`🔍 Looking for ${dayName} in week text...`);
+    
+    // Try multiple patterns to find the day workout:
+    // Pattern 1: **Monday: Title**
+    // Pattern 2: **Monday**\n- content
+    // Pattern 3: Monday\n- content
+    
+    // First, try to find **DayName** followed by content until the next day or end
+    const dayPattern1 = new RegExp(`\\*\\*${dayName}\\*\\*\\s*([\\s\\S]*?)(?=\\*\\*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\\*\\*|$)`, 'i');
+    let dayMatch = weekText.match(dayPattern1);
+    
+    if (!dayMatch) {
+      // Try without the bold markers
+      const dayPattern2 = new RegExp(`${dayName}[:\\s]+([\\s\\S]*?)(?=(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)[:\\s]|$)`, 'i');
+      dayMatch = weekText.match(dayPattern2);
+    }
     
     if (dayMatch) {
-      console.log(`✅ Found workout for ${dayName}`);
-      const workoutTitle = dayMatch[1].trim();
-      const workoutContent = dayMatch[2].trim();
+      console.log(`✅ Found workout section for ${dayName}`);
+      const workoutContent = dayMatch[1].trim();
+      console.log(`📝 ${dayName} content length: ${workoutContent.length}`);
+      console.log(`📝 ${dayName} first 150 chars:`, workoutContent.substring(0, 150));
       
-      // Extract workout type from title
+      // Extract workout type from content
       let workoutType = 'Mixed';
-      if (workoutTitle.toLowerCase().includes('walk')) {
+      const contentLower = workoutContent.toLowerCase();
+      if (contentLower.includes('walk') && contentLower.includes('strength')) {
+        workoutType = 'Mixed';
+      } else if (contentLower.includes('walk')) {
         workoutType = 'Walking';
-      } else if (workoutTitle.toLowerCase().includes('strength')) {
+      } else if (contentLower.includes('strength') || contentLower.includes('bodyweight')) {
         workoutType = 'Strength';
-      } else if (workoutTitle.toLowerCase().includes('cardio')) {
+      } else if (contentLower.includes('cardio')) {
         workoutType = 'Cardio';
-      } else if (workoutTitle.toLowerCase().includes('run')) {
+      } else if (contentLower.includes('run')) {
         workoutType = 'Running';
+      } else if (contentLower.includes('yoga')) {
+        workoutType = 'Yoga';
+      } else if (contentLower.includes('cycle') || contentLower.includes('bike')) {
+        workoutType = 'Cycling';
       }
       
-      // Extract duration
-      const durationMatch = workoutTitle.match(/\((\d+)\s*min\)/);
+      // Extract duration - look for patterns like "40 min", "(30 min)", "25 minutes"
+      const durationMatch = workoutContent.match(/(\d+)\s*(?:min|minutes)/i);
       const duration = durationMatch ? parseInt(durationMatch[1]) : (preferences.workoutDuration || 45);
       
       // Extract exercises from the content
       const exercises = this.extractExercisesFromText(workoutContent);
+      console.log(`📋 Extracted ${exercises.length} exercises for ${dayName}`);
       
       // Determine difficulty
-      let difficulty = 'Intermediate';
-      if (workoutContent.toLowerCase().includes('intro') || workoutContent.toLowerCase().includes('beginner')) {
+      let difficulty = preferences.difficultyLevel || 'Intermediate';
+      if (contentLower.includes('intro') || contentLower.includes('beginner') || contentLower.includes('easy')) {
         difficulty = 'Beginner';
-      } else if (workoutContent.toLowerCase().includes('challenge') || workoutContent.toLowerCase().includes('advanced')) {
+      } else if (contentLower.includes('challenge') || contentLower.includes('advanced') || contentLower.includes('hard')) {
         difficulty = 'Advanced';
       }
+      
+      // Create a notes/title from the first line or sentence
+      const firstLine = workoutContent.split('\n')[0].trim();
+      const notes = firstLine.replace(/^[-•*]\s*/, '').substring(0, 100);
       
       return {
         type: workoutType,
         duration_minutes: duration,
         exercises: exercises.length > 0 ? exercises : this.getDefaultExercises(workoutType),
-        notes: workoutTitle,
+        notes: notes || `${workoutType} Workout`,
         difficulty: difficulty
       };
     }
     
-    console.log(`⚠️ No specific workout found for ${dayName}, using default`);
+    console.log(`⚠️ No specific workout found for ${dayName}`);
     return null;
   }
   
@@ -218,27 +279,86 @@ export class PlanService {
   extractExercisesFromText(workoutText) {
     const exercises = [];
     
-    // Pattern 1: "- Exercise name x reps" or "- Exercise name: duration"
-    const exercisePattern = /[-•]\s*([^:\n]+?)\s*(?:x\s*(\d+)(?:\s*(?:reps?|each leg|each side))?|(\d+)\s*(?:min|sec))?(?:\n|$)/gi;
+    console.log('🔍 Extracting exercises from text...');
+    console.log('📝 Text to parse:', workoutText.substring(0, 300));
     
-    let match;
-    while ((match = exercisePattern.exec(workoutText)) !== null) {
-      const name = match[1].trim();
-      const reps = match[2] ? parseInt(match[2]) : null;
-      const duration = match[3] ? parseInt(match[3]) : null;
+    // Split by lines and process each line
+    const lines = workoutText.split('\n');
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
       
-      // Skip if it's a section header or too short
-      if (name.length < 3 || name.toLowerCase().includes('round') || name.toLowerCase().includes('circuit')) {
-        continue;
+      // Skip empty lines, section headers, and very short lines
+      if (!trimmedLine || trimmedLine.length < 3) continue;
+      if (trimmedLine.toLowerCase().includes('warm-up') && trimmedLine.includes(':')) continue;
+      if (trimmedLine.toLowerCase().includes('cool-down') && trimmedLine.includes(':')) continue;
+      if (trimmedLine.toLowerCase().includes('main') && trimmedLine.includes(':')) continue;
+      if (trimmedLine.toLowerCase().includes('round') || trimmedLine.toLowerCase().includes('circuit')) continue;
+      
+      // Look for exercise patterns with bullet points
+      const bulletMatch = trimmedLine.match(/^[-•*]\s*(.+)$/);
+      if (bulletMatch) {
+        const exerciseText = bulletMatch[1].trim();
+        
+        // Pattern: "Exercise name x reps"
+        const repsMatch = exerciseText.match(/^(.+?)\s+x\s*(\d+)\s*(?:reps?|each\s+leg|each\s+side)?/i);
+        if (repsMatch) {
+          exercises.push({
+            name: repsMatch[1].trim(),
+            sets: 1,
+            reps: parseInt(repsMatch[2]),
+            duration_minutes: null,
+            description: repsMatch[1].trim()
+          });
+          continue;
+        }
+        
+        // Pattern: "Exercise name: duration min/sec"
+        const durationMatch = exerciseText.match(/^(.+?):\s*(\d+)\s*(min|sec)/i);
+        if (durationMatch) {
+          const durationInMin = durationMatch[3].toLowerCase() === 'sec' 
+            ? Math.ceil(parseInt(durationMatch[2]) / 60) 
+            : parseInt(durationMatch[2]);
+          exercises.push({
+            name: durationMatch[1].trim(),
+            sets: 1,
+            reps: null,
+            duration_minutes: durationInMin,
+            description: durationMatch[1].trim()
+          });
+          continue;
+        }
+        
+        // Pattern: "Exercise name (duration min)"
+        const durationMatch2 = exerciseText.match(/^(.+?)\s*\((\d+)\s*min\)/i);
+        if (durationMatch2) {
+          exercises.push({
+            name: durationMatch2[1].trim(),
+            sets: 1,
+            reps: null,
+            duration_minutes: parseInt(durationMatch2[2]),
+            description: durationMatch2[1].trim()
+          });
+          continue;
+        }
+        
+        // Pattern: Just exercise name (no reps or duration specified)
+        // Only add if it looks like an exercise (not a description or header)
+        if (exerciseText.length >= 5 && !exerciseText.includes(':') && !exerciseText.toLowerCase().includes('week')) {
+          exercises.push({
+            name: exerciseText,
+            sets: 1,
+            reps: 10, // Default reps
+            duration_minutes: null,
+            description: exerciseText
+          });
+        }
       }
-      
-      exercises.push({
-        name: name,
-        sets: 1,
-        reps: reps,
-        duration_minutes: duration,
-        description: name
-      });
+    }
+    
+    console.log(`✅ Extracted ${exercises.length} exercises`);
+    if (exercises.length > 0) {
+      console.log('📋 First exercise:', exercises[0]);
     }
     
     return exercises;
