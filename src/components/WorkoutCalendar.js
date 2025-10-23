@@ -222,7 +222,11 @@ ${exerciseList}
                   let detailsText = '';
                   
                   // Prioritize description field (which contains full details)
-                  if (exercise.description && exercise.description !== exercise.name) {
+                  // ✅ FIX: Validate description is not just punctuation
+                  if (exercise.description && 
+                      exercise.description !== exercise.name &&
+                      exercise.description.trim().length > 1 &&
+                      !/^[\s\.\,\;\:]+$/.test(exercise.description)) {
                     detailsText = exercise.description;
                   } 
                   // Otherwise, build from duration or reps
@@ -262,6 +266,15 @@ ${exerciseList}
                       /^[\s\.\,\;\:]+$/.test(exerciseName)) {  // Only punctuation/whitespace
                     console.log('⚠️ Skipping invalid exercise:', exercise);
                     return null;
+                  }
+                  
+                  // ✅ DEBUG: Log what we're about to render
+                  if (exerciseName === '.' || detailsText === '.') {
+                    console.error('🚨 FOUND THE PERIOD!', {
+                      exerciseName,
+                      detailsText,
+                      fullExercise: exercise
+                    });
                   }
                   
                   return (
