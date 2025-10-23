@@ -257,13 +257,26 @@ export class PlanService {
         }
       }
       
-      // Extract duration - look for patterns like "40 min", "(30 min)", "25 minutes"
-      const durationMatch = workoutContent.match(/(\d+)\s*(?:min|minutes)/i);
-      const duration = durationMatch ? parseInt(durationMatch[1]) : (preferences.workoutDuration || 45);
-      
-      // Extract exercises from the content
+      // Extract exercises from the content first
       const exercises = this.extractExercisesFromText(workoutContent);
       console.log(`📋 Extracted ${exercises.length} exercises for ${dayName}`);
+      
+      // ✅ FIX: Calculate total duration from exercises OR use user preference
+      // Don't parse from text as it might match random durations like "2 minutes walking rest"
+      let duration = preferences.workoutDuration || 45; // Default to user preference
+      
+      // Try to calculate from exercises if they have duration info
+      if (exercises.length > 0) {
+        const totalExerciseDuration = exercises.reduce((total, ex) => {
+          return total + (ex.duration_minutes || 0);
+        }, 0);
+        
+        // If we got a reasonable total from exercises, use it
+        // Otherwise stick with user preference
+        if (totalExerciseDuration >= 15 && totalExerciseDuration <= 120) {
+          duration = totalExerciseDuration;
+        }
+      }
       
       // ✅ FIX: Re-add contentLower for difficulty detection
       const contentLower = workoutContent.toLowerCase();
