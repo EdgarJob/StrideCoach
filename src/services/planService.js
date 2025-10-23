@@ -265,6 +265,9 @@ export class PlanService {
       const exercises = this.extractExercisesFromText(workoutContent);
       console.log(`📋 Extracted ${exercises.length} exercises for ${dayName}`);
       
+      // ✅ FIX: Re-add contentLower for difficulty detection
+      const contentLower = workoutContent.toLowerCase();
+      
       // Determine difficulty
       let difficulty = preferences.difficultyLevel || 'Intermediate';
       if (contentLower.includes('intro') || contentLower.includes('beginner') || contentLower.includes('easy')) {
