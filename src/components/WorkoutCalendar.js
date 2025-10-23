@@ -244,11 +244,18 @@ ${exerciseList}
                   }
 
                   // Regular exercise item
+                  const exerciseName = (exercise.name || exercise.exercise || '').trim();
+                  
+                  // Skip if the exercise name is empty or just punctuation
+                  if (!exerciseName || exerciseName === '.' || exerciseName.length === 0) {
+                    return null;
+                  }
+                  
                   return (
                     <View key={idx} style={styles.exerciseItem}>
                       <View style={styles.exerciseDetails}>
                         <Text style={styles.exerciseName} numberOfLines={3}>
-                          {exercise.name || exercise.exercise}
+                          {exerciseName}
                         </Text>
                         {detailsText && (
                           <Text style={styles.exerciseInfo}>{detailsText}</Text>
