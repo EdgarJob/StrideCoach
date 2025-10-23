@@ -263,6 +263,15 @@ ${exerciseList}
                     }
                   }
 
+                  // ✅ ULTRA DEBUG: Log the RAW exercise object BEFORE trimming
+                  console.log('🔎 RAW EXERCISE BEFORE PROCESSING:', {
+                    idx,
+                    rawName: exercise.name,
+                    rawExercise: exercise.exercise,
+                    rawDescription: exercise.description,
+                    fullRawObject: exercise
+                  });
+                  
                   // Regular exercise item
                   const exerciseName = (exercise.name || exercise.exercise || '').trim();
                   
