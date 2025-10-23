@@ -172,24 +172,25 @@ export class PlanService {
       .filter(([day, selected]) => selected)
       .map(([day]) => day.toLowerCase());
     
+    // ✅ FIX: Only create day entries for SELECTED workout days
+    // This prevents showing all 7 days with "Rest Day" placeholders
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const dayName = dayNames[dayIndex];
       const dayLower = dayName.toLowerCase();
       const isWorkoutDay = selectedDays.includes(dayLower);
       
-      let workout = null;
+      // Only add this day if it's a selected workout day
       if (isWorkoutDay) {
-        // Try to extract workout for this specific day from the AI response
-        workout = this.extractWorkoutForDay(weekText, dayName, preferences);
+        const workout = this.extractWorkoutForDay(weekText, dayName, preferences);
+        
+        days.push({
+          day_number: dayIndex + 1,
+          day_name: dayName,
+          is_workout_day: true,
+          is_rest_day: false,
+          workout: workout
+        });
       }
-      
-      days.push({
-        day_number: dayIndex + 1,
-        day_name: dayName,
-        is_workout_day: isWorkoutDay,
-        is_rest_day: !isWorkoutDay,
-        workout: workout
-      });
     }
     
     return days;

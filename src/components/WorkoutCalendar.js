@@ -36,8 +36,22 @@ export default function WorkoutCalendar({ plan }) {
   // Get the current week's data
   const currentWeek = plan.weeks[selectedWeek];
   
-  // Days of the week labels
+  // Days of the week labels (full names for mapping)
   const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  
+  // Get abbreviated day label from full day name
+  const getDayLabel = (dayName) => {
+    const dayMap = {
+      'Monday': 'Mon',
+      'Tuesday': 'Tue',
+      'Wednesday': 'Wed',
+      'Thursday': 'Thu',
+      'Friday': 'Fri',
+      'Saturday': 'Sat',
+      'Sunday': 'Sun'
+    };
+    return dayMap[dayName] || dayName.substring(0, 3);
+  };
 
   /**
    * Function to get the icon and color for different workout types
@@ -119,17 +133,18 @@ ${exerciseList}
   const renderDay = (day, index) => {
     const isRestDay = day.is_rest_day || !day.workout;
     const workoutIcon = day.workout ? getWorkoutIcon(day.workout.type) : null;
+    const dayLabel = getDayLabel(day.day_name);
 
     return (
       <TouchableOpacity 
         key={index} 
         style={styles.dayCard}
-        onPress={() => handleDayPress(day, dayLabels[index])}
+        onPress={() => handleDayPress(day, day.day_name)}
         activeOpacity={0.7}
       >
         {/* Day label (Mon, Tue, etc.) */}
         <View style={[styles.dayHeader, isRestDay && styles.restDayHeader]}>
-          <Text style={styles.dayLabel}>{dayLabels[index]}</Text>
+          <Text style={styles.dayLabel}>{dayLabel}</Text>
         </View>
 
         {/* Day content - either workout details or rest day message */}
