@@ -257,6 +257,16 @@ Guidelines:
       preferences.preferredTime.charAt(0).toUpperCase() + preferences.preferredTime.slice(1) : 
       'Not specified';
 
+    // ✅ FIX: Build dynamic example format based on actual selected days
+    const selectedDaysArray = Object.entries(preferences?.availableDays || {})
+      .filter(([day, selected]) => selected)
+      .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1));
+    
+    // Create example format with actual selected days
+    const exampleDaysFormat = selectedDaysArray.length > 0 
+      ? selectedDaysArray.map(day => `**${day}**\n- Warm-up: [description]\n- Main: [detailed workout with specific exercises, sets, reps, and durations]\n- Cool-down: [description]\n`).join('\n')
+      : `**Monday**\n- Warm-up: [description]\n- Main: [detailed workout with specific exercises, sets, reps, and durations]\n- Cool-down: [description]\n\n**Wednesday**\n- [Same format]\n\n**Friday**\n- [Same format]\n`;
+
     return `Create a 4-week personalized workout plan for:
 
 User Details:
@@ -275,11 +285,12 @@ Preferences:
 - Intensity Level: ${difficultyLevel}
 - Focus Areas: ${primaryGoal}
 
-IMPORTANT: 
-1. ONLY schedule workouts on these days: ${selectedDays || 'Monday, Wednesday, Friday'}
-2. Each workout should be approximately ${workoutDuration}
-3. Focus on these workout types: ${selectedWorkoutTypes || 'Walking, Strength Training'}
-4. Difficulty should match: ${difficultyLevel}
+CRITICAL REQUIREMENTS: 
+1. You MUST create workouts for EXACTLY these days ONLY: ${selectedDays || 'Monday, Wednesday, Friday'}
+2. DO NOT include workouts for any other days
+3. Each workout should be approximately ${workoutDuration}
+4. Focus on these workout types: ${selectedWorkoutTypes || 'Walking, Strength Training'}
+5. Difficulty should match: ${difficultyLevel}
 
 Please create a structured 4-week plan using this EXACT format:
 
@@ -287,30 +298,27 @@ Please create a structured 4-week plan using this EXACT format:
 
 ### Week 1
 
-**Monday**
-- Warm-up: [description]
-- Main: [detailed workout with specific exercises, sets, reps, and durations]
-- Cool-down: [description]
-
-**Wednesday**
-- [Same format]
-
-**Friday**
-- [Same format]
+${exampleDaysFormat}
 
 ### Week 2
 
-**Monday**
-- [Same format]
+${exampleDaysFormat}
 
-[Continue for all 4 weeks]
+### Week 3
+
+[Same format with all selected days: ${selectedDays}]
+
+### Week 4
+
+[Same format with all selected days: ${selectedDays}]
 
 Make sure to:
 1. Include specific exercise names, sets, reps, and durations
 2. List exercises with bullet points (-)
 3. Use format: "- Exercise name x reps" or "- Exercise name: duration"
 4. Progressively increase intensity across weeks
-5. Include rest day recommendations for non-workout days`;
+5. Create workouts for ALL ${selectedDaysArray.length} selected days: ${selectedDays}
+6. DO NOT skip any of the selected days`;
   }
 
   // Clear conversation history
