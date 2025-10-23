@@ -295,11 +295,21 @@ ${exerciseList}
                     return null;
                   }
                   
+                  // ✅ FINAL SAFETY CHECK: Ensure exerciseName is a valid string with actual content
+                  const safeExerciseName = exerciseName && typeof exerciseName === 'string' && exerciseName.trim().length > 1 && !/^[\.\,\;\:\!\?\-\_]+$/.test(exerciseName.trim()) 
+                    ? exerciseName 
+                    : null;
+                  
+                  if (!safeExerciseName) {
+                    console.error('🚨 BLOCKED: Invalid exercise name would cause text node error:', exerciseName);
+                    return null;
+                  }
+                  
                   return (
                     <View key={idx} style={styles.exerciseItem}>
                       <View style={styles.exerciseDetails}>
                         <Text style={styles.exerciseName} numberOfLines={3}>
-                          {exerciseName}
+                          {safeExerciseName}
                         </Text>
                         {detailsText && detailsText.trim().length > 1 && !/^[\s\.\,\;\:\!\?\-\_]+$/.test(detailsText) && (
                           <Text style={styles.exerciseInfo}>{detailsText}</Text>
