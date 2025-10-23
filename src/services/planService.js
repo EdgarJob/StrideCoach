@@ -284,21 +284,65 @@ export class PlanService {
     const lines = workoutText.split('\n');
     
     for (const line of lines) {
+      // ✅ FIX: Don't trim the line first, so we can detect indentation
       const trimmedLine = line.trim();
       
-      // Skip empty lines, section headers, and very short lines
+      // Skip empty lines and very short lines
       if (!trimmedLine || trimmedLine.length < 3) continue;
-      if (trimmedLine.toLowerCase().includes('warm-up') && trimmedLine.includes(':')) continue;
-      if (trimmedLine.toLowerCase().includes('cool-down') && trimmedLine.includes(':')) continue;
-      if (trimmedLine.toLowerCase().includes('main') && trimmedLine.includes(':')) continue;
-      if (trimmedLine.toLowerCase().includes('round') || trimmedLine.toLowerCase().includes('circuit')) continue;
       
-      // Look for exercise patterns with bullet points
+      // Skip section headers (only if they end with a colon and don't have content after)
+      if (/^[-•*]\s*(warm-up|cool-down|main|round|circuit)\s*:?\s*$/i.test(trimmedLine)) continue;
+      
+      // ✅ FIX: Match bullet points with OR without indentation
+      // This regex matches: "- text", "  - text", "    - text", etc.
       const bulletMatch = trimmedLine.match(/^[-•*]\s*(.+)$/);
       if (bulletMatch) {
         const exerciseText = bulletMatch[1].trim();
         
-        // Pattern: "Exercise name x reps"
+        // Skip if it's just a section header with a colon at the end
+        if (/^(warm-up|cool-down|main|round|circuit)\s*:?\s*$/i.test(exerciseText)) continue;
+        
+        // ✅ NEW: Pattern for "N minutes/seconds activity"
+        // Matches: "10 minutes easy jogging", "30 seconds butt kicks"
+        const durationFirstMatch = exerciseText.match(/^(\d+)\s+(minutes?|mins?|seconds?|secs?)\s+(.+)/i);
+        if (durationFirstMatch) {
+          const durationValue = parseInt(durationFirstMatch[1]);
+          const unit = durationFirstMatch[2].toLowerCase();
+          const activityName = durationFirstMatch[3].trim();
+          const durationInMin = (unit.startsWith('sec')) 
+            ? Math.ceil(durationValue / 60) 
+            : durationValue;
+          
+          exercises.push({
+            name: activityName,
+            sets: 1,
+            reps: null,
+            duration_minutes: durationInMin,
+            description: `${durationValue} ${durationFirstMatch[2]} ${activityName}`
+          });
+          continue;
+        }
+        
+        // ✅ NEW: Pattern for "Activity: details (N reps/sets)"
+        // Matches: "Dynamic stretches: leg swings (10 each leg)", "Interval running: 6 sets of 3 minutes"
+        const detailedMatch = exerciseText.match(/^([^:]+):\s*(.+)\((\d+)\s*(sets?|reps?|each\s+leg|each\s+side)/i);
+        if (detailedMatch) {
+          const activityName = detailedMatch[1].trim();
+          const details = detailedMatch[2].trim();
+          const count = parseInt(detailedMatch[3]);
+          const unit = detailedMatch[4].toLowerCase();
+          
+          exercises.push({
+            name: activityName,
+            sets: unit.includes('set') ? count : 1,
+            reps: unit.includes('rep') || unit.includes('each') ? count : null,
+            duration_minutes: null,
+            description: `${activityName}: ${details}`
+          });
+          continue;
+        }
+        
+        // Existing Pattern: "Exercise name x reps"
         const repsMatch = exerciseText.match(/^(.+?)\s+x\s*(\d+)\s*(?:reps?|each\s+leg|each\s+side)?/i);
         if (repsMatch) {
           exercises.push({
@@ -311,7 +355,7 @@ export class PlanService {
           continue;
         }
         
-        // Pattern: "Exercise name: duration min/sec"
+        // Existing Pattern: "Exercise name: duration min/sec"
         const durationMatch = exerciseText.match(/^(.+?):\s*(\d+)\s*(min|sec)/i);
         if (durationMatch) {
           const durationInMin = durationMatch[3].toLowerCase() === 'sec' 
@@ -327,7 +371,7 @@ export class PlanService {
           continue;
         }
         
-        // Pattern: "Exercise name (duration min)"
+        // Existing Pattern: "Exercise name (duration min)"
         const durationMatch2 = exerciseText.match(/^(.+?)\s*\((\d+)\s*min\)/i);
         if (durationMatch2) {
           exercises.push({
@@ -342,7 +386,7 @@ export class PlanService {
         
         // Pattern: Just exercise name (no reps or duration specified)
         // Only add if it looks like an exercise (not a description or header)
-        if (exerciseText.length >= 5 && !exerciseText.includes(':') && !exerciseText.toLowerCase().includes('week')) {
+        if (exerciseText.length >= 5 && !exerciseText.toLowerCase().includes('week')) {
           exercises.push({
             name: exerciseText,
             sets: 1,
