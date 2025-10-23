@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import PreferencesScreen from './PreferencesScreen';
 import WorkoutCalendar from '../components/WorkoutCalendar';
+import CircularProgress from '../components/CircularProgress';
 
 export default function PlansScreen() {
   const navigation = useNavigation();
@@ -34,6 +35,7 @@ export default function PlansScreen() {
   const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState('');
+  const [generationProgress, setGenerationProgress] = useState(0);
   const [showGenerationModal, setShowGenerationModal] = useState(false);
   
   // Check if user is new (no preferences set) and show modal
@@ -89,25 +91,34 @@ export default function PlansScreen() {
     try {
       // Step 1: Preparing your preferences
       setGenerationStep('Preparing your workout preferences...');
+      setGenerationProgress(10);
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Step 2: Analyzing your fitness goals
       setGenerationStep('Analyzing your fitness goals and requirements...');
+      setGenerationProgress(25);
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Step 3: Creating personalized workouts
       setGenerationStep('Creating personalized workouts for each day...');
+      setGenerationProgress(50);
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Step 4: Generating the plan
       setGenerationStep('Generating your 4-week fitness plan...');
+      setGenerationProgress(75);
       const result = await generatePlan(preferences);
       
       console.log('Plan generation result:', result);
       
       if (result.success) {
         console.log('✅ Plan generated successfully!');
+        setGenerationStep('Finalizing your plan...');
+        setGenerationProgress(90);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         setGenerationStep('Plan generated successfully!');
+        setGenerationProgress(100);
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         setShowGenerationModal(false);
@@ -137,6 +148,7 @@ export default function PlansScreen() {
     
     setIsGenerating(false);
     setGenerationStep('');
+    setGenerationProgress(0);
   };
 
   const handleSaveCustomPlan = (customPlan) => {
@@ -417,7 +429,14 @@ export default function PlansScreen() {
         <View style={styles.generationModalOverlay}>
           <View style={styles.generationModalContainer}>
             <View style={styles.generationHeader}>
-              <ActivityIndicator size="large" color="#4F46E5" />
+              <CircularProgress 
+                progress={generationProgress}
+                size={140}
+                strokeWidth={10}
+                color="#4F46E5"
+                backgroundColor="#E5E7EB"
+                showPercentage={true}
+              />
               <Text style={styles.generationTitle}>Creating Your Plan</Text>
             </View>
             
