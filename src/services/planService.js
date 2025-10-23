@@ -284,14 +284,26 @@ export class PlanService {
     const lines = workoutText.split('\n');
     
     for (const line of lines) {
-      // ✅ FIX: Don't trim the line first, so we can detect indentation
       const trimmedLine = line.trim();
       
       // Skip empty lines and very short lines
       if (!trimmedLine || trimmedLine.length < 3) continue;
       
-      // Skip section headers (only if they end with a colon and don't have content after)
-      if (/^[-•*]\s*(warm-up|cool-down|main|round|circuit)\s*:?\s*$/i.test(trimmedLine)) continue;
+      // ✅ NEW: Check for section headers and ADD them as exercises
+      // Matches: "- Warm-Up:", "- Main Workout:", "- Cool Down:", "- Main Workout (Repeat x3):"
+      const sectionHeaderMatch = trimmedLine.match(/^[-•*]\s*(Warm[-\s]?Up|Main\s+Workout|Cool\s+Down)(\s*\([^)]+\))?:\s*$/i);
+      if (sectionHeaderMatch) {
+        const sectionName = sectionHeaderMatch[1].trim() + (sectionHeaderMatch[2] || '');
+        exercises.push({
+          name: sectionName,
+          sets: 0,
+          reps: null,
+          duration_minutes: null,
+          description: sectionName,
+          isSection: true  // Mark as section header
+        });
+        continue;
+      }
       
       // ✅ FIX: Match bullet points with OR without indentation
       // This regex matches: "- text", "  - text", "    - text", etc.

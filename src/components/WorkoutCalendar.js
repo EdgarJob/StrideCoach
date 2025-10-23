@@ -184,33 +184,49 @@ ${exerciseList}
               </View>
             </View>
 
-            {/* Exercise list - showing ALL exercises */}
+            {/* Exercise list - grouped by sections */}
             {day.workout.exercises && day.workout.exercises.length > 0 && (
               <View style={styles.exerciseSection}>
-                <View style={styles.exercisesHeader}>
-                  <Ionicons name="list" size={16} color="#6B7280" />
-                  <Text style={styles.exercisesTitle}>
-                    Exercises ({day.workout.exercises.length}):
-                  </Text>
-                </View>
                 {day.workout.exercises.map((exercise, idx) => {
-                  // Format exercise details
-                  let detailsText = '';
-                  if (exercise.sets && exercise.reps) {
-                    detailsText = `${exercise.sets} sets × ${exercise.reps} reps`;
-                  } else if (exercise.sets && exercise.duration) {
-                    detailsText = `${exercise.sets} sets - ${exercise.duration} min`;
-                  } else if (exercise.duration) {
-                    detailsText = `${exercise.duration} min`;
-                  } else if (exercise.sets) {
-                    detailsText = `${exercise.sets} sets`;
+                  // Check if this is a section header (from AI response or parsing)
+                  const isSection = exercise.isSection === true;
+
+                  // If it's a section header, render it differently
+                  if (isSection) {
+                    return (
+                      <View key={idx} style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>
+                          {exercise.name || exercise.exercise}
+                        </Text>
+                      </View>
+                    );
                   }
 
+                  // Format exercise details (cleaner, simpler format)
+                  let detailsText = '';
+                  
+                  // Prioritize description field (which contains full details)
+                  if (exercise.description && exercise.description !== exercise.name) {
+                    detailsText = exercise.description;
+                  } 
+                  // Otherwise, build from duration or reps
+                  else if (exercise.duration_minutes && exercise.duration_minutes > 0) {
+                    // Don't show duration if it's already in the name
+                    if (!exercise.name?.toLowerCase().includes('min')) {
+                      detailsText = `${exercise.duration_minutes} min`;
+                    }
+                  } else if (exercise.reps && exercise.reps > 0) {
+                    // Don't show reps if it's already in the name
+                    if (!exercise.name?.toLowerCase().includes(' x ')) {
+                      detailsText = `${exercise.reps} reps`;
+                    }
+                  }
+
+                  // Regular exercise item
                   return (
                     <View key={idx} style={styles.exerciseItem}>
-                      <Text style={styles.exerciseNumber}>{idx + 1}.</Text>
                       <View style={styles.exerciseDetails}>
-                        <Text style={styles.exerciseName} numberOfLines={2}>
+                        <Text style={styles.exerciseName} numberOfLines={3}>
                           {exercise.name || exercise.exercise}
                         </Text>
                         {detailsText && (
@@ -458,6 +474,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },
+  sectionHeader: {
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+    textTransform: 'capitalize',
+  },
   exercisesHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -472,10 +502,11 @@ const styles = StyleSheet.create({
   exerciseItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
-    backgroundColor: '#F9FAFB',
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
     padding: 10,
-    borderRadius: 8,
+    paddingLeft: 12,
+    borderRadius: 6,
     borderLeftWidth: 3,
     borderLeftColor: '#4F46E5',
   },
