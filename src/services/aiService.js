@@ -257,15 +257,38 @@ Guidelines:
       preferences.preferredTime.charAt(0).toUpperCase() + preferences.preferredTime.slice(1) : 
       'Not specified';
 
-    // ✅ FIX: Build dynamic example format based on actual selected days
+    // ✅ Build dynamic example format based on actual selected days
     const selectedDaysArray = Object.entries(preferences?.availableDays || {})
       .filter(([day, selected]) => selected)
       .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1));
     
-    // Create example format with actual selected days
-    const exampleDaysFormat = selectedDaysArray.length > 0 
-      ? selectedDaysArray.map(day => `**${day}**\n- Warm-up: [description]\n- Main: [detailed workout with specific exercises, sets, reps, and durations]\n- Cool-down: [description]\n`).join('\n')
-      : `**Monday**\n- Warm-up: [description]\n- Main: [detailed workout with specific exercises, sets, reps, and durations]\n- Cool-down: [description]\n\n**Wednesday**\n- [Same format]\n\n**Friday**\n- [Same format]\n`;
+    // ✅ NEW: Create clearer example format for running/cardio workouts
+    const exampleRunningFormat = `**Monday**
+- Warm-Up:
+  - 1km at a conversational pace (no faster than 7:00/km)
+  - 90s walking rest
+- Main Workout (Repeat x3):
+  - 1km at 6:00/km
+  - 90s walking rest
+- Cool Down:
+  - 1km at a conversational pace or slower`;
+
+    const exampleStrengthFormat = `**Monday**
+- Warm-Up:
+  - 5 minutes light cardio
+  - Dynamic stretches x 10 each side
+- Main Workout (3 Rounds):
+  - Squats x 15
+  - Push-ups x 12
+  - Plank: 45 seconds
+  - Rest: 90 seconds between rounds
+- Cool Down:
+  - Stretching: 5 minutes`;
+
+    // Determine which example to use based on workout types
+    const isRunningFocus = selectedWorkoutTypes.toLowerCase().includes('running');
+    const isWalkingFocus = selectedWorkoutTypes.toLowerCase().includes('walking');
+    const exampleFormat = (isRunningFocus || isWalkingFocus) ? exampleRunningFormat : exampleStrengthFormat;
 
     return `Create a 4-week personalized workout plan for:
 
@@ -284,6 +307,7 @@ Preferences:
 - Workout Duration: ${workoutDuration}
 - Intensity Level: ${difficultyLevel}
 - Focus Areas: ${primaryGoal}
+- Workout Types: ${selectedWorkoutTypes || 'Walking, Strength Training'}
 
 CRITICAL REQUIREMENTS: 
 1. You MUST create workouts for EXACTLY these days ONLY: ${selectedDays || 'Monday, Wednesday, Friday'}
@@ -292,33 +316,53 @@ CRITICAL REQUIREMENTS:
 4. Focus on these workout types: ${selectedWorkoutTypes || 'Walking, Strength Training'}
 5. Difficulty should match: ${difficultyLevel}
 
+FORMAT REQUIREMENTS FOR RUNNING/WALKING WORKOUTS:
+- Use DISTANCE (km) instead of time when possible (e.g., "1km" not "10 minutes")
+- Include PACE information (e.g., "at 6:00/km" or "at a conversational pace")
+- Use simple, clear descriptions (e.g., "no faster than 7:00/km")
+- Group repeated intervals clearly (e.g., "Repeat x3:")
+- For rest periods, use seconds or minutes (e.g., "90s rest" or "2 minutes rest")
+
+FORMAT REQUIREMENTS FOR STRENGTH WORKOUTS:
+- Use reps and sets format (e.g., "Squats x 15")
+- Group exercises into rounds/circuits if appropriate (e.g., "3 Rounds:")
+- Include rest periods between sets/rounds
+- Use time for holds (e.g., "Plank: 45 seconds")
+
 Please create a structured 4-week plan using this EXACT format:
 
 ## Daily Workout Breakdown
 
 ### Week 1
 
-${exampleDaysFormat}
+${exampleFormat}
+
+**${selectedDaysArray[1] || 'Wednesday'}**
+[Same structured format]
+
+**${selectedDaysArray[2] || 'Friday'}**
+[Same structured format]
 
 ### Week 2
 
-${exampleDaysFormat}
+[Continue with same format for all ${selectedDaysArray.length} days: ${selectedDays}]
 
 ### Week 3
 
-[Same format with all selected days: ${selectedDays}]
+[Continue with same format for all ${selectedDaysArray.length} days: ${selectedDays}]
 
 ### Week 4
 
-[Same format with all selected days: ${selectedDays}]
+[Continue with same format for all ${selectedDaysArray.length} days: ${selectedDays}]
 
-Make sure to:
-1. Include specific exercise names, sets, reps, and durations
-2. List exercises with bullet points (-)
-3. Use format: "- Exercise name x reps" or "- Exercise name: duration"
-4. Progressively increase intensity across weeks
-5. Create workouts for ALL ${selectedDaysArray.length} selected days: ${selectedDays}
-6. DO NOT skip any of the selected days`;
+IMPORTANT FORMATTING RULES:
+1. Always structure workouts as: Warm-Up → Main Workout → Cool Down
+2. For running/walking: Use distance (km) + pace (min/km)
+3. For strength: Use exercise name x reps or exercise: duration
+4. Clearly mark repeated sections (e.g., "Repeat x3:" or "3 Rounds:")
+5. Keep descriptions simple and actionable
+6. Progress intensity across the 4 weeks
+7. Create workouts for ALL ${selectedDaysArray.length} selected days: ${selectedDays}`;
   }
 
   // Clear conversation history
