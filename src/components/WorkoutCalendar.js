@@ -268,13 +268,21 @@ ${exerciseList}
                     return null;
                   }
                   
-                  // ✅ DEBUG: Log what we're about to render
-                  if (exerciseName === '.' || detailsText === '.') {
-                    console.error('🚨 FOUND THE PERIOD!', {
-                      exerciseName,
-                      detailsText,
-                      fullExercise: exercise
-                    });
+                  // ✅ DEBUG: Log EVERYTHING about this exercise
+                  console.log('🔍 Rendering exercise:', {
+                    idx,
+                    exerciseName,
+                    exerciseNameLength: exerciseName.length,
+                    exerciseNameCharCodes: Array.from(exerciseName).map(c => c.charCodeAt(0)),
+                    detailsText,
+                    detailsTextLength: detailsText?.length || 0,
+                    fullExercise: exercise
+                  });
+                  
+                  // ✅ NUCLEAR OPTION: If exerciseName contains ONLY punctuation/whitespace, skip it
+                  if (!exerciseName || exerciseName.trim().length === 0 || /^[\s\.\,\;\:\!\?\-\_]+$/.test(exerciseName)) {
+                    console.warn('❌ SKIPPED: Exercise name is invalid:', exerciseName);
+                    return null;
                   }
                   
                   return (
