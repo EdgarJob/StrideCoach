@@ -196,7 +196,17 @@ ${exerciseList}
                   if (isSection) {
                     // ✅ Filter out invalid section names
                     const sectionName = (exercise.name || exercise.exercise || '').trim();
+                    
+                    console.log('📌 SECTION HEADER:', {
+                      idx,
+                      sectionName,
+                      sectionNameLength: sectionName.length,
+                      isRepeatGroup,
+                      fullExercise: exercise
+                    });
+                    
                     if (!sectionName || sectionName === '.' || sectionName.length === 0) {
+                      console.warn('❌ SKIPPED SECTION:', sectionName);
                       return null; // Skip invalid sections
                     }
                     
