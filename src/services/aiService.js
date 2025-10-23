@@ -262,33 +262,28 @@ Guidelines:
       .filter(([day, selected]) => selected)
       .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1));
     
-    // ✅ NEW: Create clearer example format for running/cardio workouts
-    const exampleRunningFormat = `**Monday**
-- Warm-Up:
-  - 1km at a conversational pace (no faster than 7:00/km)
-  - 90s walking rest
-- Main Workout (Repeat x3):
-  - 1km at 6:00/km
-  - 90s walking rest
-- Cool Down:
-  - 1km at a conversational pace or slower`;
+    // ✅ UPDATED: Provide flexible formatting guidelines instead of rigid templates
+    // This allows the AI to design different workout types (intervals, steady runs, tempo, etc.)
+    const formatGuidelines = `
+WORKOUT STRUCTURE GUIDELINES (use appropriate format for each workout type):
 
-    const exampleStrengthFormat = `**Monday**
-- Warm-Up:
-  - 5 minutes light cardio
-  - Dynamic stretches x 10 each side
-- Main Workout (3 Rounds):
-  - Squats x 15
-  - Push-ups x 12
-  - Plank: 45 seconds
-  - Rest: 90 seconds between rounds
-- Cool Down:
-  - Stretching: 5 minutes`;
+For Running/Walking workouts:
+- Always include: Warm-Up → Main Workout → Cool Down
+- Use DISTANCE (km) + PACE (min/km) format: "3km at 6:00/km" or "2km at a conversational pace"
+- For interval workouts: Group repeats clearly (e.g., "Repeat x4:" or "4 Rounds:")
+- For steady runs: Simply state distance and pace (e.g., "5km steady run at 5:50/km")
+- For long runs: State total distance and effort level (e.g., "8km at easy pace")
+- Use seconds for rest periods: "90s rest" or "2 minutes rest"
 
-    // Determine which example to use based on workout types
-    const isRunningFocus = selectedWorkoutTypes.toLowerCase().includes('running');
-    const isWalkingFocus = selectedWorkoutTypes.toLowerCase().includes('walking');
-    const exampleFormat = (isRunningFocus || isWalkingFocus) ? exampleRunningFormat : exampleStrengthFormat;
+For Strength workouts:
+- Always include: Warm-Up → Main Workout → Cool Down
+- Use reps and sets format: "Squats x 15" or "Push-ups x 10"
+- Group exercises into rounds/circuits if appropriate: "3 Rounds:" or "Circuit (x4):"
+- Use time for holds: "Plank: 45 seconds"
+- Include rest periods: "Rest: 90 seconds between rounds"
+
+IMPORTANT: Choose the workout type that best fits the training goal for each day. Don't force all workouts into the same structure.`;
+
 
     return `Create a 4-week personalized workout plan for:
 
@@ -315,54 +310,40 @@ CRITICAL REQUIREMENTS:
 3. Each workout should be approximately ${workoutDuration}
 4. Focus on these workout types: ${selectedWorkoutTypes || 'Walking, Strength Training'}
 5. Difficulty should match: ${difficultyLevel}
+6. Design VARIED workout types across the week (e.g., intervals, steady runs, tempo runs, long runs, etc.)
+7. Don't force all workouts into the same structure - vary them based on training principles
 
-FORMAT REQUIREMENTS FOR RUNNING/WALKING WORKOUTS:
-- Use DISTANCE (km) instead of time when possible (e.g., "1km" not "10 minutes")
-- Include PACE information (e.g., "at 6:00/km" or "at a conversational pace")
-- Use simple, clear descriptions (e.g., "no faster than 7:00/km")
-- Group repeated intervals clearly (e.g., "Repeat x3:")
-- For rest periods, use seconds or minutes (e.g., "90s rest" or "2 minutes rest")
+${formatGuidelines}
 
-FORMAT REQUIREMENTS FOR STRENGTH WORKOUTS:
-- Use reps and sets format (e.g., "Squats x 15")
-- Group exercises into rounds/circuits if appropriate (e.g., "3 Rounds:")
-- Include rest periods between sets/rounds
-- Use time for holds (e.g., "Plank: 45 seconds")
-
-Please create a structured 4-week plan using this EXACT format:
+Please create a structured 4-week progressive plan with the following format:
 
 ## Daily Workout Breakdown
 
 ### Week 1
 
-${exampleFormat}
-
-**${selectedDaysArray[1] || 'Wednesday'}**
-[Same structured format]
-
-**${selectedDaysArray[2] || 'Friday'}**
-[Same structured format]
+${selectedDaysArray.map(day => `**${day}**\n- Warm-Up:\n  [Design appropriate warm-up]\n- Main Workout:\n  [Design workout based on day's focus - vary between intervals, steady runs, tempo, etc.]\n- Cool Down:\n  [Design appropriate cool down]`).join('\n\n')}
 
 ### Week 2
 
-[Continue with same format for all ${selectedDaysArray.length} days: ${selectedDays}]
+[Create ${selectedDaysArray.length} varied workouts for: ${selectedDays}]
+[Progress intensity from Week 1]
 
 ### Week 3
 
-[Continue with same format for all ${selectedDaysArray.length} days: ${selectedDays}]
+[Create ${selectedDaysArray.length} varied workouts for: ${selectedDays}]
+[Continue progressive overload]
 
 ### Week 4
 
-[Continue with same format for all ${selectedDaysArray.length} days: ${selectedDays}]
+[Create ${selectedDaysArray.length} varied workouts for: ${selectedDays}]
+[Peak week or recovery week based on goal]
 
-IMPORTANT FORMATTING RULES:
-1. Always structure workouts as: Warm-Up → Main Workout → Cool Down
-2. For running/walking: Use distance (km) + pace (min/km)
-3. For strength: Use exercise name x reps or exercise: duration
-4. Clearly mark repeated sections (e.g., "Repeat x3:" or "3 Rounds:")
-5. Keep descriptions simple and actionable
-6. Progress intensity across the 4 weeks
-7. Create workouts for ALL ${selectedDaysArray.length} selected days: ${selectedDays}`;
+TRAINING VARIETY PRINCIPLES:
+- Mix workout types: intervals, steady state, tempo, long runs, recovery runs
+- Don't repeat the same workout structure every session
+- Balance hard and easy days appropriately
+- Progress difficulty across the 4 weeks
+- Ensure proper recovery between intense sessions`;
   }
 
   // Clear conversation history
