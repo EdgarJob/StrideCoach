@@ -33,6 +33,8 @@ export default function PlansScreen() {
   const [showPreferences, setShowPreferences] = useState(false);
   const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState('');
+  const [showGenerationModal, setShowGenerationModal] = useState(false);
   
   // Check if user is new (no preferences set) and show modal
   useEffect(() => {
@@ -77,33 +79,64 @@ export default function PlansScreen() {
   const handleGeneratePlan = async (customPreferences = null) => {
     console.log('🚀 Starting plan generation...');
     setIsGenerating(true);
+    setShowGenerationModal(true);
     
     // Use custom preferences or the saved preferences from state
     const preferences = customPreferences || savedPreferences;
 
     console.log('Generating plan with preferences:', preferences);
 
-    const result = await generatePlan(preferences);
-    
-    console.log('Plan generation result:', result);
-    
-    if (result.success) {
-      console.log('✅ Plan generated successfully!');
-      Alert.alert(
-        'Plan Generated!',
-        'Your personalized 4-week fitness plan has been created successfully!',
-        [{ text: 'OK', onPress: () => setShowPlanModal(true) }]
-      );
-    } else {
-      console.log('❌ Plan generation failed:', result.error);
+    try {
+      // Step 1: Preparing your preferences
+      setGenerationStep('Preparing your workout preferences...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 2: Analyzing your fitness goals
+      setGenerationStep('Analyzing your fitness goals and requirements...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Step 3: Creating personalized workouts
+      setGenerationStep('Creating personalized workouts for each day...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Step 4: Generating the plan
+      setGenerationStep('Generating your 4-week fitness plan...');
+      const result = await generatePlan(preferences);
+      
+      console.log('Plan generation result:', result);
+      
+      if (result.success) {
+        console.log('✅ Plan generated successfully!');
+        setGenerationStep('Plan generated successfully!');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setShowGenerationModal(false);
+        Alert.alert(
+          'Plan Generated!',
+          'Your personalized 4-week fitness plan has been created successfully!',
+          [{ text: 'OK', onPress: () => setShowPlanModal(true) }]
+        );
+      } else {
+        console.log('❌ Plan generation failed:', result.error);
+        setShowGenerationModal(false);
+        Alert.alert(
+          'Error',
+          `Failed to generate plan: ${result.error}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.log('❌ Plan generation error:', error);
+      setShowGenerationModal(false);
       Alert.alert(
         'Error',
-        `Failed to generate plan: ${result.error}`,
+        `An error occurred while generating your plan: ${error.message}`,
         [{ text: 'OK' }]
       );
     }
     
     setIsGenerating(false);
+    setGenerationStep('');
   };
 
   const handleSaveCustomPlan = (customPlan) => {
@@ -375,6 +408,33 @@ export default function PlansScreen() {
         />
       </Modal>
 
+      {/* Plan Generation Progress Modal */}
+      <Modal
+        visible={showGenerationModal}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.generationModalOverlay}>
+          <View style={styles.generationModalContainer}>
+            <View style={styles.generationHeader}>
+              <ActivityIndicator size="large" color="#4F46E5" />
+              <Text style={styles.generationTitle}>Creating Your Plan</Text>
+            </View>
+            
+            <View style={styles.generationContent}>
+              <Text style={styles.generationStep}>{generationStep}</Text>
+              
+              <View style={styles.generationWarning}>
+                <Ionicons name="warning" size={20} color="#F59E0B" />
+                <Text style={styles.generationWarningText}>
+                  Please don't close the app or leave this page while we create your personalized workout plan.
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* New User Welcome Modal */}
       <Modal
         visible={showNewUserModal}
@@ -383,6 +443,14 @@ export default function PlansScreen() {
         onRequestClose={() => setShowNewUserModal(false)}
       >
         <View style={styles.newUserModalContainer}>
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.newUserCloseButton}
+            onPress={() => setShowNewUserModal(false)}
+          >
+            <Ionicons name="close" size={24} color="#6B7280" />
+          </TouchableOpacity>
+          
           <View style={styles.newUserHeader}>
             <Ionicons name="sparkles" size={48} color="#4F46E5" />
             <Text style={styles.newUserTitle}>Welcome to StrideCoach!</Text>
@@ -859,6 +927,68 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
+  },
+  newUserCloseButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 1,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+  },
+  // Generation Progress Modal Styles
+  generationModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  generationModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    margin: 20,
+    minWidth: 300,
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  generationHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  generationTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginTop: 16,
+  },
+  generationContent: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  generationStep: {
+    fontSize: 16,
+    color: '#4B5563',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  generationWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FEF3C7',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+  },
+  generationWarningText: {
+    fontSize: 14,
+    color: '#92400E',
+    marginLeft: 12,
+    flex: 1,
+    lineHeight: 20,
   },
   newUserHeader: {
     alignItems: 'center',
