@@ -75,26 +75,196 @@ export class PlanService {
   parseAIResponse(aiResponse, userProfile, preferences) {
     const weeks = [];
     
+    console.log('🔍 Starting to parse AI response...');
+    
+    // Extract week sections from the AI response
+    const weekPattern = /### Week (\d+)[^#]*(?=### Week \d+|##|$)/gs;
+    const weekMatches = [...aiResponse.matchAll(weekPattern)];
+    
+    if (weekMatches.length > 0) {
+      console.log(`📅 Found ${weekMatches.length} week sections in AI response`);
+      
+      weekMatches.forEach((match, index) => {
+        const weekNumber = parseInt(match[1]);
+        const weekText = match[0];
+        
+        console.log(`📝 Parsing Week ${weekNumber}...`);
+        
+        weeks.push({
+          week_number: weekNumber,
+          focus: this.extractWeekFocus(weekText) || this.getWeekFocus(weekNumber),
+          days: this.extractDaysFromWeek(weekText, preferences)
+        });
+      });
+    } else {
+      console.log('⚠️ No week sections found, creating structured weeks...');
+      
+      // Fallback: Create 4 weeks with AI-inspired content
+      const availableDays = preferences.availableDays || {};
+      const selectedDays = Object.entries(availableDays)
+        .filter(([day, selected]) => selected)
+        .map(([day]) => day.toLowerCase());
+      
+      const workoutDays = selectedDays.length > 0 ? selectedDays : ['monday', 'wednesday', 'friday'];
+      
+      for (let week = 1; week <= 4; week++) {
+        weeks.push({
+          week_number: week,
+          focus: this.getWeekFocus(week),
+          days: this.createWeekDays(week, workoutDays, userProfile, preferences, aiResponse)
+        });
+      }
+    }
+    
+    return weeks;
+  }
+  
+  // Extract week focus from week text
+  extractWeekFocus(weekText) {
+    // Look for focus after "Week X:" or in the first line
+    const focusMatch = weekText.match(/Week \d+[:\s]+([^\n]+)/i);
+    if (focusMatch) {
+      return focusMatch[1].trim();
+    }
+    return null;
+  }
+  
+  // Extract days from a week's text
+  extractDaysFromWeek(weekText, preferences) {
+    const days = [];
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
     // Extract selected days from preferences
     const availableDays = preferences.availableDays || {};
     const selectedDays = Object.entries(availableDays)
       .filter(([day, selected]) => selected)
       .map(([day]) => day.toLowerCase());
     
-    // If no days selected, use default
-    const workoutDays = selectedDays.length > 0 ? selectedDays : ['monday', 'wednesday', 'friday'];
-    
-    // Create 4 weeks of data
-    for (let week = 1; week <= 4; week++) {
-      const weekData = {
-        week_number: week,
-        focus: this.getWeekFocus(week),
-        days: this.createWeekDays(week, workoutDays, userProfile, preferences, aiResponse)
-      };
-      weeks.push(weekData);
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const dayName = dayNames[dayIndex];
+      const dayLower = dayName.toLowerCase();
+      const isWorkoutDay = selectedDays.includes(dayLower);
+      
+      let workout = null;
+      if (isWorkoutDay) {
+        // Try to extract workout for this specific day from the AI response
+        workout = this.extractWorkoutForDay(weekText, dayName, preferences);
+      }
+      
+      days.push({
+        day_number: dayIndex + 1,
+        day_name: dayName,
+        is_workout_day: isWorkoutDay,
+        is_rest_day: !isWorkoutDay,
+        workout: workout
+      });
     }
     
-    return weeks;
+    return days;
+  }
+  
+  // Extract workout details for a specific day
+  extractWorkoutForDay(weekText, dayName, preferences) {
+    // Look for day section in the format: **Monday: Walk + Strength (40 min)**
+    const dayPattern = new RegExp(`\\*\\*${dayName}[:\\s]+([^\\*]+)\\*\\*([^\\*]+?)(?=\\*\\*\\w+day:|$)`, 'is');
+    const dayMatch = weekText.match(dayPattern);
+    
+    if (dayMatch) {
+      console.log(`✅ Found workout for ${dayName}`);
+      const workoutTitle = dayMatch[1].trim();
+      const workoutContent = dayMatch[2].trim();
+      
+      // Extract workout type from title
+      let workoutType = 'Mixed';
+      if (workoutTitle.toLowerCase().includes('walk')) {
+        workoutType = 'Walking';
+      } else if (workoutTitle.toLowerCase().includes('strength')) {
+        workoutType = 'Strength';
+      } else if (workoutTitle.toLowerCase().includes('cardio')) {
+        workoutType = 'Cardio';
+      } else if (workoutTitle.toLowerCase().includes('run')) {
+        workoutType = 'Running';
+      }
+      
+      // Extract duration
+      const durationMatch = workoutTitle.match(/\((\d+)\s*min\)/);
+      const duration = durationMatch ? parseInt(durationMatch[1]) : (preferences.workoutDuration || 45);
+      
+      // Extract exercises from the content
+      const exercises = this.extractExercisesFromText(workoutContent);
+      
+      // Determine difficulty
+      let difficulty = 'Intermediate';
+      if (workoutContent.toLowerCase().includes('intro') || workoutContent.toLowerCase().includes('beginner')) {
+        difficulty = 'Beginner';
+      } else if (workoutContent.toLowerCase().includes('challenge') || workoutContent.toLowerCase().includes('advanced')) {
+        difficulty = 'Advanced';
+      }
+      
+      return {
+        type: workoutType,
+        duration_minutes: duration,
+        exercises: exercises.length > 0 ? exercises : this.getDefaultExercises(workoutType),
+        notes: workoutTitle,
+        difficulty: difficulty
+      };
+    }
+    
+    console.log(`⚠️ No specific workout found for ${dayName}, using default`);
+    return null;
+  }
+  
+  // Extract exercises from workout text
+  extractExercisesFromText(workoutText) {
+    const exercises = [];
+    
+    // Pattern 1: "- Exercise name x reps" or "- Exercise name: duration"
+    const exercisePattern = /[-•]\s*([^:\n]+?)\s*(?:x\s*(\d+)(?:\s*(?:reps?|each leg|each side))?|(\d+)\s*(?:min|sec))?(?:\n|$)/gi;
+    
+    let match;
+    while ((match = exercisePattern.exec(workoutText)) !== null) {
+      const name = match[1].trim();
+      const reps = match[2] ? parseInt(match[2]) : null;
+      const duration = match[3] ? parseInt(match[3]) : null;
+      
+      // Skip if it's a section header or too short
+      if (name.length < 3 || name.toLowerCase().includes('round') || name.toLowerCase().includes('circuit')) {
+        continue;
+      }
+      
+      exercises.push({
+        name: name,
+        sets: 1,
+        reps: reps,
+        duration_minutes: duration,
+        description: name
+      });
+    }
+    
+    return exercises;
+  }
+  
+  // Get default exercises based on workout type
+  getDefaultExercises(workoutType) {
+    const defaults = {
+      'Walking': [
+        { name: 'Warm-up Walk', duration_minutes: 5, description: 'Easy pace' },
+        { name: 'Brisk Walk', duration_minutes: 20, description: 'Moderate pace' },
+        { name: 'Cool-down Walk', duration_minutes: 5, description: 'Slow pace' }
+      ],
+      'Strength': [
+        { name: 'Squats', sets: 3, reps: 15, description: 'Bodyweight squats' },
+        { name: 'Push-ups', sets: 3, reps: 10, description: 'Modified or full' },
+        { name: 'Plank', sets: 3, duration_minutes: 1, description: 'Core stability' }
+      ],
+      'Mixed': [
+        { name: 'Warm-up', duration_minutes: 5, description: 'Light cardio' },
+        { name: 'Main Workout', duration_minutes: 30, description: 'Mixed exercises' },
+        { name: 'Cool-down', duration_minutes: 5, description: 'Stretching' }
+      ]
+    };
+    
+    return defaults[workoutType] || defaults['Mixed'];
   }
   
   // Create week days with AI-inspired content
