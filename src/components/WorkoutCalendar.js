@@ -190,12 +190,22 @@ ${exerciseList}
                 {day.workout.exercises.map((exercise, idx) => {
                   // Check if this is a section header (from AI response or parsing)
                   const isSection = exercise.isSection === true;
+                  const isRepeatGroup = exercise.isRepeatGroup === true;
 
                   // If it's a section header, render it differently
                   if (isSection) {
+                    // ✅ NEW: Different styling for repeat groups (e.g., "4 Rounds")
+                    const headerStyle = isRepeatGroup 
+                      ? styles.repeatGroupHeader 
+                      : styles.sectionHeader;
+                    const titleStyle = isRepeatGroup 
+                      ? styles.repeatGroupTitle 
+                      : styles.sectionTitle;
+                    
                     return (
-                      <View key={idx} style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>
+                      <View key={idx} style={headerStyle}>
+                        <Text style={titleStyle}>
+                          {isRepeatGroup && '🔁 '}
                           {exercise.name || exercise.exercise}
                         </Text>
                       </View>
@@ -498,6 +508,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
     textTransform: 'capitalize',
+  },
+  // ✅ NEW: Styles for repeat group headers (e.g., "4 Rounds", "Repeat x3")
+  repeatGroupHeader: {
+    backgroundColor: '#EEF2FF',  // Lighter indigo background
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginBottom: 6,
+    marginTop: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4F46E5',  // Indigo accent
+  },
+  repeatGroupTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4F46E5',  // Indigo text
+    fontStyle: 'italic',
   },
   exercisesHeader: {
     flexDirection: 'row',

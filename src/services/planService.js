@@ -356,6 +356,27 @@ export class PlanService {
         continue;
       }
       
+      // ✅ NEW: Detect standalone round/repeat indicators (e.g., "4 Rounds:", "Repeat x3:")
+      // These appear as non-bullet lines and are crucial for interval workouts
+      const roundMatch = trimmedLine.match(/^(\d+)\s+(rounds?|sets?|circuits?|reps?):\s*$/i);
+      const repeatMatch = trimmedLine.match(/^repeat\s+x?(\d+):\s*$/i);
+      
+      if (roundMatch || repeatMatch) {
+        const count = roundMatch ? roundMatch[1] : repeatMatch[1];
+        const type = roundMatch ? roundMatch[2] : 'Repeat';
+        
+        exercises.push({
+          name: `${count} ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+          sets: 0,
+          reps: null,
+          duration_minutes: null,
+          description: `${count} ${type}`,
+          isSection: true,  // Mark as sub-section header
+          isRepeatGroup: true  // Special marker for repeat groups
+        });
+        continue;
+      }
+      
       // ✅ FIX: Match bullet points with OR without indentation
       // This regex matches: "- text", "  - text", "    - text", etc.
       const bulletMatch = trimmedLine.match(/^[-•*]\s*(.+)$/);
