@@ -24,8 +24,20 @@ export default function WorkoutCalendar({ plan }) {
   // State to track which week is currently being displayed
   const [selectedWeek, setSelectedWeek] = useState(0);
 
+  // ✅ DEBUG: Log the plan object to see what we're getting
+  console.log('🔍 WorkoutCalendar received plan:', {
+    plan,
+    planType: typeof plan,
+    planIsNull: plan === null,
+    planIsUndefined: plan === undefined,
+    planWeeks: plan?.weeks,
+    planWeeksLength: plan?.weeks?.length,
+    planKeys: plan ? Object.keys(plan) : 'N/A'
+  });
+
   // If no plan exists, show a message
   if (!plan || !plan.weeks || plan.weeks.length === 0) {
+    console.log('🚫 WorkoutCalendar: No plan data, showing no data message');
     return (
       <View style={styles.container}>
         <Text style={styles.noDataText}>No workout plan available</Text>
