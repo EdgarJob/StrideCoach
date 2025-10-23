@@ -221,23 +221,31 @@ export class PlanService {
       console.log(`📝 ${dayName} content length: ${workoutContent.length}`);
       console.log(`📝 ${dayName} first 150 chars:`, workoutContent.substring(0, 150));
       
-      // Extract workout type from content
+      // ✅ FIX: Extract workout type from content (check more specific types first!)
       let workoutType = 'Mixed';
       const contentLower = workoutContent.toLowerCase();
-      if (contentLower.includes('walk') && contentLower.includes('strength')) {
-        workoutType = 'Mixed';
-      } else if (contentLower.includes('walk')) {
-        workoutType = 'Walking';
+      
+      // Check for specific workout types first (more specific before more general)
+      if (contentLower.includes('running') || contentLower.includes('run at') || contentLower.includes('tempo run') || contentLower.includes('interval run')) {
+        workoutType = 'Running';
+      } else if (contentLower.includes('cycling') || contentLower.includes('cycle') || contentLower.includes('bike')) {
+        workoutType = 'Cycling';
+      } else if (contentLower.includes('yoga')) {
+        workoutType = 'Yoga';
       } else if (contentLower.includes('strength') || contentLower.includes('bodyweight')) {
         workoutType = 'Strength';
       } else if (contentLower.includes('cardio')) {
         workoutType = 'Cardio';
+      } else if (contentLower.includes('walking') || contentLower.includes('walk at')) {
+        workoutType = 'Walking';
+      } else if (contentLower.includes('walk') && contentLower.includes('strength')) {
+        workoutType = 'Mixed';
       } else if (contentLower.includes('run')) {
+        // Fallback for generic "run" mentions
         workoutType = 'Running';
-      } else if (contentLower.includes('yoga')) {
-        workoutType = 'Yoga';
-      } else if (contentLower.includes('cycle') || contentLower.includes('bike')) {
-        workoutType = 'Cycling';
+      } else if (contentLower.includes('walk')) {
+        // Fallback for generic "walk" mentions
+        workoutType = 'Walking';
       }
       
       // Extract duration - look for patterns like "40 min", "(30 min)", "25 minutes"
@@ -335,9 +343,28 @@ export class PlanService {
           continue;
         }
         
-        // ✅ NEW: Pattern for "Activity: details (N reps/sets)"
+        // ✅ IMPROVED: Pattern for "N km/m at pace" (distance-based cardio)
+        // Matches: "1km at 6:00/km", "2km at a conversational pace", "500m at tempo pace"
+        const distanceMatch = exerciseText.match(/^(\d+(?:\.\d+)?)\s*(km|m|miles?)\s+at\s+(.+)/i);
+        if (distanceMatch) {
+          const distance = parseFloat(distanceMatch[1]);
+          const unit = distanceMatch[2].toLowerCase();
+          const pace = distanceMatch[3].trim();
+          
+          exercises.push({
+            name: `${distance}${unit} at ${pace}`,
+            sets: 1,
+            reps: null,
+            duration_minutes: null,
+            description: pace.includes('(') ? pace.match(/\(([^)]+)\)/)?.[1] || pace : pace
+          });
+          continue;
+        }
+        
+        // ✅ NEW: Pattern for "Activity: details (N reps/sets)" - STRICT matching to avoid false positives
         // Matches: "Dynamic stretches: leg swings (10 each leg)", "Interval running: 6 sets of 3 minutes"
-        const detailedMatch = exerciseText.match(/^([^:]+):\s*(.+)\((\d+)\s*(sets?|reps?|each\s+leg|each\s+side)/i);
+        // But NOT: "1km at pace (no faster than 7:00/km)" - "no" is not a number!
+        const detailedMatch = exerciseText.match(/^([^:]+):\s*(.+?)\s*\((\d+)\s*(sets?|reps?|each\s+leg|each\s+side)\)/i);
         if (detailedMatch) {
           const activityName = detailedMatch[1].trim();
           const details = detailedMatch[2].trim();
