@@ -15,7 +15,17 @@ export const useAICoach = () => {
 
 export const AICoachProvider = ({ children }) => {
   const { user, profile } = useAuth();
-  const { currentPlan } = usePlan();
+  
+  // Safely access plan context with fallback
+  let currentPlan = null;
+  try {
+    const planContext = usePlan();
+    currentPlan = planContext?.currentPlan || null;
+  } catch (error) {
+    console.warn('Plan context not available:', error.message);
+    currentPlan = null;
+  }
+  
   const [isLoading, setIsLoading] = useState(false);
   const [dailyMotivation, setDailyMotivation] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
