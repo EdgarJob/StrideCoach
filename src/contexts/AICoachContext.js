@@ -34,6 +34,18 @@ export const AICoachProvider = ({ children }) => {
   const [dailyMotivation, setDailyMotivation] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
   const [workoutPlan, setWorkoutPlan] = useState(null);
+  const [motivationLoadedToday, setMotivationLoadedToday] = useState(false);
+
+  // Reset motivation loaded flag when day changes
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastMotivationDate = localStorage.getItem('lastMotivationDate') || sessionStorage.getItem('lastMotivationDate');
+    
+    if (lastMotivationDate !== today) {
+      console.log('📅 New day detected, resetting motivation loaded flag');
+      setMotivationLoadedToday(false);
+    }
+  }, []);
 
   // Load daily motivation with progress data (memoized to prevent re-renders)
   const loadDailyMotivation = useCallback(async (progressData = null) => {
@@ -41,12 +53,29 @@ export const AICoachProvider = ({ children }) => {
     
     // ✅ FIX: Check if we already loaded motivation today
     const today = new Date().toDateString();
-    const lastMotivationDate = localStorage.getItem('lastMotivationDate');
+    let lastMotivationDate = null;
     
-    if (lastMotivationDate === today && dailyMotivation) {
-      console.log('📅 Daily motivation already loaded today, skipping...');
+    try {
+      // Try localStorage first, fallback to sessionStorage
+      lastMotivationDate = localStorage.getItem('lastMotivationDate') || sessionStorage.getItem('lastMotivationDate');
+    } catch (error) {
+      console.warn('Storage not available, using memory fallback');
+    }
+    
+    console.log('🔍 Daily motivation check:', {
+      today,
+      lastMotivationDate,
+      hasDailyMotivation: !!dailyMotivation,
+      motivationLoadedToday,
+      shouldSkip: (lastMotivationDate === today && dailyMotivation) || motivationLoadedToday
+    });
+    
+    if ((lastMotivationDate === today && dailyMotivation) || motivationLoadedToday) {
+      console.log('📅 Daily motivation already loaded today, skipping API call...');
       return;
     }
+    
+    console.log('🚀 Loading daily motivation for', today);
     
     try {
       setIsLoading(true);
@@ -54,9 +83,15 @@ export const AICoachProvider = ({ children }) => {
       
       if (result.success) {
         setDailyMotivation(result.motivation);
+        setMotivationLoadedToday(true);
         // ✅ FIX: Store today's date to prevent multiple loads
-        localStorage.setItem('lastMotivationDate', today);
-        console.log('✅ Daily motivation loaded for', today);
+        try {
+          localStorage.setItem('lastMotivationDate', today);
+          sessionStorage.setItem('lastMotivationDate', today); // Backup
+        } catch (error) {
+          console.warn('Could not save to storage:', error);
+        }
+        console.log('✅ Daily motivation loaded and saved for', today);
       } else {
         console.error('Failed to load daily motivation:', result.error);
         setDailyMotivation("Ready to make today count? Every step brings you closer to your goals! 💪");
