@@ -225,13 +225,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // OAuth Sign in with Google or Apple
+  const signInWithOAuth = async (provider) => {
+    try {
+      setLoading(true);
+      console.log(`Starting ${provider} OAuth sign in...`);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider, // 'google' or 'apple'
+        options: {
+          redirectTo: window.location.origin, // Redirect back to current URL
+          skipBrowserRedirect: false,
+        },
+      });
+
+      if (error) {
+        console.error(`${provider} OAuth sign in error:`, error);
+        throw error;
+      }
+
+      console.log(`${provider} OAuth initiated:`, data);
+      return { data, error: null };
+    } catch (error) {
+      console.error(`${provider} OAuth error:`, error);
+      return { data: null, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Sign in function
   const signIn = async (email, password) => {
     try {
       setLoading(true);
       console.log('Starting sign in process...');
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error} = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -310,6 +339,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     signUp,
     signIn,
+    signInWithOAuth,
     signOut,
     updateProfile,
   };

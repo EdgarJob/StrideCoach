@@ -26,7 +26,22 @@ export default function AuthScreen() {
     sex: 'male',
   });
 
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInWithOAuth } = useAuth();
+
+  const handleOAuthSignIn = async (provider) => {
+    setLoading(true);
+    try {
+      const { error } = await signInWithOAuth(provider);
+      if (error) {
+        Alert.alert(`${provider} Sign In Error`, error.message || 'Failed to sign in. Please try again.');
+      }
+      // OAuth will redirect the user, so no success message needed here
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!formData.email || !formData.password) {
@@ -206,6 +221,36 @@ export default function AuthScreen() {
             </Text>
           </TouchableOpacity>
 
+          {/* Divider */}
+          {isLogin && (
+            <>
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* OAuth Buttons */}
+              <TouchableOpacity
+                style={[styles.oauthButton, styles.googleButton]}
+                onPress={() => handleOAuthSignIn('google')}
+                disabled={loading}
+              >
+                <Ionicons name="logo-google" size={20} color="#DB4437" />
+                <Text style={styles.oauthButtonText}>Continue with Google</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.oauthButton, styles.appleButton]}
+                onPress={() => handleOAuthSignIn('apple')}
+                disabled={loading}
+              >
+                <Ionicons name="logo-apple" size={20} color="#000000" />
+                <Text style={styles.oauthButtonText}>Continue with Apple</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
           {/* Toggle Login/Signup */}
           <TouchableOpacity
             style={styles.toggleButton}
@@ -304,5 +349,44 @@ const styles = StyleSheet.create({
     color: '#4F46E5',
     fontSize: 14,
     fontWeight: '500',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#D1D5DB',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#6B7280',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  oauthButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFFFFF',
+  },
+  googleButton: {
+    borderColor: '#DB4437',
+  },
+  appleButton: {
+    borderColor: '#000000',
+  },
+  oauthButtonText: {
+    marginLeft: 12,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
   },
 });
