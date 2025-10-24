@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { aiCoach } from '../services/aiService';
 import { useAuth } from './AuthContext';
 import { usePlan } from './PlanContext';
@@ -35,6 +35,19 @@ export const AICoachProvider = ({ children }) => {
   const [conversationHistory, setConversationHistory] = useState([]);
   const [workoutPlan, setWorkoutPlan] = useState(null);
   const [motivationLoadedToday, setMotivationLoadedToday] = useState(false);
+  
+  // Use refs to avoid dependency issues
+  const dailyMotivationRef = useRef('');
+  const motivationLoadedTodayRef = useRef(false);
+
+  // Update refs when state changes
+  useEffect(() => {
+    dailyMotivationRef.current = dailyMotivation;
+  }, [dailyMotivation]);
+
+  useEffect(() => {
+    motivationLoadedTodayRef.current = motivationLoadedToday;
+  }, [motivationLoadedToday]);
 
   // Reset motivation loaded flag when day changes
   useEffect(() => {
@@ -65,12 +78,12 @@ export const AICoachProvider = ({ children }) => {
     console.log('🔍 Daily motivation check:', {
       today,
       lastMotivationDate,
-      hasDailyMotivation: !!dailyMotivation,
-      motivationLoadedToday,
-      shouldSkip: (lastMotivationDate === today && dailyMotivation) || motivationLoadedToday
+      hasDailyMotivation: !!dailyMotivationRef.current,
+      motivationLoadedToday: motivationLoadedTodayRef.current,
+      shouldSkip: (lastMotivationDate === today && dailyMotivationRef.current) || motivationLoadedTodayRef.current
     });
     
-    if ((lastMotivationDate === today && dailyMotivation) || motivationLoadedToday) {
+    if ((lastMotivationDate === today && dailyMotivationRef.current) || motivationLoadedTodayRef.current) {
       console.log('📅 Daily motivation already loaded today, skipping API call...');
       return;
     }
@@ -102,7 +115,7 @@ export const AICoachProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [profile, dailyMotivation]);
+  }, [profile]); // Removed dailyMotivation and motivationLoadedToday from dependencies
 
   // Send message to AI coach
   const sendMessage = async (message) => {

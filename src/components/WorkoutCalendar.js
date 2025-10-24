@@ -269,7 +269,10 @@ ${exerciseList}
                         <Text style={styles.exerciseName} numberOfLines={3}>
                           {exerciseName}
                         </Text>
-                        {detailsText && detailsText.trim().length > 1 && !/^[\s\.\,\;\:\!\?\-\_]+$/.test(detailsText) && (
+                        {detailsText && 
+                         detailsText.trim().length > 1 && 
+                         detailsText.trim() !== '.' &&
+                         !/^[\s\.\,\;\:\!\?\-\_]+$/.test(detailsText) && (
                           <Text style={styles.exerciseInfo}>{detailsText}</Text>
                         )}
                       </View>
