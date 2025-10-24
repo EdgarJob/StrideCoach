@@ -200,6 +200,21 @@ Be honest, direct, and motivating. No fluff or generic platitudes. Base everythi
     let planContext = '';
     let preferencesContext = '';
     
+    // Get current date and time information
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const currentTime = now.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' });
+    
     if (currentPlan) {
       // Extract plan information
       const planTitle = currentPlan.title || '4-Week Fitness Plan';
@@ -238,6 +253,11 @@ USER PREFERENCES:
     }
 
     return `You are StrideCoach, an expert AI fitness coach specializing in walking and strength training. 
+
+CURRENT DATE & TIME:
+- Today is: ${currentDate}
+- Current time: ${currentTime}
+- Day of week: ${dayOfWeek}
 
 USER PROFILE:
 - Name: ${userProfile?.display_name || 'User'}

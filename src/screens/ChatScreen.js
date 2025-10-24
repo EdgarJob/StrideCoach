@@ -42,12 +42,16 @@ export default function ChatScreen() {
   };
 
   const handleClearChat = () => {
+    console.log('Clear chat button pressed');
     Alert.alert(
       'Clear Chat',
       'Are you sure you want to clear the conversation?',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear', style: 'destructive', onPress: clearConversation }
+        { text: 'Cancel', style: 'cancel', onPress: () => console.log('Clear cancelled') },
+        { text: 'Clear', style: 'destructive', onPress: () => {
+          console.log('Clear confirmed, calling clearConversation');
+          clearConversation();
+        }}
       ]
     );
   };

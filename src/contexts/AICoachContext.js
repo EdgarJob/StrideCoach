@@ -144,8 +144,10 @@ export const AICoachProvider = ({ children }) => {
 
   // Clear conversation
   const clearConversation = () => {
+    console.log('Clearing conversation...');
     setConversationHistory([]);
     aiCoach.clearHistory();
+    console.log('Conversation cleared successfully');
   };
 
   // Refresh daily motivation with optional progress data
