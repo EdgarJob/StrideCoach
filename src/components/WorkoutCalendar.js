@@ -225,6 +225,7 @@ ${exerciseList}
                   if (exercise.description && 
                       exercise.description !== exercise.name &&
                       exercise.description.trim().length > 1 &&
+                      exercise.description.trim() !== '.' &&
                       !/^[\s\.\,\;\:\!\?\-\_]+$/.test(exercise.description)) {
                     detailsText = exercise.description;
                   } 
@@ -250,6 +251,11 @@ ${exerciseList}
                     if (!isCardio && !exercise.name?.toLowerCase().includes(' x ')) {
                       detailsText = `${exercise.reps} reps`;
                     }
+                  }
+                  
+                  // ✅ ADDITIONAL FIX: Ensure detailsText is never just a period or empty
+                  if (detailsText && (detailsText.trim() === '.' || detailsText.trim().length === 0)) {
+                    detailsText = '';
                   }
 
                   // Regular exercise item
