@@ -241,9 +241,14 @@ export const AICoachProvider = ({ children }) => {
   // Clear conversation
   const clearConversation = () => {
     console.log('Clearing conversation...');
-    setConversationHistory([]);
+    console.log('Current conversation history length:', conversationHistory.length);
+    
+    // Clear both the service history and the state
     aiCoach.clearHistory();
+    setConversationHistory([]);
+    
     console.log('Conversation cleared successfully');
+    console.log('aiCoach history after clear:', aiCoach.getHistory().length);
   };
 
   // Refresh daily motivation with optional progress data

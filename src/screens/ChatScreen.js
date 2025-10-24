@@ -47,12 +47,22 @@ export default function ChatScreen() {
       'Clear Chat',
       'Are you sure you want to clear the conversation?',
       [
-        { text: 'Cancel', style: 'cancel', onPress: () => console.log('Clear cancelled') },
-        { text: 'Clear', style: 'destructive', onPress: () => {
-          console.log('Clear confirmed, calling clearConversation');
-          clearConversation();
-        }}
-      ]
+        { 
+          text: 'Cancel', 
+          style: 'cancel', 
+          onPress: () => console.log('Clear cancelled') 
+        },
+        { 
+          text: 'Clear', 
+          style: 'destructive', 
+          onPress: () => {
+            console.log('Clear confirmed, calling clearConversation');
+            clearConversation();
+            console.log('Clear conversation called, state should update now');
+          }
+        }
+      ],
+      { cancelable: true }
     );
   };
 
