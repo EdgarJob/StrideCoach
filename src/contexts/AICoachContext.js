@@ -49,16 +49,59 @@ export const AICoachProvider = ({ children }) => {
     motivationLoadedTodayRef.current = motivationLoadedToday;
   }, [motivationLoadedToday]);
 
-  // Reset motivation loaded flag when day changes
+  // ✅ NEW: Auto-load motivation at 7am or on first visit after 7am
   useEffect(() => {
-    const today = new Date().toDateString();
-    const lastMotivationDate = localStorage.getItem('lastMotivationDate') || sessionStorage.getItem('lastMotivationDate');
+    if (!profile) return;
     
-    if (lastMotivationDate !== today) {
-      console.log('📅 New day detected, resetting motivation loaded flag');
-      setMotivationLoadedToday(false);
-    }
-  }, []);
+    const checkAndLoadMotivation = () => {
+      const now = new Date();
+      const today = now.toDateString();
+      const currentHour = now.getHours();
+      
+      // Get last load date and time from storage
+      let lastMotivationDate = null;
+      let lastMotivationTime = null;
+      
+      try {
+        lastMotivationDate = localStorage.getItem('lastMotivationDate') || sessionStorage.getItem('lastMotivationDate');
+        lastMotivationTime = localStorage.getItem('lastMotivationTime') || sessionStorage.getItem('lastMotivationTime');
+      } catch (error) {
+        console.warn('Storage not available');
+      }
+      
+      console.log('⏰ Checking motivation schedule:', {
+        today,
+        lastMotivationDate,
+        currentHour,
+        lastMotivationTime,
+        shouldLoad: lastMotivationDate !== today && currentHour >= 7
+      });
+      
+      // Reset flag if it's a new day
+      if (lastMotivationDate !== today) {
+        console.log('📅 New day detected, resetting motivation loaded flag');
+        setMotivationLoadedToday(false);
+        motivationLoadedTodayRef.current = false;
+      }
+      
+      // Auto-load motivation if:
+      // 1. It's a new day AND
+      // 2. Current time is 7am or later AND
+      // 3. We haven't loaded it today yet
+      if (lastMotivationDate !== today && currentHour >= 7 && !motivationLoadedTodayRef.current) {
+        console.log('🌅 Auto-loading morning motivation (7am+)...');
+        loadDailyMotivation(null);
+      }
+    };
+    
+    // Check immediately on mount
+    checkAndLoadMotivation();
+    
+    // Check every 30 minutes to catch the 7am window
+    const interval = setInterval(checkAndLoadMotivation, 30 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [profile, loadDailyMotivation]);
 
   // Load daily motivation with progress data (memoized to prevent re-renders)
   const loadDailyMotivation = useCallback(async (progressData = null) => {
@@ -97,14 +140,18 @@ export const AICoachProvider = ({ children }) => {
       if (result.success) {
         setDailyMotivation(result.motivation);
         setMotivationLoadedToday(true);
-        // ✅ FIX: Store today's date to prevent multiple loads
+        // ✅ FIX: Store today's date and time to prevent multiple loads
+        const now = new Date();
+        const timeString = now.toTimeString();
         try {
           localStorage.setItem('lastMotivationDate', today);
+          localStorage.setItem('lastMotivationTime', timeString);
           sessionStorage.setItem('lastMotivationDate', today); // Backup
+          sessionStorage.setItem('lastMotivationTime', timeString);
         } catch (error) {
           console.warn('Could not save to storage:', error);
         }
-        console.log('✅ Daily motivation loaded and saved for', today);
+        console.log('✅ Daily motivation loaded and saved for', today, 'at', timeString);
       } else {
         console.error('Failed to load daily motivation:', result.error);
         setDailyMotivation("Ready to make today count? Every step brings you closer to your goals! 💪");

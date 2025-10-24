@@ -10,20 +10,12 @@ import WorkoutCalendar from '../components/WorkoutCalendar';
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { signOut } = useAuth();
-  const { dailyMotivation, loadDailyMotivation } = useAICoach();
+  const { dailyMotivation } = useAICoach(); // ✅ Removed loadDailyMotivation - now auto-loads at 7am
   const { currentPlan, getTodaysWorkout, getPlanProgress } = usePlan();
 
-  // Load AI motivation with real progress data when component mounts or plan changes
-  useEffect(() => {
-    if (currentPlan) {
-      // Calculate real progress data
-      const progressData = calculateRealProgressData();
-      loadDailyMotivation(progressData);
-    } else {
-      // Load without progress data if no plan exists
-      loadDailyMotivation({});
-    }
-  }, [currentPlan]); // Removed loadDailyMotivation from dependencies since it's now memoized
+  // ✅ REMOVED: Auto-loading on mount/plan change
+  // Daily motivation now auto-loads at 7am via AICoachContext
+  // This prevents multiple API calls on page reloads
 
   // Calculate real progress data from current plan
   const calculateRealProgressData = () => {
