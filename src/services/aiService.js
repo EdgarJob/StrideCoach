@@ -81,7 +81,7 @@ export class AICoachService {
   }
 
   // Chat with the AI coach
-  async chatWithCoach(message, userProfile) {
+  async chatWithCoach(message, userProfile, currentPlan = null) {
     try {
       // Add user message to conversation history
       this.conversationHistory.push({
@@ -95,7 +95,7 @@ export class AICoachService {
         messages: [
           {
             role: "system",
-            content: this.buildSystemPrompt(userProfile)
+            content: this.buildSystemPrompt(userProfile, currentPlan)
           },
           ...this.conversationHistory
         ],
@@ -196,10 +196,50 @@ Be honest, direct, and motivating. No fluff or generic platitudes. Base everythi
   }
 
   // Build system prompt for chat
-  buildSystemPrompt(userProfile) {
+  buildSystemPrompt(userProfile, currentPlan = null) {
+    let planContext = '';
+    let preferencesContext = '';
+    
+    if (currentPlan) {
+      // Extract plan information
+      const planTitle = currentPlan.title || '4-Week Fitness Plan';
+      const totalWeeks = currentPlan.weeks?.length || 0;
+      const currentWeek = currentPlan.currentWeek || 1;
+      
+      // Extract workout types from plan
+      const workoutTypes = this.extractWorkoutTypesFromPlan(currentPlan);
+      const availableDays = this.extractAvailableDaysFromPlan(currentPlan);
+      
+      planContext = `
+CURRENT ACTIVE PLAN:
+- Plan: ${planTitle}
+- Progress: Week ${currentWeek} of ${totalWeeks}
+- Workout Types: ${workoutTypes}
+- Available Days: ${availableDays}
+- Plan Status: ${currentPlan.status || 'Active'}
+
+You have access to the user's current workout plan and can reference specific workouts, progress, and upcoming sessions.`;
+    } else {
+      planContext = `
+CURRENT PLAN STATUS: No active plan found. The user may be new or hasn't generated a plan yet.
+You can help them understand how to create a personalized workout plan.`;
+    }
+
+    // Extract preferences from user profile if available
+    if (userProfile?.workout_preferences) {
+      const prefs = userProfile.workout_preferences;
+      preferencesContext = `
+USER PREFERENCES:
+- Workout Duration: ${prefs.workoutDuration || 'Not specified'} minutes
+- Difficulty Level: ${prefs.difficultyLevel || 'Not specified'}
+- Primary Goal: ${prefs.primaryGoal || 'Not specified'}
+- Preferred Time: ${prefs.preferredTime || 'Not specified'}
+- Equipment Available: ${prefs.hasEquipment ? Object.entries(prefs.hasEquipment).filter(([_, available]) => available).map(([equipment, _]) => equipment).join(', ') : 'None'}`;
+    }
+
     return `You are StrideCoach, an expert AI fitness coach specializing in walking and strength training. 
 
-User Profile:
+USER PROFILE:
 - Name: ${userProfile?.display_name || 'User'}
 - Age: ${userProfile?.age || 'Not specified'}
 - Height: ${userProfile?.height_cm || 'Not specified'} cm
@@ -209,14 +249,60 @@ User Profile:
 - Workout Schedule: ${userProfile?.schedule?.days?.join(', ') || 'Not specified'}
 - Equipment: ${userProfile?.equipment?.join(', ') || 'None'}
 
-Guidelines:
+${planContext}
+
+${preferencesContext}
+
+GUIDELINES:
 - Be encouraging, supportive, and professional
+- Reference their current plan and progress when relevant
 - Focus on walking and strength training
 - Provide safe, evidence-based advice
 - Keep responses concise but helpful
 - Ask clarifying questions when needed
 - Never provide medical advice
-- Encourage gradual progress and consistency`;
+- Encourage gradual progress and consistency
+- If they ask about workouts, reference their current plan if available`;
+  }
+
+  // Extract workout types from current plan
+  extractWorkoutTypesFromPlan(plan) {
+    if (!plan?.weeks) return 'Not specified';
+    
+    const workoutTypes = new Set();
+    plan.weeks.forEach(week => {
+      if (week.days) {
+        week.days.forEach(day => {
+          if (day.workouts) {
+            day.workouts.forEach(workout => {
+              if (workout.type) {
+                workoutTypes.add(workout.type);
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    return Array.from(workoutTypes).join(', ') || 'Not specified';
+  }
+
+  // Extract available days from current plan
+  extractAvailableDaysFromPlan(plan) {
+    if (!plan?.weeks) return 'Not specified';
+    
+    const availableDays = new Set();
+    plan.weeks.forEach(week => {
+      if (week.days) {
+        week.days.forEach(day => {
+          if (day.dayName) {
+            availableDays.add(day.dayName);
+          }
+        });
+      }
+    });
+    
+    return Array.from(availableDays).join(', ') || 'Not specified';
   }
 
   // Build workout plan prompt

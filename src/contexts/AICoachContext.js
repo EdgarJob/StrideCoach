@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { aiCoach } from '../services/aiService';
 import { useAuth } from './AuthContext';
+import { usePlan } from './PlanContext';
 
 const AICoachContext = createContext();
 
@@ -14,6 +15,7 @@ export const useAICoach = () => {
 
 export const AICoachProvider = ({ children }) => {
   const { user, profile } = useAuth();
+  const { currentPlan } = usePlan();
   const [isLoading, setIsLoading] = useState(false);
   const [dailyMotivation, setDailyMotivation] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
@@ -70,8 +72,8 @@ export const AICoachProvider = ({ children }) => {
       
       setConversationHistory(prev => [...prev, userMessage]);
 
-      // Get AI response
-      const result = await aiCoach.chatWithCoach(message, profile);
+      // Get AI response with plan and preferences context
+      const result = await aiCoach.chatWithCoach(message, profile, currentPlan);
       
       if (result.success) {
         const aiMessage = {

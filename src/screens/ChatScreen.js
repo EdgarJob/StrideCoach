@@ -17,11 +17,9 @@ import { useAICoach } from '../contexts/AICoachContext';
 export default function ChatScreen() {
   const { 
     isLoading, 
-    dailyMotivation, 
     conversationHistory, 
     sendMessage: sendAIMessage, 
-    clearConversation,
-    refreshMotivation 
+    clearConversation
   } = useAICoach();
   
   const [inputText, setInputText] = useState('');
@@ -98,22 +96,10 @@ export default function ChatScreen() {
         </View>
         <TouchableOpacity onPress={handleClearChat} style={styles.clearButton}>
           <Ionicons name="trash-outline" size={20} color="#6B7280" />
+          <Text style={styles.clearButtonText}>Clear</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Daily Motivation */}
-      {dailyMotivation && (
-        <View style={styles.motivationCard}>
-          <View style={styles.motivationHeader}>
-            <Ionicons name="sunny" size={20} color="#F59E0B" />
-            <Text style={styles.motivationTitle}>Daily Motivation</Text>
-            <TouchableOpacity onPress={refreshMotivation}>
-              <Ionicons name="refresh" size={16} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.motivationText}>{dailyMotivation}</Text>
-        </View>
-      )}
 
       {/* Chat Messages */}
       <ScrollView 
@@ -210,31 +196,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   clearButton: {
-    padding: 8,
-  },
-  motivationCard: {
-    backgroundColor: '#FEF3C7',
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-  },
-  motivationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    padding: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
   },
-  motivationTitle: {
+  clearButtonText: {
+    marginLeft: 4,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#92400E',
-    marginLeft: 8,
-    flex: 1,
-  },
-  motivationText: {
-    fontSize: 14,
-    color: '#92400E',
-    lineHeight: 20,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   messagesContainer: {
     flex: 1,
