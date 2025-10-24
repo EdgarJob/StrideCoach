@@ -91,35 +91,70 @@ export default function PlansScreen() {
     try {
       // Step 1: Preparing your preferences
       setGenerationStep('Preparing your workout preferences...');
-      setGenerationProgress(10);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setGenerationProgress(5);
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       // Step 2: Analyzing your fitness goals
       setGenerationStep('Analyzing your fitness goals and requirements...');
-      setGenerationProgress(25);
+      setGenerationProgress(12);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 3: Processing your available days
+      setGenerationStep('Processing your available workout days...');
+      setGenerationProgress(20);
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // Step 4: Connecting to AI fitness coach...
+      setGenerationStep('Connecting to AI fitness coach...');
+      setGenerationProgress(30);
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Step 5: Sending your preferences to AI model...
+      setGenerationStep('Sending your preferences to AI model...');
+      setGenerationProgress(40);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 6: AI is analyzing your profile...
+      setGenerationStep('AI is analyzing your profile and goals...');
+      setGenerationProgress(50);
+      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      // Step 7: Drafting your personalized workouts...
+      setGenerationStep('Drafting your personalized workouts...');
+      setGenerationProgress(65);
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Step 3: Creating personalized workouts
-      setGenerationStep('Creating personalized workouts for each day...');
-      setGenerationProgress(50);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Step 7.5: Adding variety to workouts...
+      setGenerationStep('Adding variety and progression to workouts...');
+      setGenerationProgress(70);
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Step 4: Generating the plan
-      setGenerationStep('Generating your 4-week fitness plan...');
-      setGenerationProgress(75);
+      // Step 8: Creating your 4-week plan structure...
+      setGenerationStep('Creating your 4-week plan structure...');
+      setGenerationProgress(80);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 8.5: Optimizing workout timing...
+      setGenerationStep('Optimizing workout timing and rest periods...');
+      setGenerationProgress(85);
+      await new Promise(resolve => setTimeout(resolve, 700));
+
+      // Step 9: Finalizing your fitness plan...
+      setGenerationStep('Finalizing your fitness plan...');
+      setGenerationProgress(90);
       const result = await generatePlan(preferences);
       
       console.log('Plan generation result:', result);
       
       if (result.success) {
         console.log('✅ Plan generated successfully!');
-        setGenerationStep('Finalizing your plan...');
-        setGenerationProgress(90);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setGenerationStep('Saving your personalized plan...');
+        setGenerationProgress(95);
+        await new Promise(resolve => setTimeout(resolve, 600));
         
-        setGenerationStep('Plan generated successfully!');
+        setGenerationStep('Plan generated successfully! 🎉');
         setGenerationProgress(100);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1200));
         
         setShowGenerationModal(false);
         Alert.alert(
