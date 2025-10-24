@@ -38,10 +38,26 @@ export default function PlansScreen() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [showGenerationModal, setShowGenerationModal] = useState(false);
   
-  // Check if user is new (no preferences set) and show modal
+  // ✅ Check if user is truly new (just signed up) and hasn't seen onboarding
   useEffect(() => {
-    if (profile && !profile.workout_preferences) {
-      // User has no preferences set, show new user modal
+    if (!profile) return;
+    
+    // Create a unique key for this user's onboarding status
+    const onboardingKey = `onboarding_completed_${profile.id}`;
+    const hasCompletedOnboarding = localStorage.getItem(onboardingKey);
+    
+    console.log('🎯 Checking onboarding status:', {
+      userId: profile.id,
+      hasPreferences: !!profile.workout_preferences,
+      hasCompletedOnboarding: !!hasCompletedOnboarding,
+      shouldShowModal: !hasCompletedOnboarding && !profile.workout_preferences
+    });
+    
+    // Only show modal if:
+    // 1. User has never completed onboarding for this account AND
+    // 2. User has no workout preferences set
+    if (!hasCompletedOnboarding && !profile.workout_preferences) {
+      console.log('🌟 New user detected - showing onboarding modal');
       setShowNewUserModal(true);
     }
   }, [profile]);
@@ -204,6 +220,12 @@ export default function PlansScreen() {
     // Always generate a plan when preferences are saved
     if (showNewUserModal) {
       setShowNewUserModal(false);
+      // Mark onboarding as completed
+      if (profile) {
+        const onboardingKey = `onboarding_completed_${profile.id}`;
+        localStorage.setItem(onboardingKey, 'true');
+        console.log('✅ Onboarding marked as completed for user:', profile.id);
+      }
     }
     
     // Generate plan with the new preferences
@@ -500,7 +522,15 @@ export default function PlansScreen() {
           {/* Close Button */}
           <TouchableOpacity
             style={styles.newUserCloseButton}
-            onPress={() => setShowNewUserModal(false)}
+            onPress={() => {
+              setShowNewUserModal(false);
+              // Mark onboarding as completed even if user closes without setting preferences
+              if (profile) {
+                const onboardingKey = `onboarding_completed_${profile.id}`;
+                localStorage.setItem(onboardingKey, 'true');
+                console.log('✅ Onboarding dismissed for user:', profile.id);
+              }
+            }}
           >
             <Ionicons name="close" size={24} color="#6B7280" />
           </TouchableOpacity>
@@ -540,6 +570,8 @@ export default function PlansScreen() {
               onPress={() => {
                 setShowNewUserModal(false);
                 setShowPreferences(true);
+                // Don't mark onboarding as completed yet - 
+                // it will be marked when preferences are saved
               }}
             >
               <Ionicons name="settings" size={20} color="#FFFFFF" />
