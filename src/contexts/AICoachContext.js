@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { aiCoach } from '../services/aiService';
 import { useAuth } from './AuthContext';
 import { usePlan } from './PlanContext';
@@ -165,8 +165,8 @@ export const AICoachProvider = ({ children }) => {
     return () => clearInterval(interval);
   }, [profile, loadDailyMotivation]);
 
-  // Send message to AI coach
-  const sendMessage = async (message) => {
+  // Send message to AI coach (wrapped in useCallback)
+  const sendMessage = useCallback(async (message) => {
     if (!message.trim() || !profile) return;
 
     try {
@@ -214,10 +214,10 @@ export const AICoachProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [profile, currentPlan]);
 
-  // Generate workout plan
-  const generateWorkoutPlan = async (preferences = {}) => {
+  // Generate workout plan (wrapped in useCallback)
+  const generateWorkoutPlan = useCallback(async (preferences = {}) => {
     if (!profile) return;
 
     try {
@@ -236,27 +236,32 @@ export const AICoachProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [profile]);
 
-  // Clear conversation
-  const clearConversation = () => {
-    console.log('Clearing conversation...');
+  // Clear conversation (wrapped in useCallback to maintain stable reference)
+  const clearConversation = useCallback(() => {
+    console.log('🗑️ Clearing conversation...');
     console.log('Current conversation history length:', conversationHistory.length);
     
-    // Clear both the service history and the state
+    // Clear the service history first
     aiCoach.clearHistory();
+    console.log('✅ aiCoach service history cleared');
+    
+    // Then clear the React state
     setConversationHistory([]);
+    console.log('✅ React state cleared');
     
     console.log('Conversation cleared successfully');
     console.log('aiCoach history after clear:', aiCoach.getHistory().length);
-  };
+  }, [conversationHistory]); // Include conversationHistory to get current length
 
   // Refresh daily motivation with optional progress data
-  const refreshMotivation = (progressData = null) => {
+  const refreshMotivation = useCallback((progressData = null) => {
     loadDailyMotivation(progressData);
-  };
+  }, [loadDailyMotivation]);
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     isLoading,
     dailyMotivation,
     conversationHistory,
@@ -266,7 +271,17 @@ export const AICoachProvider = ({ children }) => {
     clearConversation,
     refreshMotivation,
     loadDailyMotivation // Export for direct use with progress data
-  };
+  }), [
+    isLoading,
+    dailyMotivation,
+    conversationHistory,
+    workoutPlan,
+    sendMessage,
+    generateWorkoutPlan,
+    clearConversation,
+    refreshMotivation,
+    loadDailyMotivation
+  ]);
 
   return (
     <AICoachContext.Provider value={value}>
