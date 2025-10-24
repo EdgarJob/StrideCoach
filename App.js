@@ -115,11 +115,11 @@ function AppNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <AICoachProvider>
-        <PlanProvider>
+      <PlanProvider>
+        <AICoachProvider>
           <AppNavigator />
-        </PlanProvider>
-      </AICoachProvider>
+        </AICoachProvider>
+      </PlanProvider>
     </AuthProvider>
   );
 }

@@ -109,8 +109,6 @@ const styles = StyleSheet.create({
   percentageText: {
     fontWeight: '700',
     color: '#1F2937',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
   },
 });
