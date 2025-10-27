@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
@@ -131,30 +130,32 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Modern Header with Gradient Background */}
+      {/* Light Blue Gradient Header */}
       <View style={styles.headerGradient}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <Text style={styles.greeting}>Hi, {profile?.display_name || 'Athlete'}! 👋</Text>
               <View style={styles.levelBadge}>
-                <Ionicons name="trophy" size={14} color="#FFF" />
-                <Text style={styles.levelText}>Level {Math.floor(progressData.completedWorkouts / 7) + 1}</Text>
+                <Ionicons name="star" size={12} color="#FF9500" />
+                <Text style={styles.levelText}>Lv {Math.floor(progressData.completedWorkouts / 7) + 1}</Text>
+                <Text style={styles.levelDot}>•</Text>
+                <Ionicons name="trophy" size={12} color="#FF9500" />
+                <Text style={styles.levelText}>Beginner</Text>
               </View>
             </View>
             <TouchableOpacity 
               style={styles.profileButton}
               onPress={() => navigation.navigate('Profile')}
             >
-              <Ionicons name="person-circle" size={40} color="#FFF" />
+              <Ionicons name="person-circle" size={40} color="#5AB3C1" />
             </TouchableOpacity>
           </View>
 
           {/* Fitness Mascot Character */}
           <View style={styles.mascotContainer}>
-            <Text style={styles.mascotEmoji}>🏃‍♂️</Text>
-            <View style={styles.speechBubble}>
-              <Text style={styles.speechText}>Keep pushing!</Text>
+            <View style={styles.mascotCircle}>
+              <Text style={styles.mascotEmoji}>🏃‍♂️</Text>
             </View>
           </View>
         </View>
@@ -170,26 +171,18 @@ export default function HomeScreen() {
             onPress={() => navigation.navigate('Plans')}
             activeOpacity={0.9}
           >
-            <LinearGradient
-              colors={['#3B82F6', '#2563EB']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.ctaGradient}
-            >
-              <View style={styles.ctaContent}>
-                <View style={styles.ctaLeft}>
-                  <Text style={styles.ctaTitle}>Ready to Start</Text>
-                  <Text style={styles.ctaSubtitle}>Your Challenge</Text>
-                  <View style={styles.ctaButton}>
-                    <Text style={styles.ctaButtonText}>Next</Text>
-                    <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
-                  </View>
-                </View>
-                <View style={styles.ctaRight}>
-                  <Text style={styles.ctaIcon}>💪</Text>
+            <View style={styles.ctaContent}>
+              <View style={styles.ctaLeft}>
+                <Text style={styles.ctaTitle}>Ready to Start</Text>
+                <Text style={styles.ctaSubtitle}>Your Challenge</Text>
+                <View style={styles.ctaButton}>
+                  <Text style={styles.ctaButtonText}>Next</Text>
                 </View>
               </View>
-            </LinearGradient>
+              <View style={styles.ctaRight}>
+                <Text style={styles.ctaIcon}>💪</Text>
+              </View>
+            </View>
           </TouchableOpacity>
         )}
 
@@ -197,22 +190,22 @@ export default function HomeScreen() {
         <View style={styles.quickAccessGrid}>
           {/* Plans Card */}
           <TouchableOpacity 
-            style={[styles.quickCard, styles.plansCard]}
+            style={styles.quickCard}
             onPress={() => navigation.navigate('Plans')}
           >
             <View style={styles.quickIconContainer}>
-              <Text style={styles.quickIcon}>📋</Text>
+              <Ionicons name="calendar" size={28} color="#5AB3C1" />
             </View>
             <Text style={styles.quickCardTitle}>Plans</Text>
           </TouchableOpacity>
 
           {/* Progress Card */}
           <TouchableOpacity 
-            style={[styles.quickCard, styles.progressCard]}
+            style={styles.quickCard}
             onPress={() => navigation.navigate('Progress')}
           >
             <View style={styles.quickIconContainer}>
-              <Text style={styles.quickIcon}>📊</Text>
+              <Ionicons name="trending-up" size={28} color="#5AB3C1" />
             </View>
             <Text style={styles.quickCardTitle}>Progress</Text>
           </TouchableOpacity>
@@ -224,24 +217,18 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('Chat')}
           activeOpacity={0.9}
         >
-          <LinearGradient
-            colors={['#34D399', '#10B981']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.coachGradient}
-          >
-            <View style={styles.coachContent}>
-              <View style={styles.coachLeft}>
-                <Text style={styles.coachIcon}>🤖</Text>
-              </View>
-              <View style={styles.coachRight}>
-                <Text style={styles.coachTitle}>AI Coach</Text>
-                <Text style={styles.coachSubtitle}>
-                  {dailyMotivation || "I'm here to help you reach your goals!"}
-                </Text>
-              </View>
+          <View style={styles.coachContent}>
+            <View style={styles.coachIconWrapper}>
+              <Text style={styles.coachIcon}>🤖</Text>
             </View>
-          </LinearGradient>
+            <View style={styles.coachTextContent}>
+              <Text style={styles.coachTitle}>AI Coach</Text>
+              <Text style={styles.coachSubtitle} numberOfLines={2}>
+                {dailyMotivation || "I'm here to help you reach your goals!"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#5AB3C1" />
+          </View>
         </TouchableOpacity>
 
         {/* Stats Overview Card */}
@@ -249,45 +236,48 @@ export default function HomeScreen() {
           <View style={styles.statsHeader}>
             <Text style={styles.statsTitle}>Your Stats</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Progress')}>
-              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
           <View style={styles.statsGrid}>
             {/* Workouts Completed */}
-            <View style={[styles.statItem, { backgroundColor: '#FEF3C7' }]}>
-              <View style={styles.statIconWrapper}>
-                <Ionicons name="checkmark-circle" size={24} color="#F59E0B" />
+            <View style={styles.statItem}>
+              <View style={[styles.statIconWrapper, { backgroundColor: '#FFF3CD' }]}>
+                <Ionicons name="checkmark-circle" size={22} color="#FF9500" />
               </View>
               <Text style={styles.statNumber}>{progressData.completedWorkouts}</Text>
-              <Text style={styles.statLabel}>Workouts Done</Text>
-              <View style={styles.statProgress}>
-                <View style={[styles.statProgressBar, { width: `${Math.min(completionPercentage, 100)}%`, backgroundColor: '#F59E0B' }]} />
+              <Text style={styles.statLabel}>Completed</Text>
+              <View style={styles.statProgressBar}>
+                <View style={[styles.statProgressFill, { width: `${Math.min(completionPercentage, 100)}%` }]} />
               </View>
+              <Text style={styles.statPercentage}>{completionPercentage}%</Text>
             </View>
 
             {/* Streak */}
-            <View style={[styles.statItem, { backgroundColor: '#FEE2E2' }]}>
-              <View style={styles.statIconWrapper}>
-                <Ionicons name="flame" size={24} color="#EF4444" />
+            <View style={styles.statItem}>
+              <View style={[styles.statIconWrapper, { backgroundColor: '#FFE5E5' }]}>
+                <Ionicons name="flame" size={22} color="#FF4444" />
               </View>
               <Text style={styles.statNumber}>{progressData.streak}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
-              <View style={styles.statProgress}>
-                <View style={[styles.statProgressBar, { width: `${Math.min((progressData.streak / 7) * 100, 100)}%`, backgroundColor: '#EF4444' }]} />
+              <Text style={styles.statLabel}>Streak</Text>
+              <View style={styles.statProgressBar}>
+                <View style={[styles.statProgressFill, { width: `${Math.min((progressData.streak / 7) * 100, 100)}%` }]} />
               </View>
+              <Text style={styles.statPercentage}>{progressData.streak}/7</Text>
             </View>
 
-            {/* Points/Badges */}
-            <View style={[styles.statItem, { backgroundColor: '#E0E7FF' }]}>
-              <View style={styles.statIconWrapper}>
-                <Ionicons name="trophy" size={24} color="#6366F1" />
+            {/* Badge */}
+            <View style={styles.statItem}>
+              <View style={[styles.statIconWrapper, { backgroundColor: '#E5F3FF' }]}>
+                <Ionicons name="trophy" size={22} color="#5AB3C1" />
               </View>
-              <Text style={styles.statNumber}>{completionPercentage}</Text>
-              <Text style={styles.statLabel}>Completion %</Text>
-              <View style={styles.statProgress}>
-                <View style={[styles.statProgressBar, { width: `${completionPercentage}%`, backgroundColor: '#6366F1' }]} />
+              <Text style={styles.statNumber}>{Math.floor(progressData.completedWorkouts / 7) + 1}</Text>
+              <Text style={styles.statLabel}>Level</Text>
+              <View style={styles.statProgressBar}>
+                <View style={[styles.statProgressFill, { width: '60%' }]} />
               </View>
+              <Text style={styles.statPercentage}>60%</Text>
             </View>
           </View>
         </View>
@@ -296,20 +286,32 @@ export default function HomeScreen() {
         <View style={styles.achievementsCard}>
           <View style={styles.achievementsHeader}>
             <Text style={styles.achievementsTitle}>Achievements</Text>
-            <Text style={styles.achievementsCount}>3/12</Text>
+            <View style={styles.achievementBadgeWrapper}>
+              <Ionicons name="trophy" size={14} color="#FF9500" />
+              <Text style={styles.achievementsCount}>3/12</Text>
+            </View>
           </View>
+          
           <View style={styles.achievementsList}>
             <View style={styles.achievementBadge}>
-              <Text style={styles.badgeEmoji}>🌟</Text>
+              <View style={styles.achievementBadgeCircle}>
+                <Text style={styles.badgeEmoji}>1️⃣</Text>
+              </View>
               <Text style={styles.badgeName}>First Steps</Text>
             </View>
+            
             <View style={styles.achievementBadge}>
-              <Text style={styles.badgeEmoji}>🔥</Text>
-              <Text style={styles.badgeName}>On Fire</Text>
+              <View style={styles.achievementBadgeCircle}>
+                <Text style={styles.badgeEmoji}>5️⃣</Text>
+              </View>
+              <Text style={styles.badgeName}>5 Day Streak</Text>
             </View>
+            
             <View style={[styles.achievementBadge, styles.lockedBadge]}>
-              <Text style={styles.badgeEmoji}>🏆</Text>
-              <Text style={styles.badgeName}>Champion</Text>
+              <View style={[styles.achievementBadgeCircle, styles.lockedCircle]}>
+                <Ionicons name="lock-closed" size={24} color="#D1D5DB" />
+              </View>
+              <Text style={[styles.badgeName, styles.lockedText]}>Unlocked</Text>
             </View>
           </View>
         </View>
@@ -358,13 +360,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F5F8FA',
   },
   headerGradient: {
-    backgroundColor: '#6366F1',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    paddingBottom: 32,
+    backgroundColor: '#D4EFFF',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    paddingBottom: 24,
   },
   header: {
     paddingTop: 60,
@@ -373,64 +375,66 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
   headerLeft: {
     flex: 1,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#1F2937',
     marginBottom: 8,
   },
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     alignSelf: 'flex-start',
   },
   levelText: {
-    color: '#FFF',
+    color: '#1F2937',
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  levelDot: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    marginHorizontal: 6,
   },
   profileButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   mascotContainer: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  mascotCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   mascotEmoji: {
-    fontSize: 80,
-    marginBottom: 8,
-  },
-  speechBubble: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  speechText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6366F1',
+    fontSize: 60,
   },
   content: {
     paddingHorizontal: 20,
@@ -438,17 +442,15 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   ctaCard: {
+    backgroundColor: '#5AB3C1',
     borderRadius: 20,
-    overflow: 'hidden',
+    padding: 24,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
-  },
-  ctaGradient: {
-    padding: 24,
   },
   ctaContent: {
     flexDirection: 'row',
@@ -467,14 +469,12 @@ const styles = StyleSheet.create({
   ctaSubtitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
+    color: '#FFFFFF',
     marginBottom: 16,
   },
   ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 20,
     alignSelf: 'flex-start',
@@ -482,13 +482,12 @@ const styles = StyleSheet.create({
   ctaButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#3B82F6',
-    marginRight: 8,
+    color: '#5AB3C1',
   },
   ctaRight: {
     width: 80,
     height: 80,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
@@ -505,7 +504,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
+    padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -513,23 +512,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  plansCard: {
-    backgroundColor: '#DBEAFE',
-  },
-  progressCard: {
-    backgroundColor: '#FECACA',
-  },
   quickIconContainer: {
     width: 60,
     height: 60,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E5F3FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-  },
-  quickIcon: {
-    fontSize: 32,
   },
   quickCardTitle: {
     fontSize: 16,
@@ -537,27 +527,25 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   coachCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    overflow: 'hidden',
+    padding: 20,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 3,
-  },
-  coachGradient: {
-    padding: 20,
   },
   coachContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  coachLeft: {
+  coachIconWrapper: {
     width: 60,
     height: 60,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: '#E5F3FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -565,19 +553,20 @@ const styles = StyleSheet.create({
   coachIcon: {
     fontSize: 32,
   },
-  coachRight: {
+  coachTextContent: {
     flex: 1,
+    marginRight: 12,
   },
   coachTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 6,
+    color: '#1F2937',
+    marginBottom: 4,
   },
   coachSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.95)',
-    lineHeight: 20,
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 18,
   },
   statsCard: {
     backgroundColor: '#FFFFFF',
@@ -607,41 +596,44 @@ const styles = StyleSheet.create({
   },
   statItem: {
     flex: 1,
-    borderRadius: 16,
-    padding: 16,
     alignItems: 'center',
   },
   statIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1F2937',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 11,
-    color: '#6B7280',
-    textAlign: 'center',
+    color: '#9CA3AF',
     marginBottom: 8,
   },
-  statProgress: {
-    width: '100%',
-    height: 4,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
   statProgressBar: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  statProgressFill: {
     height: '100%',
-    borderRadius: 2,
+    backgroundColor: '#FF9500',
+    borderRadius: 3,
+  },
+  statPercentage: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    fontWeight: '600',
   },
   achievementsCard: {
     backgroundColor: '#FFFFFF',
@@ -665,10 +657,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
   },
+  achievementBadgeWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3CD',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
   achievementsCount: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#1F2937',
+    marginLeft: 4,
   },
   achievementsList: {
     flexDirection: 'row',
@@ -676,23 +677,34 @@ const styles = StyleSheet.create({
   },
   achievementBadge: {
     flex: 1,
-    backgroundColor: '#FEF3C7',
-    borderRadius: 16,
-    padding: 16,
     alignItems: 'center',
   },
   lockedBadge: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
-  badgeEmoji: {
-    fontSize: 32,
+  achievementBadgeCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FFF3CD',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
   },
+  lockedCircle: {
+    backgroundColor: '#F3F4F6',
+  },
+  badgeEmoji: {
+    fontSize: 28,
+  },
   badgeName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
+  },
+  lockedText: {
+    color: '#9CA3AF',
   },
   calendarCard: {
     backgroundColor: '#FFFFFF',
@@ -719,7 +731,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6366F1',
+    color: '#5AB3C1',
   },
   noPlanCard: {
     backgroundColor: '#FFFFFF',
@@ -753,7 +765,7 @@ const styles = StyleSheet.create({
   createPlanButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#6366F1',
+    backgroundColor: '#FF9500',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
