@@ -55,29 +55,63 @@ function AppNavigator() {
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
+            let iconSize = focused ? 28 : 24;
 
             if (route.name === 'Home') {
               iconName = focused ? 'home' : 'home-outline';
             } else if (route.name === 'Plans') {
               iconName = focused ? 'calendar' : 'calendar-outline';
             } else if (route.name === 'Progress') {
-              iconName = focused ? 'bar-chart' : 'bar-chart-outline';
+              iconName = focused ? 'trending-up' : 'trending-up-outline';
             } else if (route.name === 'Chat') {
-              iconName = focused ? 'bulb' : 'bulb-outline';
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
             } else if (route.name === 'Profile') {
-              iconName = focused ? 'person' : 'person-outline';
+              iconName = focused ? 'person-circle' : 'person-circle-outline';
             }
 
-            return <Ionicons name={iconName} size={size} color={color} />;
+            return (
+              <View style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 60,
+                height: 40,
+                borderRadius: 12,
+                backgroundColor: focused ? '#E5F3FF' : 'transparent',
+              }}>
+                <Ionicons name={iconName} size={iconSize} color={color} />
+              </View>
+            );
           },
           tabBarActiveTintColor: '#5AB3C1',
-          tabBarInactiveTintColor: 'gray',
+          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarStyle: {
+            height: 65,
+            paddingBottom: 8,
+            paddingTop: 8,
+            borderTopWidth: 1,
+            borderTopColor: '#E5E7EB',
+            backgroundColor: '#FFFFFF',
+            elevation: 8,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+            marginTop: -4,
+          },
           headerStyle: {
             backgroundColor: '#5AB3C1',
+            height: 70,
+            elevation: 0,
+            shadowOpacity: 0,
           },
           headerTintColor: '#fff',
           headerTitleStyle: {
             fontWeight: 'bold',
+            fontSize: 20,
           },
         })}
       >
