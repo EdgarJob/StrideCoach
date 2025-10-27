@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text, Animated } from 'react-native';
 
 // Import our screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -54,6 +54,25 @@ function AppNavigator() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
+            const scaleValue = React.useRef(new Animated.Value(focused ? 1 : 0.9)).current;
+            const opacityValue = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
+
+            React.useEffect(() => {
+              Animated.parallel([
+                Animated.spring(scaleValue, {
+                  toValue: focused ? 1 : 0.9,
+                  friction: 5,
+                  tension: 100,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(opacityValue, {
+                  toValue: focused ? 1 : 0,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+              ]).start();
+            }, [focused]);
+
             let iconName;
             let iconSize = focused ? 28 : 24;
 
@@ -70,16 +89,18 @@ function AppNavigator() {
             }
 
             return (
-              <View style={{
+              <Animated.View style={{
                 alignItems: 'center',
                 justifyContent: 'center',
                 width: 60,
                 height: 40,
                 borderRadius: 12,
                 backgroundColor: focused ? '#E5F3FF' : 'transparent',
+                transform: [{ scale: scaleValue }],
+                opacity: Animated.add(opacityValue, 0.3),
               }}>
                 <Ionicons name={iconName} size={iconSize} color={color} />
-              </View>
+              </Animated.View>
             );
           },
           tabBarActiveTintColor: '#5AB3C1',
@@ -113,32 +134,50 @@ function AppNavigator() {
             fontWeight: 'bold',
             fontSize: 20,
           },
+          // Smooth screen transitions
+          animation: 'shift',
+          animationDuration: 300,
         })}
       >
         <Tab.Screen 
           name="Home" 
           component={HomeScreen} 
-          options={{ title: 'StrideCoach' }}
+          options={{ 
+            title: 'StrideCoach',
+            tabBarLabel: 'Home',
+          }}
         />
         <Tab.Screen 
           name="Plans" 
           component={PlansScreen} 
-          options={{ title: 'Plans' }}
+          options={{ 
+            title: 'Plans',
+            tabBarLabel: 'Plans',
+          }}
         />
         <Tab.Screen 
           name="Progress" 
           component={ProgressScreen} 
-          options={{ title: 'Progress' }}
+          options={{ 
+            title: 'Progress',
+            tabBarLabel: 'Progress',
+          }}
         />
         <Tab.Screen 
           name="Chat" 
           component={ChatScreen} 
-          options={{ title: 'AI Coach' }}
+          options={{ 
+            title: 'AI Coach',
+            tabBarLabel: 'AI Coach',
+          }}
         />
         <Tab.Screen 
           name="Profile" 
           component={ProfileScreen} 
-          options={{ title: 'Profile' }}
+          options={{ 
+            title: 'Profile',
+            tabBarLabel: 'Profile',
+          }}
         />
       </Tab.Navigator>
     </NavigationContainer>
