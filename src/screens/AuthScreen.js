@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -143,9 +144,19 @@ export default function AuthScreen() {
               placeholder="Password"
               value={formData.password}
               onChangeText={(text) => setFormData({ ...formData, password: text })}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
             />
+            <TouchableOpacity 
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.passwordToggle}
+            >
+              <Ionicons 
+                name={showPassword ? "eye-off" : "eye"} 
+                size={20} 
+                color="#6B7280" 
+              />
+            </TouchableOpacity>
           </View>
 
           {/* Profile fields for signup */}
@@ -309,6 +320,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: '#1F2937',
+    outlineStyle: 'none', // Remove blue focus outline
+  },
+  passwordToggle: {
+    padding: 8,
   },
   row: {
     flexDirection: 'row',
