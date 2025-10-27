@@ -33,7 +33,7 @@ function AppNavigator() {
     console.log('Showing loading screen');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color="#5AB3C1" />
         <Text style={{ marginTop: 16, fontSize: 16, color: '#6B7280' }}>Loading...</Text>
       </View>
     );
@@ -70,10 +70,10 @@ function AppNavigator() {
 
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: '#4F46E5',
+          tabBarActiveTintColor: '#5AB3C1',
           tabBarInactiveTintColor: 'gray',
           headerStyle: {
-            backgroundColor: '#4F46E5',
+            backgroundColor: '#5AB3C1',
           },
           headerTintColor: '#fff',
           headerTitleStyle: {

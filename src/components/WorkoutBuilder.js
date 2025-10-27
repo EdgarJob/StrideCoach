@@ -211,7 +211,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
             onPress={() => addExercise(workout.id)}
             style={styles.addExerciseButton}
           >
-            <Ionicons name="add" size={16} color="#4F46E5" />
+            <Ionicons name="add" size={16} color="#5AB3C1" />
             <Text style={styles.addExerciseText}>Add Exercise</Text>
           </TouchableOpacity>
         </View>
@@ -332,7 +332,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
                 {weekNames[weekDays.indexOf(currentDay)]} Workouts
               </Text>
               <TouchableOpacity onPress={addWorkout} style={styles.addWorkoutButton}>
-                <Ionicons name="add" size={20} color="#4F46E5" />
+                <Ionicons name="add" size={20} color="#5AB3C1" />
                 <Text style={styles.addWorkoutText}>Add Workout</Text>
               </TouchableOpacity>
             </View>
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   saveButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -439,8 +439,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weekButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
+    borderColor: '#5AB3C1',
   },
   weekButtonText: {
     fontSize: 14,
@@ -469,8 +469,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   dayButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
+    borderColor: '#5AB3C1',
   },
   dayButtonText: {
     fontSize: 12,
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addWorkoutText: {
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontWeight: '600',
     marginLeft: 4,
   },
@@ -563,8 +563,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   typeButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
+    borderColor: '#5AB3C1',
   },
   typeButtonText: {
     fontSize: 12,
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   addExerciseText: {
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,

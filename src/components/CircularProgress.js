@@ -23,7 +23,7 @@ export default function CircularProgress({
   progress = 0, 
   size = 120, 
   strokeWidth = 8,
-  color = '#4F46E5',
+  color = '#5AB3C1',
   backgroundColor = '#E5E7EB',
   showPercentage = true 
 }) {

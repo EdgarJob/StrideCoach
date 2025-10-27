@@ -305,7 +305,7 @@ ${exerciseList}
           <Ionicons 
             name="chevron-back" 
             size={24} 
-            color={selectedWeek === 0 ? '#CBD5E1' : '#4F46E5'} 
+            color={selectedWeek === 0 ? '#CBD5E1' : '#5AB3C1'} 
           />
         </TouchableOpacity>
 
@@ -327,7 +327,7 @@ ${exerciseList}
           <Ionicons 
             name="chevron-forward" 
             size={24} 
-            color={selectedWeek === plan.weeks.length - 1 ? '#CBD5E1' : '#4F46E5'} 
+            color={selectedWeek === plan.weeks.length - 1 ? '#CBD5E1' : '#5AB3C1'} 
           />
         </TouchableOpacity>
       </View>
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   },
   weekDotActive: {
     width: 24,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
   },
   calendarScrollView: {
     width: '100%',
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   dayHeader: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     paddingVertical: 10,
     alignItems: 'center',
   },
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   },
   durationText: {
     fontSize: 11,
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontWeight: '600',
   },
   difficultyBadge: {
@@ -546,12 +546,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: 4,
     borderLeftWidth: 3,
-    borderLeftColor: '#4F46E5',  // Indigo accent
+    borderLeftColor: '#5AB3C1',  // Indigo accent
   },
   repeatGroupTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#4F46E5',  // Indigo text
+    color: '#5AB3C1',  // Indigo text
     fontStyle: 'italic',
   },
   exercisesHeader: {
@@ -574,12 +574,12 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     borderRadius: 6,
     borderLeftWidth: 3,
-    borderLeftColor: '#4F46E5',
+    borderLeftColor: '#5AB3C1',
   },
   exerciseNumber: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#4F46E5',
+    color: '#5AB3C1',
     marginRight: 10,
     marginTop: 2,
   },
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   },
   moreExercisesText: {
     fontSize: 12,
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontWeight: '600',
   },
 });
