@@ -41,7 +41,7 @@ export default function ProgressScreen() {
         <Text style={styles.cardTitle}>Progress Overview</Text>
         <View style={styles.overviewGrid}>
           <View style={styles.overviewItem}>
-            <Ionicons name="walk" size={32} color="#4F46E5" />
+            <Ionicons name="walk" size={32} color="#5AB3C1" />
             <Text style={styles.overviewNumber}>24.5</Text>
             <Text style={styles.overviewLabel}>Miles Walked</Text>
           </View>
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   periodButtonActive: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
   },
   periodButtonText: {
     fontSize: 14,

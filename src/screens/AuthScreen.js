@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#4F46E5',
+    color: '#5AB3C1',
     marginBottom: 8,
   },
   subtitle: {
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     width: '48%',
   },
   submitButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toggleButtonText: {
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontSize: 14,
     fontWeight: '500',
   },

@@ -105,7 +105,7 @@ export default function ChatScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="bulb" size={24} color="#4F46E5" />
+          <Ionicons name="bulb" size={24} color="#5AB3C1" />
           <Text style={styles.headerTitle}>AI Coach</Text>
         </View>
         <TouchableOpacity onPress={handleClearChat} style={styles.clearButton}>
@@ -124,7 +124,7 @@ export default function ChatScreen() {
       >
         {conversationHistory.length === 0 ? (
           <View style={styles.welcomeContainer}>
-            <Ionicons name="chatbubbles" size={48} color="#4F46E5" />
+            <Ionicons name="chatbubbles" size={48} color="#5AB3C1" />
             <Text style={styles.welcomeTitle}>Welcome to your AI Coach!</Text>
             <Text style={styles.welcomeSubtitle}>
               I'm here to help you with your fitness journey. Ask me about workouts, 
@@ -148,7 +148,7 @@ export default function ChatScreen() {
         
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#4F46E5" />
+            <ActivityIndicator size="small" color="#5AB3C1" />
             <Text style={styles.loadingText}>AI Coach is thinking...</Text>
           </View>
         )}
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     fontSize: 14,
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontWeight: '500',
   },
   loadingContainer: {
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   userBubble: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     borderBottomRightRadius: 4,
   },
   aiBubble: {
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   sendButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     width: 44,
     height: 44,
     borderRadius: 22,

@@ -38,7 +38,7 @@ export default function ProfileScreen() {
       {/* Profile Header */}
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
-          <Ionicons name="person" size={40} color="#4F46E5" />
+          <Ionicons name="person" size={40} color="#5AB3C1" />
         </View>
         <Text style={styles.userName}>{user?.user_metadata?.display_name || 'User'}</Text>
         <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
@@ -73,7 +73,7 @@ export default function ProfileScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
-            <Ionicons name="notifications" size={24} color="#4F46E5" />
+            <Ionicons name="notifications" size={24} color="#5AB3C1" />
             <View style={styles.settingText}>
               <Text style={styles.settingTitle}>Notifications</Text>
               <Text style={styles.settingSubtitle}>Workout reminders</Text>
@@ -82,7 +82,7 @@ export default function ProfileScreen() {
           <Switch
             value={notificationsEnabled}
             onValueChange={setNotificationsEnabled}
-            trackColor={{ false: '#D1D5DB', true: '#4F46E5' }}
+            trackColor={{ false: '#D1D5DB', true: '#5AB3C1' }}
             thumbColor={notificationsEnabled ? '#FFFFFF' : '#F3F4F6'}
           />
         </View>
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   profileHeader: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     padding: 24,
     alignItems: 'center',
   },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   connectButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#4F46E5',
+    color: '#5AB3C1',
   },
   connectButtonTextConnected: {
     color: '#FFFFFF',

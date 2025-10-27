@@ -236,7 +236,7 @@ export default function PlansScreen() {
     if (!currentPlan) {
       return (
         <View style={styles.noPlanContainer}>
-          <Ionicons name="fitness" size={64} color="#4F46E5" />
+          <Ionicons name="fitness" size={64} color="#5AB3C1" />
           <Text style={styles.noPlanTitle}>No Active Plan</Text>
           <Text style={styles.noPlanSubtitle}>
             Generate a personalized 4-week fitness plan to get started with your fitness journey!
@@ -267,7 +267,7 @@ export default function PlansScreen() {
         {/* Plan Header */}
         <View style={styles.planHeader}>
           <View style={styles.planTitleContainer}>
-            <Ionicons name="calendar" size={24} color="#4F46E5" />
+            <Ionicons name="calendar" size={24} color="#5AB3C1" />
             <Text style={styles.planTitle}>{currentPlan.title}</Text>
           </View>
           <TouchableOpacity
@@ -275,7 +275,7 @@ export default function PlansScreen() {
             onPress={() => setShowPlanModal(true)}
           >
             <Text style={styles.viewDetailsText}>View Details</Text>
-            <Ionicons name="chevron-forward" size={16} color="#4F46E5" />
+            <Ionicons name="chevron-forward" size={16} color="#5AB3C1" />
           </TouchableOpacity>
         </View>
 
@@ -330,7 +330,7 @@ export default function PlansScreen() {
         {/* Workout Calendar - Shows the plan in a visual calendar format */}
         <View style={styles.calendarSection}>
           <View style={styles.calendarHeader}>
-            <Ionicons name="calendar" size={24} color="#4F46E5" />
+            <Ionicons name="calendar" size={24} color="#5AB3C1" />
             <Text style={styles.calendarTitle}>Your Workout Calendar</Text>
           </View>
           <WorkoutCalendar plan={currentPlan} />
@@ -409,13 +409,13 @@ export default function PlansScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="calendar" size={24} color="#4F46E5" />
+        <Ionicons name="calendar" size={24} color="#5AB3C1" />
         <Text style={styles.headerTitle}>Workout Plans</Text>
       </View>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color="#5AB3C1" />
           <Text style={styles.loadingText}>Loading your plan...</Text>
         </View>
       ) : error ? (
@@ -437,7 +437,7 @@ export default function PlansScreen() {
           style={styles.actionButton}
           onPress={() => setShowPreferences(true)}
         >
-          <Ionicons name="settings" size={20} color="#4F46E5" />
+          <Ionicons name="settings" size={20} color="#5AB3C1" />
           <Text style={styles.actionButtonText}>Preferences</Text>
         </TouchableOpacity>
         
@@ -490,7 +490,7 @@ export default function PlansScreen() {
                 progress={generationProgress}
                 size={140}
                 strokeWidth={10}
-                color="#4F46E5"
+                color="#5AB3C1"
                 backgroundColor="#E5E7EB"
                 showPercentage={true}
               />
@@ -536,7 +536,7 @@ export default function PlansScreen() {
           </TouchableOpacity>
           
           <View style={styles.newUserHeader}>
-            <Ionicons name="sparkles" size={48} color="#4F46E5" />
+            <Ionicons name="sparkles" size={48} color="#5AB3C1" />
             <Text style={styles.newUserTitle}>Welcome to StrideCoach!</Text>
             <Text style={styles.newUserSubtitle}>
               Let's set up your personalized workout preferences to create your perfect fitness plan.
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   generateButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewDetailsText: {
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontSize: 14,
     fontWeight: '600',
     marginRight: 4,
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
   progressPercentage: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4F46E5',
+    color: '#5AB3C1',
   },
   progressBar: {
     height: 8,
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     borderRadius: 4,
   },
   progressText: {
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
   },
   weekProgressFill: {
     height: '100%',
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     borderRadius: 2,
   },
   weekProgressText: {
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   primaryButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryButtonText: {
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -897,7 +897,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   workoutBadge: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -959,7 +959,7 @@ const styles = StyleSheet.create({
   },
   moreExercises: {
     fontSize: 12,
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontStyle: 'italic',
   },
   actionButtons: {
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4F46E5',
+    color: '#5AB3C1',
     marginLeft: 6,
   },
   calendarSection: {
@@ -1120,7 +1120,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   newUserButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,

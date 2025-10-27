@@ -112,7 +112,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             <Ionicons 
               name={getWorkoutIcon(type)} 
               size={24} 
-              color={selected ? '#4F46E5' : '#9CA3AF'} 
+              color={selected ? '#5AB3C1' : '#9CA3AF'} 
             />
             <Text style={[styles.optionText, selected && styles.selectedText]}>
               {getWorkoutLabel(type)}
@@ -122,7 +122,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             value={selected}
             onValueChange={(value) => updatePreference('workoutTypes', type, value)}
             trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-            thumbColor={selected ? '#4F46E5' : '#F3F4F6'}
+            thumbColor={selected ? '#5AB3C1' : '#F3F4F6'}
           />
         </TouchableOpacity>
       ))}
@@ -149,7 +149,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
                 <Ionicons 
                   name="calendar" 
                   size={24} 
-                  color={selected ? '#4F46E5' : '#9CA3AF'} 
+                  color={selected ? '#5AB3C1' : '#9CA3AF'} 
                 />
                 <Text style={[styles.optionText, selected && styles.selectedText]}>
                   {day.charAt(0).toUpperCase() + day.slice(1)}
@@ -159,7 +159,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
                 value={selected}
                 onValueChange={(value) => updatePreference('availableDays', day, value)}
                 trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-                thumbColor={selected ? '#4F46E5' : '#F3F4F6'}
+                thumbColor={selected ? '#5AB3C1' : '#F3F4F6'}
               />
             </TouchableOpacity>
           );
@@ -267,7 +267,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             <Ionicons 
               name={getEquipmentIcon(equipment)} 
               size={24} 
-              color={selected ? '#4F46E5' : '#9CA3AF'} 
+              color={selected ? '#5AB3C1' : '#9CA3AF'} 
             />
             <Text style={[styles.optionText, selected && styles.selectedText]}>
               {getEquipmentLabel(equipment)}
@@ -277,7 +277,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             value={selected}
             onValueChange={(value) => updatePreference('hasEquipment', equipment, value)}
             trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-            thumbColor={selected ? '#4F46E5' : '#F3F4F6'}
+            thumbColor={selected ? '#5AB3C1' : '#F3F4F6'}
           />
         </TouchableOpacity>
       ))}
@@ -305,7 +305,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             <Ionicons 
               name={time.icon} 
               size={24} 
-              color={preferences.preferredTime === time.key ? '#FFFFFF' : '#4F46E5'} 
+              color={preferences.preferredTime === time.key ? '#FFFFFF' : '#5AB3C1'} 
             />
             <Text style={[
               styles.timingButtonText,
@@ -326,7 +326,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
           style={styles.backButton}
           onPress={onCancel || (() => {})}
         >
-          <Ionicons name="arrow-back" size={24} color="#4F46E5" />
+          <Ionicons name="arrow-back" size={24} color="#5AB3C1" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Workout Preferences</Text>
         <TouchableOpacity
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   generateButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   selectedText: {
-    color: '#4F46E5',
+    color: '#5AB3C1',
     fontWeight: '600',
   },
   settingRow: {
@@ -508,8 +508,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   durationButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
+    borderColor: '#5AB3C1',
   },
   durationButtonText: {
     fontSize: 14,
@@ -533,8 +533,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   difficultyButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
+    borderColor: '#5AB3C1',
   },
   difficultyButtonText: {
     fontSize: 14,
@@ -558,8 +558,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   goalButtonSelected: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
+    borderColor: '#5AB3C1',
   },
   goalButtonText: {
     fontSize: 12,
@@ -581,16 +581,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#4F46E5',
+    borderColor: '#5AB3C1',
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
   },
   timingButtonSelected: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#5AB3C1',
   },
   timingButtonText: {
     fontSize: 14,
-    color: '#4F46E5',
+    color: '#5AB3C1',
     marginTop: 4,
     fontWeight: '600',
   },
