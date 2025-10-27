@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,11 +7,9 @@ import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
 import WorkoutCalendar from '../components/WorkoutCalendar';
 
-const { width } = Dimensions.get('window');
-
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const { profile, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { dailyMotivation } = useAICoach();
   const { currentPlan, getTodaysWorkout, getPlanProgress } = usePlan();
 
@@ -100,7 +98,11 @@ export default function HomeScreen() {
       if (!day || !day.is_workout_day) continue;
       
       if (day.progress && day.progress.completed) {
-        return checkDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const daysAgo = daysDiff - i;
+        if (daysAgo === 0) return 'Today';
+        if (daysAgo === 1) return 'Yesterday';
+        if (daysAgo < 7) return `${daysAgo} days ago`;
+        return checkDate.toLocaleDateString();
       }
     }
     
@@ -124,235 +126,189 @@ export default function HomeScreen() {
   };
 
   const progressData = calculateRealProgressData();
-  const completionPercentage = progressData.totalWorkouts > 0 
-    ? Math.round((progressData.completedWorkouts / progressData.totalWorkouts) * 100) 
-    : 0;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Light Blue Gradient Header */}
-      <View style={styles.headerGradient}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.greeting}>Hi, {profile?.display_name || 'Athlete'}! 👋</Text>
-              <View style={styles.levelBadge}>
-                <Ionicons name="star" size={12} color="#FF9500" />
-                <Text style={styles.levelText}>Lv {Math.floor(progressData.completedWorkouts / 7) + 1}</Text>
-                <Text style={styles.levelDot}>•</Text>
-                <Ionicons name="trophy" size={12} color="#FF9500" />
-                <Text style={styles.levelText}>Beginner</Text>
-              </View>
+    <ScrollView style={styles.container}>
+      {/* Enhanced Header with Modern Buttons */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.greeting}>Good morning! 👋</Text>
+          <Text style={styles.subtitle}>Ready for your workout today?</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.modernHeaderButton} 
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <View style={styles.iconCircle}>
+              <Ionicons name="person" size={20} color="#5AB3C1" />
             </View>
-            <TouchableOpacity 
-              style={styles.profileButton}
-              onPress={() => navigation.navigate('Profile')}
-            >
-              <Ionicons name="person-circle" size={40} color="#5AB3C1" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Fitness Mascot Character */}
-          <View style={styles.mascotContainer}>
-            <View style={styles.mascotCircle}>
-              <Text style={styles.mascotEmoji}>🏃‍♂️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.modernHeaderButton} 
+            onPress={handleSignOut}
+          >
+            <View style={styles.iconCircle}>
+              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Main Content */}
-      <View style={styles.content}>
-        
-        {/* Ready to Start Card - Primary CTA */}
-        {currentPlan && (
-          <TouchableOpacity 
-            style={styles.ctaCard}
-            onPress={() => navigation.navigate('Plans')}
-            activeOpacity={0.9}
-          >
-            <View style={styles.ctaContent}>
-              <View style={styles.ctaLeft}>
-                <Text style={styles.ctaTitle}>Ready to Start</Text>
-                <Text style={styles.ctaSubtitle}>Your Challenge</Text>
-                <View style={styles.ctaButton}>
-                  <Text style={styles.ctaButtonText}>Next</Text>
-                </View>
-              </View>
-              <View style={styles.ctaRight}>
-                <Text style={styles.ctaIcon}>💪</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* Quick Access Grid */}
-        <View style={styles.quickAccessGrid}>
-          {/* Plans Card */}
-          <TouchableOpacity 
-            style={styles.quickCard}
-            onPress={() => navigation.navigate('Plans')}
-          >
-            <View style={styles.quickIconContainer}>
-              <Ionicons name="calendar" size={28} color="#5AB3C1" />
-            </View>
-            <Text style={styles.quickCardTitle}>Plans</Text>
-          </TouchableOpacity>
-
-          {/* Progress Card */}
-          <TouchableOpacity 
-            style={styles.quickCard}
-            onPress={() => navigation.navigate('Progress')}
-          >
-            <View style={styles.quickIconContainer}>
-              <Ionicons name="trending-up" size={28} color="#5AB3C1" />
-            </View>
-            <Text style={styles.quickCardTitle}>Progress</Text>
-          </TouchableOpacity>
+      {/* Modern Progress Dashboard */}
+      <View style={styles.progressCard}>
+        <View style={styles.cardHeader}>
+          <View style={styles.headerTitleGroup}>
+            <Ionicons name="analytics" size={24} color="#5AB3C1" />
+            <Text style={styles.cardTitle}>This Week's Progress</Text>
+          </View>
+          <View style={styles.weekBadge}>
+            <Text style={styles.weekBadgeText}>Week {progressData.weekNumber}</Text>
+          </View>
         </View>
 
-        {/* AI Coach Card */}
-        <TouchableOpacity 
-          style={styles.coachCard}
-          onPress={() => navigation.navigate('Chat')}
-          activeOpacity={0.9}
-        >
-          <View style={styles.coachContent}>
-            <View style={styles.coachIconWrapper}>
-              <Text style={styles.coachIcon}>🤖</Text>
+        {/* Visual Progress Bar with Stats */}
+        <View style={styles.progressVisualization}>
+          {/* Circular Progress Indicator */}
+          <View style={styles.circularProgress}>
+            <View style={styles.progressCircleOuter}>
+              <View style={styles.progressCircleInner}>
+                <Text style={styles.bigPercentage}>{progressData.totalWorkouts > 0 ? Math.round((progressData.completedWorkouts / progressData.totalWorkouts) * 100) : 0}%</Text>
+                <Text style={styles.percentageLabel}>Complete</Text>
+              </View>
             </View>
-            <View style={styles.coachTextContent}>
-              <Text style={styles.coachTitle}>AI Coach</Text>
-              <Text style={styles.coachSubtitle} numberOfLines={2}>
-                {dailyMotivation || "I'm here to help you reach your goals!"}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#5AB3C1" />
-          </View>
-        </TouchableOpacity>
-
-        {/* Stats Overview Card */}
-        <View style={styles.statsCard}>
-          <View style={styles.statsHeader}>
-            <Text style={styles.statsTitle}>Your Stats</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Progress')}>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
+            <View style={styles.progressDot1} />
+            <View style={styles.progressDot2} />
+            <View style={styles.progressDot3} />
           </View>
 
+          {/* Stats Grid */}
           <View style={styles.statsGrid}>
-            {/* Workouts Completed */}
-            <View style={styles.statItem}>
-              <View style={[styles.statIconWrapper, { backgroundColor: '#FFF3CD' }]}>
-                <Ionicons name="checkmark-circle" size={22} color="#FF9500" />
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
               </View>
-              <Text style={styles.statNumber}>{progressData.completedWorkouts}</Text>
+              <Text style={styles.statNumber}>{progressData.completedWorkouts}/{progressData.totalWorkouts}</Text>
               <Text style={styles.statLabel}>Completed</Text>
-              <View style={styles.statProgressBar}>
-                <View style={[styles.statProgressFill, { width: `${Math.min(completionPercentage, 100)}%` }]} />
-              </View>
-              <Text style={styles.statPercentage}>{completionPercentage}%</Text>
             </View>
-
-            {/* Streak */}
-            <View style={styles.statItem}>
-              <View style={[styles.statIconWrapper, { backgroundColor: '#FFE5E5' }]}>
-                <Ionicons name="flame" size={22} color="#FF4444" />
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="flame" size={24} color="#FF9500" />
               </View>
               <Text style={styles.statNumber}>{progressData.streak}</Text>
-              <Text style={styles.statLabel}>Streak</Text>
-              <View style={styles.statProgressBar}>
-                <View style={[styles.statProgressFill, { width: `${Math.min((progressData.streak / 7) * 100, 100)}%` }]} />
-              </View>
-              <Text style={styles.statPercentage}>{progressData.streak}/7</Text>
+              <Text style={styles.statLabel}>Day Streak</Text>
             </View>
-
-            {/* Badge */}
-            <View style={styles.statItem}>
-              <View style={[styles.statIconWrapper, { backgroundColor: '#E5F3FF' }]}>
-                <Ionicons name="trophy" size={22} color="#5AB3C1" />
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="trophy" size={24} color="#5AB3C1" />
               </View>
-              <Text style={styles.statNumber}>{Math.floor(progressData.completedWorkouts / 7) + 1}</Text>
-              <Text style={styles.statLabel}>Level</Text>
-              <View style={styles.statProgressBar}>
-                <View style={[styles.statProgressFill, { width: '60%' }]} />
-              </View>
-              <Text style={styles.statPercentage}>60%</Text>
+              <Text style={styles.statNumber}>{Math.max(0, progressData.totalWorkouts - progressData.completedWorkouts)}</Text>
+              <Text style={styles.statLabel}>Left</Text>
             </View>
           </View>
         </View>
 
-        {/* Achievements Preview */}
-        <View style={styles.achievementsCard}>
-          <View style={styles.achievementsHeader}>
-            <Text style={styles.achievementsTitle}>Achievements</Text>
-            <View style={styles.achievementBadgeWrapper}>
-              <Ionicons name="trophy" size={14} color="#FF9500" />
-              <Text style={styles.achievementsCount}>3/12</Text>
-            </View>
+        {/* Progress Bar */}
+        <View style={styles.linearProgressContainer}>
+          <View style={styles.linearProgressBackground}>
+            <View style={[styles.linearProgressFill, { 
+              width: progressData.totalWorkouts > 0 ? `${Math.round((progressData.completedWorkouts / progressData.totalWorkouts) * 100)}%` : '0%' 
+            }]} />
           </View>
-          
-          <View style={styles.achievementsList}>
-            <View style={styles.achievementBadge}>
-              <View style={styles.achievementBadgeCircle}>
-                <Text style={styles.badgeEmoji}>1️⃣</Text>
-              </View>
-              <Text style={styles.badgeName}>First Steps</Text>
-            </View>
-            
-            <View style={styles.achievementBadge}>
-              <View style={styles.achievementBadgeCircle}>
-                <Text style={styles.badgeEmoji}>5️⃣</Text>
-              </View>
-              <Text style={styles.badgeName}>5 Day Streak</Text>
-            </View>
-            
-            <View style={[styles.achievementBadge, styles.lockedBadge]}>
-              <View style={[styles.achievementBadgeCircle, styles.lockedCircle]}>
-                <Ionicons name="lock-closed" size={24} color="#D1D5DB" />
-              </View>
-              <Text style={[styles.badgeName, styles.lockedText]}>Unlocked</Text>
-            </View>
-          </View>
+          <Text style={styles.progressPercentText}>
+            {progressData.totalWorkouts > 0 ? Math.round((progressData.completedWorkouts / progressData.totalWorkouts) * 100) : 0}% to weekly goal
+          </Text>
         </View>
-
-        {/* Workout Calendar */}
-        {currentPlan ? (
-          <View style={styles.calendarCard}>
-            <View style={styles.calendarHeader}>
-              <Text style={styles.calendarTitle}>Your Workout Plan</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Plans')}>
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
-            </View>
-            <WorkoutCalendar plan={currentPlan} />
+        
+        {/* AI Coach Motivation Message */}
+        <View style={styles.coachMotivation}>
+          <View style={styles.coachMessageBubble}>
+            <Ionicons name="chatbubble-ellipses" size={20} color="#5AB3C1" />
+            <Text style={styles.coachMotivationText}>
+              "{dailyMotivation || "The only bad workout is the one that didn't happen. You've got this! 💪"}"
+            </Text>
           </View>
-        ) : (
-          <View style={styles.noPlanCard}>
-            <Text style={styles.noPlanIcon}>📅</Text>
-            <Text style={styles.noPlanTitle}>No Active Plan</Text>
+          <TouchableOpacity 
+            style={styles.askCoachButton}
+            onPress={() => navigation.navigate('Chat')}
+          >
+            <Ionicons name="chatbubble" size={16} color="#FFFFFF" />
+            <Text style={styles.askCoachButtonText}>Let's chat about your progress</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Workout Calendar */}
+      {currentPlan ? (
+        <View style={styles.calendarCard}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar" size={24} color="#5AB3C1" />
+            <Text style={styles.cardTitle}>Your Workout Calendar</Text>
+            <TouchableOpacity 
+              style={styles.viewAllButton}
+              onPress={() => navigation.navigate('Plans')}
+            >
+              <Text style={styles.viewAllText}>View Full Plan</Text>
+              <Ionicons name="chevron-forward" size={16} color="#5AB3C1" />
+            </TouchableOpacity>
+          </View>
+          <WorkoutCalendar plan={currentPlan} />
+        </View>
+      ) : (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar" size={24} color="#5AB3C1" />
+            <Text style={styles.cardTitle}>No Active Plan</Text>
+          </View>
+          <View style={styles.noPlanContent}>
             <Text style={styles.noPlanText}>
-              Start your fitness journey with a personalized plan!
+              Start your fitness journey with a personalized 4-week plan!
             </Text>
             <TouchableOpacity 
               style={styles.createPlanButton}
               onPress={() => navigation.navigate('Plans')}
             >
               <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-              <Text style={styles.createPlanButtonText}>Create Your Plan</Text>
+              <Text style={styles.createPlanButtonText}>Create Plan</Text>
             </TouchableOpacity>
           </View>
-        )}
+        </View>
+      )}
 
-        {/* Sign Out Button */}
-        <TouchableOpacity 
-          style={styles.signOutButton}
-          onPress={handleSignOut}
-        >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+      {/* Today's Health Snapshot */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Ionicons name="pulse" size={24} color="#EF4444" />
+          <Text style={styles.cardTitle}>Today's Health</Text>
+        </View>
+        <View style={styles.healthGrid}>
+          <View style={styles.healthItem}>
+            <Ionicons name="walk" size={20} color="#5AB3C1" />
+            <Text style={styles.healthNumber}>8,420</Text>
+            <Text style={styles.healthLabel}>Steps</Text>
+            <Text style={styles.healthTarget}>/ 10,000</Text>
+          </View>
+          <View style={styles.healthItem}>
+            <Ionicons name="bed" size={20} color="#5AB3C1" />
+            <Text style={styles.healthNumber}>7.2h</Text>
+            <Text style={styles.healthLabel}>Sleep</Text>
+            <Text style={styles.healthTarget}>Good</Text>
+          </View>
+          <View style={styles.healthItem}>
+            <Ionicons name="heart" size={20} color="#EF4444" />
+            <Text style={styles.healthNumber}>62</Text>
+            <Text style={styles.healthLabel}>Resting HR</Text>
+            <Text style={styles.healthTarget}>Excellent</Text>
+          </View>
+          <View style={styles.healthItem}>
+            <Ionicons name="time" size={20} color="#10B981" />
+            <Text style={styles.healthNumber}>45</Text>
+            <Text style={styles.healthLabel}>Active Min</Text>
+            <Text style={styles.healthTarget}>/ 60</Text>
+          </View>
+        </View>
       </View>
+
     </ScrollView>
   );
 }
@@ -360,400 +316,261 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F8FA',
-  },
-  headerGradient: {
-    backgroundColor: '#D4EFFF',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    paddingBottom: 24,
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-  },
-  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#5AB3C1',
   },
   headerLeft: {
     flex: 1,
   },
-  greeting: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  levelBadge: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
+    gap: 12,
   },
-  levelText: {
-    color: '#1F2937',
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
+  modernHeaderButton: {
+    padding: 4,
   },
-  levelDot: {
-    color: '#9CA3AF',
-    fontSize: 12,
-    marginHorizontal: 6,
-  },
-  profileButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mascotContainer: {
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  mascotCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  mascotEmoji: {
-    fontSize: 60,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 100,
-  },
-  ctaCard: {
-    backgroundColor: '#5AB3C1',
+  iconCircle: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  ctaContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
   },
-  ctaLeft: {
-    flex: 1,
-  },
-  ctaTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 4,
   },
-  ctaSubtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 16,
+  subtitle: {
+    fontSize: 16,
+    color: '#E8F6F8',
   },
-  ctaButton: {
+  progressCard: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
+    margin: 16,
+    padding: 20,
+    borderRadius: 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
   },
-  ctaButtonText: {
-    fontSize: 15,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  headerTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  weekBadge: {
+    backgroundColor: '#E5F3FF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  weekBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
     color: '#5AB3C1',
   },
-  ctaRight: {
-    width: 80,
-    height: 80,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ctaIcon: {
-    fontSize: 48,
-  },
-  quickAccessGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 20,
-  },
-  quickCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  quickIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    backgroundColor: '#E5F3FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quickCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  coachCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  coachContent: {
+  progressVisualization: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 20,
+    marginBottom: 20,
   },
-  coachIconWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    backgroundColor: '#E5F3FF',
+  circularProgress: {
+    width: 120,
+    height: 120,
+    position: 'relative',
+  },
+  progressCircleOuter: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
-  coachIcon: {
-    fontSize: 32,
+  progressCircleInner: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 8,
+    borderColor: '#5AB3C1',
   },
-  coachTextContent: {
-    flex: 1,
-    marginRight: 12,
+  bigPercentage: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#5AB3C1',
   },
-  coachTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  coachSubtitle: {
-    fontSize: 13,
+  percentageLabel: {
+    fontSize: 12,
     color: '#6B7280',
-    lineHeight: 18,
+    marginTop: 4,
   },
-  statsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
+  progressDot1: {
+    position: 'absolute',
+    top: 10,
+    right: 20,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#5AB3C1',
   },
-  statsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  progressDot2: {
+    position: 'absolute',
+    bottom: 20,
+    left: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF9500',
   },
-  statsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+  progressDot3: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
   },
   statsGrid: {
-    flexDirection: 'row',
+    flex: 1,
     gap: 12,
   },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginBottom: 8,
-  },
-  statProgressBar: {
-    width: '100%',
-    height: 6,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  statProgressFill: {
-    height: '100%',
-    backgroundColor: '#FF9500',
-    borderRadius: 3,
-  },
-  statPercentage: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    fontWeight: '600',
-  },
-  achievementsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  achievementsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  achievementsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  achievementBadgeWrapper: {
+  statCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF3CD',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    gap: 12,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
     borderRadius: 12,
   },
-  achievementsCount: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginLeft: 4,
-  },
-  achievementsList: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  achievementBadge: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  lockedBadge: {
-    opacity: 0.6,
-  },
-  achievementBadgeCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFF3CD',
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  linearProgressContainer: {
+    marginBottom: 20,
+  },
+  linearProgressBackground: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
     marginBottom: 8,
   },
-  lockedCircle: {
-    backgroundColor: '#F3F4F6',
+  linearProgressFill: {
+    height: '100%',
+    backgroundColor: '#5AB3C1',
+    borderRadius: 4,
   },
-  badgeEmoji: {
-    fontSize: 28,
-  },
-  badgeName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#1F2937',
+  progressPercentText: {
+    fontSize: 13,
+    color: '#6B7280',
     textAlign: 'center',
   },
-  lockedText: {
-    color: '#9CA3AF',
+  coachMotivation: {
+    gap: 12,
+  },
+  coachMessageBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 16,
+    backgroundColor: '#E5F3FF',
+    borderRadius: 12,
+  },
+  coachMotivationText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1F2937',
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
+  askCoachButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#FF9500',
+    borderRadius: 12,
+  },
+  askCoachButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   calendarCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    margin: 16,
+    marginTop: 0,
     padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    borderRadius: 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
-  calendarHeader: {
+  viewAllButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  calendarTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
+    gap: 4,
   },
   viewAllText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#5AB3C1',
   },
-  noPlanCard: {
+  card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    margin: 16,
+    marginTop: 0,
+    padding: 20,
+    borderRadius: 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
-  noPlanIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  noPlanTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
+  noPlanContent: {
+    alignItems: 'center',
+    paddingTop: 20,
   },
   noPlanText: {
     fontSize: 14,
@@ -765,30 +582,45 @@ const styles = StyleSheet.create({
   createPlanButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 24,
+    gap: 8,
     paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 24,
+    backgroundColor: '#FF9500',
+    borderRadius: 12,
   },
   createPlanButtonText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginLeft: 8,
   },
-  signOutButton: {
+  healthGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingVertical: 14,
-    borderRadius: 16,
-    marginBottom: 20,
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 16,
   },
-  signOutText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#EF4444',
-    marginLeft: 8,
+  healthItem: {
+    flex: 1,
+    minWidth: 140,
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+  },
+  healthNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  healthLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  healthTarget: {
+    fontSize: 11,
+    color: '#9CA3AF',
   },
 });
