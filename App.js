@@ -143,7 +143,7 @@ function AppNavigator() {
           name="Home" 
           component={HomeScreen} 
           options={{ 
-            title: 'StrideCoach',
+            headerShown: false,
             tabBarLabel: 'Home',
           }}
         />

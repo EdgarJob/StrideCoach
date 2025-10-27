@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,9 +9,18 @@ import WorkoutCalendar from '../components/WorkoutCalendar';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const { dailyMotivation } = useAICoach();
   const { currentPlan, getTodaysWorkout, getPlanProgress } = usePlan();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // Get time-appropriate greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   // Calculate real progress data from current plan
   const calculateRealProgressData = () => {
@@ -128,32 +137,86 @@ export default function HomeScreen() {
   const progressData = calculateRealProgressData();
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Enhanced Header with Modern Buttons */}
+    <View style={styles.container}>
+      {/* Colorful Header with Greeting and Profile Dropdown */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>Good morning! 👋</Text>
+          <Text style={styles.greeting}>{getGreeting()}! 👋</Text>
           <Text style={styles.subtitle}>Ready for your workout today?</Text>
         </View>
+        
+        {/* Profile Dropdown Menu */}
         <View style={styles.headerRight}>
           <TouchableOpacity 
-            style={styles.modernHeaderButton} 
-            onPress={() => navigation.navigate('Profile')}
+            style={styles.profileButton} 
+            onPress={() => setShowProfileMenu(!showProfileMenu)}
+            onBlur={() => setTimeout(() => setShowProfileMenu(false), 200)}
           >
-            <View style={styles.iconCircle}>
-              <Ionicons name="person" size={20} color="#5AB3C1" />
+            <View style={styles.profileAvatar}>
+              <Ionicons name="person" size={20} color="#FFFFFF" />
             </View>
+            <Ionicons 
+              name={showProfileMenu ? "chevron-up" : "chevron-down"} 
+              size={16} 
+              color="#FFFFFF" 
+              style={{ marginLeft: 4 }}
+            />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.modernHeaderButton} 
-            onPress={handleSignOut}
-          >
-            <View style={styles.iconCircle}>
-              <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+          
+          {/* Dropdown Menu */}
+          {showProfileMenu && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  navigation.navigate('Profile');
+                }}
+              >
+                <Ionicons name="person-outline" size={18} color="#1F2937" />
+                <Text style={styles.dropdownText}>My Profile</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  navigation.navigate('Plans');
+                }}
+              >
+                <Ionicons name="calendar-outline" size={18} color="#1F2937" />
+                <Text style={styles.dropdownText}>My Plans</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  navigation.navigate('Progress');
+                }}
+              >
+                <Ionicons name="trending-up-outline" size={18} color="#1F2937" />
+                <Text style={styles.dropdownText}>Progress</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.dropdownDivider} />
+              
+              <TouchableOpacity 
+                style={[styles.dropdownItem, styles.logoutItem]}
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  handleSignOut();
+                }}
+              >
+                <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                <Text style={[styles.dropdownText, styles.logoutText]}>Sign Out</Text>
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          )}
         </View>
       </View>
+
+      <ScrollView style={styles.scrollContent}>
 
       {/* Modern Progress Dashboard */}
       <View style={styles.progressCard}>
@@ -309,7 +372,8 @@ export default function HomeScreen() {
         </View>
       </View>
 
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -318,33 +382,91 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
+  scrollContent: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     backgroundColor: '#5AB3C1',
+    boxShadow: '0px 2px 8px rgba(90, 179, 193, 0.2)',
+    elevation: 3,
+    zIndex: 1000,
   },
   headerLeft: {
     flex: 1,
   },
+  // Profile Dropdown Styles
   headerRight: {
+    position: 'relative',
+    zIndex: 2000,
+  },
+  profileButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  modernHeaderButton: {
-    padding: 4,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+  profileAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 52,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
+    zIndex: 9999,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingVertical: 8,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    cursor: 'pointer',
+    backgroundColor: '#FFFFFF',
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 4,
+  },
+  logoutItem: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  logoutText: {
+    color: '#EF4444',
   },
   greeting: {
     fontSize: 24,
@@ -354,11 +476,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#E8F6F8',
+    color: '#FFFFFF',
+    opacity: 0.9,
   },
   progressCard: {
     backgroundColor: '#FFFFFF',
     margin: 16,
+    marginTop: 16,
     padding: 20,
     borderRadius: 16,
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
