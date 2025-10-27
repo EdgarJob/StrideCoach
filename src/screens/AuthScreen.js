@@ -239,15 +239,6 @@ export default function AuthScreen() {
                 <Ionicons name="logo-google" size={20} color="#DB4437" />
                 <Text style={styles.oauthButtonText}>Continue with Google</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.oauthButton, styles.appleButton]}
-                onPress={() => handleOAuthSignIn('apple')}
-                disabled={loading}
-              >
-                <Ionicons name="logo-apple" size={20} color="#000000" />
-                <Text style={styles.oauthButtonText}>Continue with Apple</Text>
-              </TouchableOpacity>
             </>
           )}
 
@@ -379,9 +370,6 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     borderColor: '#DB4437',
-  },
-  appleButton: {
-    borderColor: '#000000',
   },
   oauthButtonText: {
     marginLeft: 12,
