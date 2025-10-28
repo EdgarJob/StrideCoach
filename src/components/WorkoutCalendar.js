@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 /**
@@ -211,7 +211,12 @@ ${exerciseList}
             <Text style={styles.restDaySubtext}>Recovery & Relaxation</Text>
           </View>
         ) : (
-          <View style={styles.workoutContent}>
+          <View 
+            style={[
+              styles.workoutContent,
+              Platform.OS === 'web' && styles.workoutContentWeb
+            ]}
+          >
             {/* Workout type icon */}
             <Ionicons 
               name={workoutIcon.name} 
@@ -240,11 +245,10 @@ ${exerciseList}
               </View>
             </View>
 
-            {/* Exercise list - grouped by sections (condensed view) */}
+            {/* Exercise list - grouped by sections */}
             {day.workout.exercises && day.workout.exercises.length > 0 && (
               <View style={styles.exerciseSection}>
-                {/* Show first 4 exercises only, with "view more" indicator */}
-                {day.workout.exercises.slice(0, 4).map((exercise, idx) => {
+                {day.workout.exercises.map((exercise, idx) => {
                   // Check if this is a section header (from AI response or parsing)
                   const isSection = exercise.isSection === true;
                   const isRepeatGroup = exercise.isRepeatGroup === true;
@@ -342,24 +346,8 @@ ${exerciseList}
                     </View>
                   );
                 })}
-                
-                {/* Show "Tap for more" if there are more than 4 exercises */}
-                {day.workout.exercises.length > 4 && (
-                  <View style={styles.moreIndicator}>
-                    <Ionicons name="chevron-down-circle-outline" size={16} color="#5AB3C1" />
-                    <Text style={styles.moreText}>
-                      +{day.workout.exercises.length - 4} more - Tap for details
-                    </Text>
-                  </View>
-                )}
               </View>
             )}
-            
-            {/* Tap to view full details hint */}
-            <View style={styles.tapHint}>
-              <Ionicons name="hand-left-outline" size={14} color="#9CA3AF" />
-              <Text style={styles.tapHintText}>Tap for full workout</Text>
-            </View>
           </View>
         )}
       </TouchableOpacity>
@@ -604,40 +592,13 @@ const styles = StyleSheet.create({
   workoutContent: {
     padding: 12,
     flex: 1,
-    overflow: 'hidden', // Prevent content overflow
   },
-  moreIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#F0F9FF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-    borderStyle: 'dashed',
-  },
-  moreText: {
-    fontSize: 11,
-    color: '#0284C7',
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  tapHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 'auto',
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  tapHintText: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginLeft: 4,
-    fontStyle: 'italic',
+  workoutContentWeb: {
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+    scrollbarWidth: 'none', // Hide scrollbar on Firefox
+    msOverflowStyle: 'none', // Hide scrollbar on IE/Edge
   },
   workoutType: {
     fontSize: 17,
