@@ -62,7 +62,7 @@ export class AICoachService {
             content: prompt
           }
         ],
-        max_tokens: 1500,
+        max_tokens: 4000, // Increased from 1500 to ensure full 4-week plan generation
         temperature: 0.7
       });
 
