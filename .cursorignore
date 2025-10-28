@@ -1,0 +1,22 @@
+# Supabase Edge Functions - These are Deno files, not Node.js
+# They will be checked by Deno CLI when deployed
+supabase/functions/**/*.ts
+
+# Build outputs
+dist/
+web-build/
+node_modules/
+
+# Temp and debug files
+*.log
+*.tmp
+.expo/
+.expo-shared/
+
+# Test files that don't exist yet
+**/__tests__/
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+

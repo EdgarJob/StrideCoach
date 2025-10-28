@@ -1,14 +1,22 @@
 {
-  "deno.enable": false,
+  "deno.enable": true,
   "deno.enablePaths": [
-    "supabase/functions"
+    "./supabase/functions"
+  ],
+  "deno.disablePaths": [
+    "./src",
+    "./node_modules",
+    "./"
   ],
   "deno.lint": true,
   "deno.unstable": true,
+  "deno.config": "./supabase/functions/deno.json",
+  "deno.importMap": "./supabase/functions/deno.json",
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true
+  "files.associations": {
+    "**/supabase/functions/**/*.ts": "typescript"
+  }
 }
 
