@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -23,6 +23,11 @@ import { Ionicons } from '@expo/vector-icons';
 export default function WorkoutCalendar({ plan }) {
   // State to track which week is currently being displayed
   const [selectedWeek, setSelectedWeek] = useState(0);
+  // Ref to the horizontal ScrollView for programmatic scrolling
+  const scrollViewRef = useRef(null);
+  // State to track if we can scroll left/right (for showing/hiding arrows)
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   // If no plan exists, show a message
   if (!plan || !plan.weeks || plan.weeks.length === 0) {
@@ -74,6 +79,34 @@ export default function WorkoutCalendar({ plan }) {
       default:
         return { name: 'fitness-outline', color: '#6B7280' };
     }
+  };
+
+  /**
+   * Function to scroll the calendar left or right
+   */
+  const scrollCalendar = (direction) => {
+    if (scrollViewRef.current) {
+      const scrollAmount = 300; // Scroll by approximately one card width
+      scrollViewRef.current.scrollTo({
+        x: direction === 'left' 
+          ? Math.max(0, scrollViewRef.current.contentOffset?.x - scrollAmount || 0)
+          : (scrollViewRef.current.contentOffset?.x || 0) + scrollAmount,
+        animated: true,
+      });
+    }
+  };
+
+  /**
+   * Handle scroll event to update arrow visibility
+   */
+  const handleScroll = (event) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const scrollX = contentOffset.x;
+    const maxScrollX = contentSize.width - layoutMeasurement.width;
+    
+    // Update whether we can scroll in each direction
+    setCanScrollLeft(scrollX > 10); // Show left arrow if scrolled right
+    setCanScrollRight(scrollX < maxScrollX - 10); // Show right arrow if not at end
   };
 
   /**
@@ -345,16 +378,47 @@ ${exerciseList}
         ))}
       </View>
 
-      {/* Calendar grid showing all 7 days */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.calendarGrid}
-        style={styles.calendarScrollView}
-        centerContent={true}
-      >
-        {currentWeek.days && currentWeek.days.map((day, index) => renderDay(day, index))}
-      </ScrollView>
+      {/* Calendar grid showing all 7 days with navigation arrows */}
+      <View style={styles.calendarContainer}>
+        <ScrollView 
+          ref={scrollViewRef}
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.calendarGrid}
+          style={styles.calendarScrollView}
+          centerContent={true}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
+          {currentWeek.days && currentWeek.days.map((day, index) => renderDay(day, index))}
+        </ScrollView>
+
+        {/* Left Navigation Arrow */}
+        {canScrollLeft && (
+          <TouchableOpacity 
+            style={[styles.navArrow, styles.navArrowLeft]}
+            onPress={() => scrollCalendar('left')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.navArrowInner}>
+              <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Right Navigation Arrow */}
+        {canScrollRight && (
+          <TouchableOpacity 
+            style={[styles.navArrow, styles.navArrowRight]}
+            onPress={() => scrollCalendar('right')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.navArrowInner}>
+              <Ionicons name="chevron-forward" size={28} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -416,8 +480,36 @@ const styles = StyleSheet.create({
     width: 24,
     backgroundColor: '#5AB3C1',
   },
+  calendarContainer: {
+    position: 'relative',
+    width: '100%',
+  },
   calendarScrollView: {
     width: '100%',
+  },
+  navArrow: {
+    position: 'absolute',
+    top: '50%',
+    transform: [{ translateY: -30 }],
+    zIndex: 10,
+  },
+  navArrowLeft: {
+    left: 0,
+  },
+  navArrowRight: {
+    right: 0,
+  },
+  navArrowInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(90, 179, 193, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.25)',
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   calendarGrid: {
     flexDirection: 'row',
