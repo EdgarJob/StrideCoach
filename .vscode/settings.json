@@ -9,9 +9,8 @@
     "./"
   ],
   "deno.lint": true,
-  "deno.unstable": true,
+  "deno.unstable": [],
   "deno.config": "./supabase/functions/deno.json",
-  "deno.importMap": "./supabase/functions/deno.json",
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
