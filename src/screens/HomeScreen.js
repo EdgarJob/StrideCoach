@@ -283,23 +283,6 @@ export default function HomeScreen() {
           </Text>
         </View>
         
-        {/* AI Coach Motivation Message */}
-        <View style={styles.coachMotivation}>
-          <View style={styles.coachMessageBubble}>
-            <Ionicons name="chatbubble-ellipses" size={20} color="#5AB3C1" />
-            <Text style={styles.coachMotivationText}>
-              "{dailyMotivation || "The only bad workout is the one that didn't happen. You've got this! 💪"}"
-            </Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.askCoachButton}
-            onPress={() => navigation.navigate('Chat')}
-          >
-            <Ionicons name="chatbubble" size={16} color="#FFFFFF" />
-            <Text style={styles.askCoachButtonText}>Let's chat about your progress</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Compact Health Stats */}
         <View style={styles.compactHealthSection}>
           <View style={styles.compactHealthHeader}>
@@ -328,6 +311,23 @@ export default function HomeScreen() {
               <Text style={styles.compactHealthLabel}>active</Text>
             </View>
           </View>
+        </View>
+
+        {/* AI Coach Motivation Message */}
+        <View style={styles.coachMotivation}>
+          <View style={styles.coachMessageBubble}>
+            <Ionicons name="chatbubble-ellipses" size={20} color="#5AB3C1" />
+            <Text style={styles.coachMotivationText}>
+              "{dailyMotivation || "The only bad workout is the one that didn't happen. You've got this! 💪"}"
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.askCoachButton}
+            onPress={() => navigation.navigate('Chat')}
+          >
+            <Ionicons name="chatbubble" size={16} color="#FFFFFF" />
+            <Text style={styles.askCoachButtonText}>Let's chat about your progress</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
