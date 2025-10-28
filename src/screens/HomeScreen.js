@@ -11,7 +11,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const { signOut, profile } = useAuth();
   const { dailyMotivation } = useAICoach();
-  const { currentPlan, getTodaysWorkout, getPlanProgress } = usePlan();
+  const { currentPlan, getTodaysWorkout, getPlanProgress, isFromCache, loadCurrentPlan } = usePlan();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // Get time-appropriate greeting
@@ -224,9 +224,25 @@ export default function HomeScreen() {
           <View style={styles.headerTitleGroup}>
             <Ionicons name="analytics" size={24} color="#5AB3C1" />
             <Text style={styles.cardTitle}>This Week's Progress</Text>
+            {isFromCache && (
+              <View style={styles.cacheIndicator}>
+                <Ionicons name="cloud-offline" size={14} color="#9CA3AF" />
+                <Text style={styles.cacheText}>Offline</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.weekBadge}>
-            <Text style={styles.weekBadgeText}>Week {progressData.weekNumber}</Text>
+          <View style={styles.badgeGroup}>
+            <View style={styles.weekBadge}>
+              <Text style={styles.weekBadgeText}>Week {progressData.weekNumber}</Text>
+            </View>
+            {isFromCache && (
+              <TouchableOpacity 
+                style={styles.refreshButton}
+                onPress={() => loadCurrentPlan(true)}
+              >
+                <Ionicons name="refresh" size={18} color="#5AB3C1" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -500,6 +516,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1F2937',
   },
+  badgeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   weekBadge: {
     backgroundColor: '#E5F3FF',
     paddingHorizontal: 12,
@@ -510,6 +531,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#5AB3C1',
+  },
+  cacheIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  cacheText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  refreshButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E5F3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   progressVisualization: {
     flexDirection: 'row',

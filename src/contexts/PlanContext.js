@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { planService } from '../services/planService';
 import { useAuth } from './AuthContext';
+import cacheService from '../services/cacheService';
 
 const PlanContext = createContext();
 
@@ -17,6 +18,7 @@ export const PlanProvider = ({ children }) => {
   const [currentPlan, setCurrentPlan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isFromCache, setIsFromCache] = useState(false); // Track if data is from cache
 
   // Load current plan when user changes
   useEffect(() => {
@@ -27,28 +29,54 @@ export const PlanProvider = ({ children }) => {
     }
   }, [user, profile]);
 
-  // Load the user's current active plan
-  const loadCurrentPlan = async () => {
+  // Load the user's current active plan with cache-first strategy
+  const loadCurrentPlan = async (forceRefresh = false) => {
     if (!user) return;
 
     try {
       setIsLoading(true);
       setError(null);
       
-      const result = await planService.getCurrentPlan(user.id);
-      
-      if (result.success) {
-        setCurrentPlan(result.plan);
-      } else {
-        setCurrentPlan(null);
-        // Don't set error for no plan found - this is normal for new users
-        if (result.error && !result.error.includes('PGRST116')) {
-          setError(result.error);
-        }
+      // If forceRefresh is true, skip cache and fetch fresh data
+      if (forceRefresh) {
+        console.log('🔄 Force refresh - invalidating cache');
+        await cacheService.invalidateWorkoutPlan();
       }
+      
+      // Try cache-first strategy
+      const cacheResult = await cacheService.cacheFirst(
+        'workout_plan',
+        async () => {
+          const result = await planService.getCurrentPlan(user.id);
+          if (result.success) {
+            return result.plan;
+          } else {
+            // Don't cache errors, return null for no plan
+            return null;
+          }
+        }
+      );
+      
+      setCurrentPlan(cacheResult.data);
+      setIsFromCache(cacheResult.fromCache);
+      
+      if (cacheResult.fromCache) {
+        console.log('⚡️ Loaded plan from cache (instant)');
+      } else {
+        console.log('🌐 Loaded plan from API (fresh)');
+      }
+      
     } catch (error) {
       console.error('Error loading current plan:', error);
       setError(error.message);
+      
+      // On error, try to load from cache as fallback
+      const cachedPlan = await cacheService.getWorkoutPlan();
+      if (cachedPlan) {
+        console.log('⚠️ API failed, using cached plan as fallback');
+        setCurrentPlan(cachedPlan);
+        setIsFromCache(true);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +93,9 @@ export const PlanProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
 
+      // Invalidate old cached plan
+      await cacheService.invalidateWorkoutPlan();
+
       // Generate the plan using AI
       const result = await planService.generatePlan(profile, preferences);
       
@@ -74,6 +105,12 @@ export const PlanProvider = ({ children }) => {
         
         if (saveResult.success) {
           setCurrentPlan(saveResult.plan);
+          setIsFromCache(false);
+          
+          // Cache the new plan
+          await cacheService.cacheWorkoutPlan(saveResult.plan);
+          console.log('💾 New plan cached for offline access');
+          
           // No longer persisting plan preferences to profile; preferences are managed in Plans only
           return { success: true, plan: saveResult.plan };
         } else {
@@ -111,6 +148,12 @@ export const PlanProvider = ({ children }) => {
 
       if (result.success) {
         setCurrentPlan(result.plan);
+        setIsFromCache(false);
+        
+        // Update cache with completed workout
+        await cacheService.cacheWorkoutPlan(result.plan);
+        console.log('💾 Plan progress cached');
+        
         return { success: true, plan: result.plan };
       } else {
         throw new Error(result.error);
@@ -247,6 +290,7 @@ export const PlanProvider = ({ children }) => {
     currentPlan,
     isLoading,
     error,
+    isFromCache,
     generatePlan,
     completeWorkout,
     loadCurrentPlan,
