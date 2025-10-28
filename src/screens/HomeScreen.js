@@ -299,9 +299,39 @@ export default function HomeScreen() {
             <Text style={styles.askCoachButtonText}>Let's chat about your progress</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Compact Health Stats */}
+        <View style={styles.compactHealthSection}>
+          <View style={styles.compactHealthHeader}>
+            <Ionicons name="pulse" size={16} color="#6B7280" />
+            <Text style={styles.compactHealthTitle}>Today's Health</Text>
+          </View>
+          <View style={styles.compactHealthGrid}>
+            <View style={styles.compactHealthItem}>
+              <Ionicons name="walk" size={14} color="#5AB3C1" />
+              <Text style={styles.compactHealthValue}>8.4k</Text>
+              <Text style={styles.compactHealthLabel}>steps</Text>
+            </View>
+            <View style={styles.compactHealthItem}>
+              <Ionicons name="bed" size={14} color="#8B5CF6" />
+              <Text style={styles.compactHealthValue}>7.2h</Text>
+              <Text style={styles.compactHealthLabel}>sleep</Text>
+            </View>
+            <View style={styles.compactHealthItem}>
+              <Ionicons name="heart" size={14} color="#EF4444" />
+              <Text style={styles.compactHealthValue}>62</Text>
+              <Text style={styles.compactHealthLabel}>bpm</Text>
+            </View>
+            <View style={styles.compactHealthItem}>
+              <Ionicons name="flame" size={14} color="#FF9500" />
+              <Text style={styles.compactHealthValue}>45</Text>
+              <Text style={styles.compactHealthLabel}>active</Text>
+            </View>
+          </View>
+        </View>
       </View>
 
-      {/* Workout Calendar */}
+      {/* Workout Calendar - Now Last */}
       {currentPlan ? (
         <View style={styles.calendarCard}>
           <View style={styles.cardHeader}>
@@ -337,40 +367,6 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
-
-      {/* Today's Health Snapshot */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="pulse" size={24} color="#EF4444" />
-          <Text style={styles.cardTitle}>Today's Health</Text>
-        </View>
-        <View style={styles.healthGrid}>
-          <View style={styles.healthItem}>
-            <Ionicons name="walk" size={20} color="#5AB3C1" />
-            <Text style={styles.healthNumber}>8,420</Text>
-            <Text style={styles.healthLabel}>Steps</Text>
-            <Text style={styles.healthTarget}>/ 10,000</Text>
-          </View>
-          <View style={styles.healthItem}>
-            <Ionicons name="bed" size={20} color="#5AB3C1" />
-            <Text style={styles.healthNumber}>7.2h</Text>
-            <Text style={styles.healthLabel}>Sleep</Text>
-            <Text style={styles.healthTarget}>Good</Text>
-          </View>
-          <View style={styles.healthItem}>
-            <Ionicons name="heart" size={20} color="#EF4444" />
-            <Text style={styles.healthNumber}>62</Text>
-            <Text style={styles.healthLabel}>Resting HR</Text>
-            <Text style={styles.healthTarget}>Excellent</Text>
-          </View>
-          <View style={styles.healthItem}>
-            <Ionicons name="time" size={20} color="#10B981" />
-            <Text style={styles.healthNumber}>45</Text>
-            <Text style={styles.healthLabel}>Active Min</Text>
-            <Text style={styles.healthTarget}>/ 60</Text>
-          </View>
-        </View>
-      </View>
 
       </ScrollView>
     </View>
@@ -664,6 +660,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  // Compact Health Stats Styles
+  compactHealthSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  compactHealthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  compactHealthTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  compactHealthGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: 8,
+  },
+  compactHealthItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+  },
+  compactHealthValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginTop: 4,
+  },
+  compactHealthLabel: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
   calendarCard: {
     backgroundColor: '#FFFFFF',
     margin: 16,
@@ -716,35 +754,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  healthGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 16,
-  },
-  healthItem: {
-    flex: 1,
-    minWidth: 140,
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-  },
-  healthNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  healthLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 2,
-  },
-  healthTarget: {
-    fontSize: 11,
-    color: '#9CA3AF',
   },
 });
