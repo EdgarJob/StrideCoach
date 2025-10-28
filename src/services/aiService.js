@@ -327,16 +327,28 @@ GUIDELINES:
 
   // Build workout plan prompt
   buildWorkoutPlanPrompt(userProfile, preferences) {
+    // Helper function to sort days in correct week order
+    const sortDaysOfWeek = (days) => {
+      const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      return days.sort((a, b) => {
+        return dayOrder.indexOf(a.toLowerCase()) - dayOrder.indexOf(b.toLowerCase());
+      });
+    };
+
     // Extract selected workout types
     const selectedWorkoutTypes = Object.entries(preferences?.workoutTypes || {})
       .filter(([type, selected]) => selected)
       .map(([type]) => type.charAt(0).toUpperCase() + type.slice(1))
       .join(', ');
 
-    // Extract selected available days
-    const selectedDays = Object.entries(preferences?.availableDays || {})
+    // Extract selected available days and sort them in correct order
+    const selectedDaysRaw = Object.entries(preferences?.availableDays || {})
       .filter(([day, selected]) => selected)
-      .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1))
+      .map(([day]) => day);
+    
+    const selectedDaysSorted = sortDaysOfWeek(selectedDaysRaw);
+    const selectedDays = selectedDaysSorted
+      .map(day => day.charAt(0).toUpperCase() + day.slice(1))
       .join(', ');
 
     // Extract selected equipment
@@ -363,10 +375,9 @@ GUIDELINES:
       preferences.preferredTime.charAt(0).toUpperCase() + preferences.preferredTime.slice(1) : 
       'Not specified';
 
-    // ✅ Build dynamic example format based on actual selected days
-    const selectedDaysArray = Object.entries(preferences?.availableDays || {})
-      .filter(([day, selected]) => selected)
-      .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1));
+    // ✅ Build dynamic example format based on actual selected days (sorted in correct order)
+    const selectedDaysArray = selectedDaysSorted
+      .map(day => day.charAt(0).toUpperCase() + day.slice(1));
     
     // ✅ UPDATED: Provide flexible formatting guidelines instead of rigid templates
     // This allows the AI to design different workout types (intervals, steady runs, tempo, etc.)
