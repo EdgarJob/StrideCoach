@@ -1,78 +1,67 @@
-import OpenAI from 'openai';
+import { supabase } from './supabase';
 
-// Initialize OpenAI client
-const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY || 'your-openai-api-key-here';
-console.log('🔑 API Key being used:', apiKey.substring(0, 10) + '...');
-
-const openai = new OpenAI({
-  apiKey: apiKey,
-  dangerouslyAllowBrowser: true // Only for development - use server-side in production
-});
-
-// AI Coach Service
+// AI Coach Service - Now calls secure Supabase Edge Functions
 export class AICoachService {
   constructor() {
     this.conversationHistory = [];
-    // Configure allowed models
-    this.models = {
-      plan: 'gpt-4.1-mini',      // For plan generation
-      chat: 'gpt-4o-mini',       // For chat and motivation
-      fallback: 'gpt-4o-mini'    // Fallback if specific model fails
-    };
+    this.supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
   }
 
-  // Get model for specific function
-  getModelForFunction(functionType) {
-    const envModel = process.env.EXPO_PUBLIC_OPENAI_MODEL;
-    if (envModel) {
-      // Validate that environment model is in allowed list
-      const allowedModels = Object.values(this.models);
-      if (allowedModels.includes(envModel)) {
-        console.log(`Using model from environment: ${envModel}`);
-        return envModel;
-      } else {
-        console.warn(`Environment model ${envModel} not in allowed list. Using fallback.`);
+  // Generic method to call Edge Functions with retry logic
+  async callEdgeFunction(endpoint, body, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('No active session');
+        }
+
+        const response = await fetch(`${this.supabaseUrl}/functions/v1/${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error(`Attempt ${i + 1}/${retries} failed:`, error);
+        if (i === retries - 1) throw error;
+        // Exponential backoff: wait 1s, 2s, 4s
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
       }
     }
-    const model = this.models[functionType] || this.models.fallback;
-    console.log(`Using ${functionType} model: ${model}`);
-    return model;
   }
 
-  // Get list of allowed models
-  getAllowedModels() {
-    return Object.values(this.models);
-  }
-
-  // Generate a personalized workout plan
+  // Generate a personalized workout plan via Edge Function
   async generateWorkoutPlan(userProfile, preferences) {
     try {
-      const prompt = this.buildWorkoutPlanPrompt(userProfile, preferences);
-      const model = this.getModelForFunction('plan');
+      console.log('📝 Calling generate-plan Edge Function...');
       
-      const response = await openai.chat.completions.create({
-        model: model,
-        messages: [
-          {
-            role: "system",
-            content: "You are StrideCoach, an expert fitness AI coach specializing in walking and strength training. Create personalized, safe, and effective workout plans."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 4000, // Increased from 1500 to ensure full 4-week plan generation
-        temperature: 0.7
+      const response = await this.callEdgeFunction('generate-plan', {
+        userProfile,
+        preferences
       });
 
+      if (!response.success) {
+        throw new Error(response.error || 'Plan generation failed');
+      }
+
+      console.log('✅ Plan generated successfully');
       return {
         success: true,
-        plan: response.choices[0].message.content,
+        plan: response.plan,
         usage: response.usage
       };
     } catch (error) {
-      console.error('Error generating workout plan:', error);
+      console.error('❌ Error generating workout plan:', error);
       return {
         success: false,
         error: error.message
@@ -80,30 +69,29 @@ export class AICoachService {
     }
   }
 
-  // Chat with the AI coach
+  // Chat with the AI coach via Edge Function
   async chatWithCoach(message, userProfile, currentPlan = null) {
     try {
+      console.log('💬 Calling chat-coach Edge Function...');
+      
       // Add user message to conversation history
       this.conversationHistory.push({
         role: "user",
         content: message
       });
 
-      const model = this.getModelForFunction('chat');
-      const response = await openai.chat.completions.create({
-        model: model,
-        messages: [
-          {
-            role: "system",
-            content: this.buildSystemPrompt(userProfile, currentPlan)
-          },
-          ...this.conversationHistory
-        ],
-        max_tokens: 500,
-        temperature: 0.8
+      const response = await this.callEdgeFunction('chat-coach', {
+        message,
+        userProfile,
+        currentPlan,
+        conversationHistory: this.conversationHistory
       });
 
-      const aiResponse = response.choices[0].message.content;
+      if (!response.success) {
+        throw new Error(response.error || 'Chat failed');
+      }
+
+      const aiResponse = response.message;
       
       // Add AI response to conversation history
       this.conversationHistory.push({
@@ -111,13 +99,14 @@ export class AICoachService {
         content: aiResponse
       });
 
+      console.log('✅ Chat response received');
       return {
         success: true,
         message: aiResponse,
         usage: response.usage
       };
     } catch (error) {
-      console.error('Error chatting with AI coach:', error);
+      console.error('❌ Error chatting with AI coach:', error);
       return {
         success: false,
         error: error.message
@@ -125,69 +114,33 @@ export class AICoachService {
     }
   }
 
-  // Get daily motivation and tips
-  // Generate daily motivation based on actual progress data
+  // Get daily motivation and tips via Edge Function
   async getDailyMotivation(userProfile, progressData = {}) {
     try {
+      console.log('✨ Calling daily-motivation Edge Function...');
+      
       // Ensure progressData is not null
       if (!progressData || typeof progressData !== 'object') {
         progressData = {};
       }
-      
-      // Extract progress metrics
-      const completedWorkouts = progressData.completedWorkouts || 0;
-      const totalWorkouts = progressData.totalWorkouts || 5;
-      const completionRate = totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0;
-      const streak = progressData.streak || 0;
-      const weekNumber = progressData.weekNumber || 1;
-      const lastWorkoutDate = progressData.lastWorkoutDate || 'Not yet';
-      
-      const prompt = `You are a direct, results-focused fitness coach analyzing this week's performance.
 
-User: ${userProfile?.display_name || 'User'}
-Goal: ${userProfile?.goal?.type || 'general fitness'}
-
-ACTUAL PROGRESS DATA THIS WEEK:
-- Workouts Completed: ${completedWorkouts} out of ${totalWorkouts} scheduled
-- Completion Rate: ${completionRate}%
-- Current Streak: ${streak} days
-- Week: ${weekNumber} of 4
-- Last Workout: ${lastWorkoutDate}
-
-Provide a SHORT, NO-NONSENSE feedback message (2-3 sentences max, under 80 words) that:
-1. States the facts about their performance (good or bad)
-2. Gives specific, actionable feedback based on their completion rate:
-   - If 80-100%: Acknowledge strong performance and push for consistency
-   - If 50-79%: Point out the gap and motivate to close it
-   - If below 50%: Be direct about underperformance and need for commitment
-3. Include ONE specific action they should take this week
-
-Be honest, direct, and motivating. No fluff or generic platitudes. Base everything on their actual numbers.`;
-
-      const model = this.getModelForFunction('chat');
-      const response = await openai.chat.completions.create({
-        model: model,
-        messages: [
-          {
-            role: "system",
-            content: "You are StrideCoach, a direct, data-driven fitness coach. Give honest, specific feedback based on actual performance metrics. No generic motivation - only fact-based analysis."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 150,
-        temperature: 0.7 // Lower temperature for more consistent, factual responses
+      const response = await this.callEdgeFunction('daily-motivation', {
+        userProfile,
+        progressData
       });
 
+      if (!response.success) {
+        throw new Error(response.error || 'Motivation generation failed');
+      }
+
+      console.log('✅ Motivation generated');
       return {
         success: true,
-        motivation: response.choices[0].message.content,
+        motivation: response.motivation,
         usage: response.usage
       };
     } catch (error) {
-      console.error('Error getting daily motivation:', error);
+      console.error('❌ Error getting daily motivation:', error);
       return {
         success: false,
         error: error.message
