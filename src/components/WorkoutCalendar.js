@@ -28,6 +28,8 @@ export default function WorkoutCalendar({ plan }) {
   // State to track if we can scroll left/right (for showing/hiding arrows)
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  // State to track current visible card index
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
   // If no plan exists, show a message
   if (!plan || !plan.weeks || plan.weeks.length === 0) {
@@ -82,27 +84,48 @@ export default function WorkoutCalendar({ plan }) {
   };
 
   /**
-   * Function to scroll the calendar left or right
+   * Function to scroll the calendar left or right, centering the next/previous card
    */
   const scrollCalendar = (direction) => {
-    if (scrollViewRef.current) {
-      const scrollAmount = 300; // Scroll by approximately one card width
+    if (scrollViewRef.current && currentWeek.days) {
+      const cardWidth = 280; // Width of each card
+      const cardGap = 16; // Gap between cards
+      const totalDays = currentWeek.days.length;
+      
+      // Calculate next card index
+      let nextIndex;
+      if (direction === 'left') {
+        nextIndex = Math.max(0, currentCardIndex - 1);
+      } else {
+        nextIndex = Math.min(totalDays - 1, currentCardIndex + 1);
+      }
+      
+      // Calculate scroll position to center the card
+      // Center position = (card width + gap) * index - (viewport width / 2) + (card width / 2)
+      const scrollPosition = (cardWidth + cardGap) * nextIndex - 20; // -20 accounts for padding
+      
       scrollViewRef.current.scrollTo({
-        x: direction === 'left' 
-          ? Math.max(0, scrollViewRef.current.contentOffset?.x - scrollAmount || 0)
-          : (scrollViewRef.current.contentOffset?.x || 0) + scrollAmount,
+        x: Math.max(0, scrollPosition),
         animated: true,
       });
+      
+      setCurrentCardIndex(nextIndex);
     }
   };
 
   /**
-   * Handle scroll event to update arrow visibility
+   * Handle scroll event to update arrow visibility and current card index
    */
   const handleScroll = (event) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const scrollX = contentOffset.x;
     const maxScrollX = contentSize.width - layoutMeasurement.width;
+    
+    // Calculate approximate current card index based on scroll position
+    const cardWidth = 280;
+    const cardGap = 16;
+    const approximateIndex = Math.round(scrollX / (cardWidth + cardGap));
+    setCurrentCardIndex(approximateIndex);
     
     // Update whether we can scroll in each direction
     setCanScrollLeft(scrollX > 10); // Show left arrow if scrolled right
@@ -398,10 +421,10 @@ ${exerciseList}
           <TouchableOpacity 
             style={[styles.navArrow, styles.navArrowLeft]}
             onPress={() => scrollCalendar('left')}
-            activeOpacity={0.8}
+            activeOpacity={0.6}
           >
             <View style={styles.navArrowInner}>
-              <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
         )}
@@ -411,10 +434,10 @@ ${exerciseList}
           <TouchableOpacity 
             style={[styles.navArrow, styles.navArrowRight]}
             onPress={() => scrollCalendar('right')}
-            activeOpacity={0.8}
+            activeOpacity={0.6}
           >
             <View style={styles.navArrowInner}>
-              <Ionicons name="chevron-forward" size={28} color="#FFFFFF" />
+              <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
         )}
@@ -500,16 +523,16 @@ const styles = StyleSheet.create({
     right: 0,
   },
   navArrowInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(90, 179, 193, 0.85)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(90, 179, 193, 0.3)', // Much more transparent (30% opacity)
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.25)',
-    elevation: 6,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.15)',
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   calendarGrid: {
     flexDirection: 'row',
