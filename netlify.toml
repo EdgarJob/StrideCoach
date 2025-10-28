@@ -1,0 +1,21 @@
+# Netlify Configuration for StrideCoach
+# This tells Netlify where to find the built web app
+
+[build]
+  # Build command - exports Expo web app
+  command = "npm run build:web"
+  
+  # Publish directory - Expo exports to 'dist', not 'web-build'
+  publish = "dist"
+
+# Environment variables are configured in Netlify UI:
+# - EXPO_PUBLIC_OPENAI_API_KEY
+# - EXPO_PUBLIC_SUPABASE_ANON_KEY
+# - EXPO_PUBLIC_SUPABASE_URL
+
+# Redirect rules for single-page application (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
