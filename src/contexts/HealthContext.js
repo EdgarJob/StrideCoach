@@ -9,6 +9,7 @@ import { useAuth } from './AuthContext';
 const HealthContext = createContext(null);
 
 const connectedKeyForUser = (userId) => `health_connected:${userId || 'anonymous'}`;
+const healthCacheKeyForUser = (userId) => `health_data:${userId || 'anonymous'}`;
 
 const toCompactK = (value) => {
   if (value === null || value === undefined) return '--';
@@ -79,7 +80,7 @@ export const HealthProvider = ({ children }) => {
       setToday(summary);
       setFromCache(false);
 
-      await cacheService.set('health_data', summary, 60 * 60 * 1000);
+      await cacheService.set(healthCacheKeyForUser(userId), summary, 60 * 60 * 1000);
 
       if (syncToSupabase) {
         await healthService.syncTodayToSupabase(userId);
@@ -161,7 +162,7 @@ export const HealthProvider = ({ children }) => {
       setSupported(isSupported);
       setConnected(wasConnected);
 
-      const cached = await cacheService.get('health_data');
+      const cached = await cacheService.get(healthCacheKeyForUser(userId));
       if (!cancelled && cached) {
         setToday(cached);
         setFromCache(true);
@@ -203,4 +204,3 @@ export const HealthProvider = ({ children }) => {
     </HealthContext.Provider>
   );
 };
-
