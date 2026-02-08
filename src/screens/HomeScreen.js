@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
+import { useHealth } from '../contexts/HealthContext';
 import WorkoutCalendar from '../components/WorkoutCalendar';
 import colors from '../theme/colors';
 
@@ -15,6 +16,7 @@ export default function HomeScreen() {
   const { signOut, profile } = useAuth();
   const { dailyMotivation } = useAICoach();
   const { currentPlan, getTodaysWorkout, getPlanProgress, isFromCache, loadCurrentPlan } = usePlan();
+  const { connected: healthConnected, today: todayHealth, loading: healthLoading, format: healthFormat } = useHealth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
@@ -142,6 +144,10 @@ export default function HomeScreen() {
   };
 
   const progressData = calculateRealProgressData();
+  const healthSteps = healthConnected ? healthFormat.steps(todayHealth?.steps) : '--';
+  const healthSleep = healthConnected ? healthFormat.sleep(todayHealth?.sleepHours) : '--';
+  const healthBpm = healthConnected ? healthFormat.bpm(todayHealth?.heartRate) : '--';
+  const healthActive = healthConnected ? healthFormat.active(todayHealth?.activeMinutes) : '--';
 
   return (
     <View style={styles.container}>
@@ -307,36 +313,39 @@ export default function HomeScreen() {
         </View>
         
         {/* Compact Health Stats */}
-        {/* TODO: Replace hardcoded health values below with real data from HealthKit (iOS) / Google Fit (Android).
-            Requires a health data integration service (e.g., react-native-health or expo-health-connect)
-            to fetch steps, sleep, heart rate, and active minutes. */}
         <View style={styles.compactHealthSection}>
           <View style={styles.compactHealthHeader}>
             <Ionicons name="pulse" size={16} color={colors.textMedium} />
             <Text style={styles.compactHealthTitle}>Today's Health</Text>
+            {!healthConnected && (
+              <Text style={styles.compactHealthHint}>Connect in Profile</Text>
+            )}
           </View>
           <View style={styles.compactHealthGrid}>
             <View style={styles.compactHealthItem}>
               <Ionicons name="walk" size={14} color={colors.primary} />
-              <Text style={styles.compactHealthValue}>8.4k</Text>
+              <Text style={styles.compactHealthValue}>{healthSteps}</Text>
               <Text style={styles.compactHealthLabel}>steps</Text>
             </View>
             <View style={styles.compactHealthItem}>
               <Ionicons name="bed" size={14} color={colors.purple} />
-              <Text style={styles.compactHealthValue}>7.2h</Text>
+              <Text style={styles.compactHealthValue}>{healthSleep}</Text>
               <Text style={styles.compactHealthLabel}>sleep</Text>
             </View>
             <View style={styles.compactHealthItem}>
               <Ionicons name="heart" size={14} color={colors.error} />
-              <Text style={styles.compactHealthValue}>62</Text>
+              <Text style={styles.compactHealthValue}>{healthBpm}</Text>
               <Text style={styles.compactHealthLabel}>bpm</Text>
             </View>
             <View style={styles.compactHealthItem}>
               <Ionicons name="flame" size={14} color={colors.accent} />
-              <Text style={styles.compactHealthValue}>45</Text>
+              <Text style={styles.compactHealthValue}>{healthActive}</Text>
               <Text style={styles.compactHealthLabel}>active</Text>
             </View>
           </View>
+          {healthLoading && healthConnected && (
+            <Text style={styles.compactHealthStatus}>Updating...</Text>
+          )}
         </View>
 
         {/* AI Coach Motivation Message */}
@@ -764,6 +773,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textMedium,
   },
+  compactHealthHint: {
+    marginLeft: 'auto',
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textLight,
+  },
   compactHealthGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -787,6 +802,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.textLight,
     marginTop: 2,
+  },
+  compactHealthStatus: {
+    marginTop: 8,
+    fontSize: 11,
+    color: colors.textLight,
   },
   calendarCard: {
     backgroundColor: colors.white,

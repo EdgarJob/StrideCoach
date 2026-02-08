@@ -27,6 +27,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_EXERCISE"
+      ],
       "package": "com.edgarjobkerario.stridecoach",
       "versionCode": 1
     },
@@ -37,6 +43,25 @@
       "eas": {
         "projectId": "eff09124-e95f-4a1c-8a2f-7cc92322f2ff"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      "expo-health-connect",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "StrideCoach reads your health data (steps, sleep, heart rate) to personalize insights.",
+          "NSHealthUpdateUsageDescription": "StrideCoach can write limited health data to improve your experience.",
+          "background": true
+        }
+      ]
+    ]
   }
 }

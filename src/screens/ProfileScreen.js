@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useHealth } from '../contexts/HealthContext';
 import colors from '../theme/colors';
 
 export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [healthDataConnected, setHealthDataConnected] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
   const { user, profile, signOut } = useAuth();
+  const { connected: healthDataConnected, loading: healthLoading, connect: connectHealth, disconnect: disconnectHealth } = useHealth();
 
   // Helper to format height from cm to feet/inches
   const formatHeight = (cm) => {
@@ -42,6 +43,27 @@ export default function ProfileScreen() {
       setStatusMessage({ type: 'error', text: 'Failed to sign out. Please try again.' });
       setTimeout(() => setStatusMessage(null), 4000);
     }
+  };
+
+  const handleHealthConnectPress = async () => {
+    if (healthLoading) return;
+
+    if (healthDataConnected) {
+      await disconnectHealth();
+      setStatusMessage({ type: 'success', text: 'Health data disconnected.' });
+      setTimeout(() => setStatusMessage(null), 3500);
+      return;
+    }
+
+    const result = await connectHealth();
+    if (!result.success) {
+      setStatusMessage({ type: 'error', text: result.error || 'Failed to connect health data.' });
+      setTimeout(() => setStatusMessage(null), 4500);
+      return;
+    }
+
+    setStatusMessage({ type: 'success', text: 'Health data connected.' });
+    setTimeout(() => setStatusMessage(null), 3500);
   };
 
   return (
@@ -103,7 +125,7 @@ export default function ProfileScreen() {
             <Ionicons name="fitness" size={24} color={colors.success} />
             <View style={styles.settingText}>
               <Text style={styles.settingTitle}>Health Data</Text>
-              <Text style={styles.settingSubtitle}>Apple Health / Google Fit</Text>
+              <Text style={styles.settingSubtitle}>Apple Health / Health Connect (Google Fit)</Text>
             </View>
           </View>
           <TouchableOpacity 
@@ -111,13 +133,14 @@ export default function ProfileScreen() {
               styles.connectButton,
               healthDataConnected && styles.connectButtonConnected
             ]}
-            onPress={() => setHealthDataConnected(!healthDataConnected)}
+            onPress={handleHealthConnectPress}
+            disabled={healthLoading}
           >
             <Text style={[
               styles.connectButtonText,
               healthDataConnected && styles.connectButtonTextConnected
             ]}>
-              {healthDataConnected ? 'Connected' : 'Connect'}
+              {healthLoading ? 'Working...' : (healthDataConnected ? 'Connected' : 'Connect')}
             </Text>
           </TouchableOpacity>
         </View>

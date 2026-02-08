@@ -18,6 +18,7 @@ import AuthScreen from './src/screens/AuthScreen';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AICoachProvider } from './src/contexts/AICoachContext';
 import { PlanProvider } from './src/contexts/PlanContext';
+import { HealthProvider } from './src/contexts/HealthContext';
 
 // Create the tab navigator
 const Tab = createBottomTabNavigator();
@@ -183,11 +184,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <PlanProvider>
-          <AICoachProvider>
-            <AppNavigator />
-          </AICoachProvider>
-        </PlanProvider>
+        <HealthProvider>
+          <PlanProvider>
+            <AICoachProvider>
+              <AppNavigator />
+            </AICoachProvider>
+          </PlanProvider>
+        </HealthProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

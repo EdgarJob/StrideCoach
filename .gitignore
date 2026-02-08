@@ -34,6 +34,12 @@ yarn-error.*
 .env
 .env*.local
 
+# netlify local state
+.netlify/
+
+# supabase cli temp files
+supabase/.temp/
+
 # project credentials (contains API keys & passwords)
 PROJECT_CREDENTIALS.md
 
