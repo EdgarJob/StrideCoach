@@ -69,11 +69,9 @@ class CacheService {
 
       // Convert to JSON string and store
       await AsyncStorage.setItem(key, JSON.stringify(cacheItem));
-      
-      console.log(`✅ Cached '${key}' until ${new Date(expiresAt).toLocaleString()}`);
+
       return true;
     } catch (error) {
-      console.error(`❌ Failed to cache '${key}':`, error);
       return false;
     }
   }
@@ -95,26 +93,19 @@ class CacheService {
       const cachedString = await AsyncStorage.getItem(key);
       
       if (!cachedString) {
-        console.log(`ℹ️ No cache found for '${key}'`);
         return null;
       }
 
       const cacheItem = JSON.parse(cachedString);
       const now = Date.now();
 
-      // Check if cache has expired
       if (now > cacheItem.expiresAt) {
-        console.log(`⏰ Cache expired for '${key}' - removing`);
-        await this.remove(key); // Clean up expired cache
+        await this.remove(key);
         return null;
       }
 
-      const ageInMinutes = Math.floor((now - cacheItem.cachedAt) / 60000);
-      console.log(`✅ Cache hit for '${key}' (age: ${ageInMinutes} minutes)`);
-      
       return cacheItem.data;
     } catch (error) {
-      console.error(`❌ Failed to get cache '${key}':`, error);
       return null;
     }
   }
@@ -127,10 +118,8 @@ class CacheService {
   async remove(key) {
     try {
       await AsyncStorage.removeItem(key);
-      console.log(`🗑️ Removed cache for '${key}'`);
       return true;
     } catch (error) {
-      console.error(`❌ Failed to remove cache '${key}':`, error);
       return false;
     }
   }
@@ -146,10 +135,8 @@ class CacheService {
   async clearAll() {
     try {
       await AsyncStorage.clear();
-      console.log('🗑️ All cache cleared');
       return true;
     } catch (error) {
-      console.error('❌ Failed to clear all cache:', error);
       return false;
     }
   }
@@ -170,7 +157,6 @@ class CacheService {
 
       return now <= cacheItem.expiresAt;
     } catch (error) {
-      console.error(`❌ Failed to check cache '${key}':`, error);
       return false;
     }
   }
@@ -201,7 +187,6 @@ class CacheService {
         expiresAt: new Date(cacheItem.expiresAt).toLocaleString(),
       };
     } catch (error) {
-      console.error(`❌ Failed to get cache info for '${key}':`, error);
       return null;
     }
   }
@@ -238,12 +223,9 @@ class CacheService {
       // Try cache first
       const cachedData = await this.get(key);
       if (cachedData !== null) {
-        console.log(`⚡️ Using cached data for '${key}'`);
         return { data: cachedData, fromCache: true };
       }
 
-      // Cache miss - fetch fresh data
-      console.log(`🌐 Cache miss for '${key}' - fetching fresh data`);
       const freshData = await fetchFunction();
 
       // Store in cache for next time
@@ -251,7 +233,6 @@ class CacheService {
 
       return { data: freshData, fromCache: false };
     } catch (error) {
-      console.error(`❌ Cache-first strategy failed for '${key}':`, error);
       throw error;
     }
   }
@@ -267,7 +248,6 @@ class CacheService {
    * - Force refresh of data
    */
   async invalidate(key) {
-    console.log(`♻️ Invalidating cache for '${key}'`);
     return await this.remove(key);
   }
 

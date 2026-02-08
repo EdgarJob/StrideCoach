@@ -5,6 +5,146 @@ import cacheService from '../services/cacheService';
 
 const PlanContext = createContext();
 
+const DEFAULT_PLAN_PREFERENCES = {
+  workoutTypes: {
+    walking: true,
+    strength: true,
+    running: false,
+    yoga: false,
+    cycling: false,
+    swimming: false
+  },
+  availableDays: {
+    monday: true,
+    tuesday: false,
+    wednesday: true,
+    thursday: false,
+    friday: true,
+    saturday: false,
+    sunday: false
+  },
+  workoutDuration: 30,
+  difficultyLevel: 'beginner',
+  primaryGoal: 'general_fitness',
+  preferredTime: 'not_specified',
+  hasEquipment: {
+    none: true,
+    dumbbells: false,
+    resistance_bands: false,
+    yoga_mat: false,
+    treadmill: false,
+    bike: false
+  }
+};
+
+const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DEFAULT_FALLBACK_DAYS = ['monday', 'wednesday', 'friday'];
+
+const isPlainObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
+
+const deepMergeObjects = (base, updates) => {
+  if (!isPlainObject(base)) return isPlainObject(updates) ? { ...updates } : {};
+  if (!isPlainObject(updates)) return { ...base };
+
+  const merged = { ...base };
+  Object.entries(updates).forEach(([key, value]) => {
+    if (isPlainObject(value) && isPlainObject(base[key])) {
+      merged[key] = deepMergeObjects(base[key], value);
+      return;
+    }
+
+    merged[key] = value;
+  });
+
+  return merged;
+};
+
+const normalizeAvailableDays = (days) => {
+  const normalized = {};
+  DAY_KEYS.forEach((dayKey) => {
+    normalized[dayKey] = Boolean(days?.[dayKey]);
+  });
+  return normalized;
+};
+
+const countSelectedDays = (days) => DAY_KEYS.reduce((count, dayKey) => (
+  days?.[dayKey] ? count + 1 : count
+), 0);
+
+const getSelectedDays = (days) => DAY_KEYS.filter((dayKey) => Boolean(days?.[dayKey]));
+
+const isExplicitLowFrequencyRequest = (requestText = '') => {
+  const normalized = requestText.toLowerCase();
+  if (!normalized.trim()) return false;
+
+  const explicitPatterns = [
+    /\bonly\s+\d+\s+(day|days|workout|workouts)\b/,
+    /\b(just|only)\s+(two|three|2|3)\s+(day|days|workout|workouts)\b/,
+    /\b\d+\s+(day|days|workout|workouts)\s+(a|per)\s+week\b/,
+    /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+and\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+only\b/
+  ];
+
+  return explicitPatterns.some((pattern) => pattern.test(normalized));
+};
+
+const applyAvailableDaySafety = (currentAvailableDays, proposedAvailableDays, requestText = '', hasCurrentPlan = false) => {
+  const currentDays = normalizeAvailableDays(currentAvailableDays);
+  const safeDays = normalizeAvailableDays(proposedAvailableDays);
+  const currentCount = countSelectedDays(currentDays);
+  const proposedCount = countSelectedDays(safeDays);
+  const explicitLowFrequency = isExplicitLowFrequencyRequest(requestText);
+
+  if (explicitLowFrequency) {
+    return {
+      adjusted: false,
+      availableDays: safeDays,
+      currentCount,
+      proposedCount,
+      finalCount: proposedCount,
+      reason: null
+    };
+  }
+
+  const minimumDays = hasCurrentPlan
+    ? Math.max(3, currentCount - 2)
+    : 3;
+
+  if (proposedCount >= minimumDays) {
+    return {
+      adjusted: false,
+      availableDays: safeDays,
+      currentCount,
+      proposedCount,
+      finalCount: proposedCount,
+      reason: null
+    };
+  }
+
+  const candidates = [
+    ...getSelectedDays(currentDays),
+    ...DEFAULT_FALLBACK_DAYS,
+    ...DAY_KEYS
+  ];
+
+  let finalCount = proposedCount;
+  candidates.forEach((dayKey) => {
+    if (finalCount >= minimumDays) return;
+    if (!safeDays[dayKey]) {
+      safeDays[dayKey] = true;
+      finalCount += 1;
+    }
+  });
+
+  return {
+    adjusted: true,
+    availableDays: safeDays,
+    currentCount,
+    proposedCount,
+    finalCount,
+    reason: `Prevented an aggressive day reduction (${proposedCount} -> ${finalCount}) without explicit low-frequency request.`
+  };
+};
+
 export const usePlan = () => {
   const context = useContext(PlanContext);
   if (!context) {
@@ -37,9 +177,7 @@ export const PlanProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       
-      // If forceRefresh is true, skip cache and fetch fresh data
       if (forceRefresh) {
-        console.log('🔄 Force refresh - invalidating cache');
         await cacheService.invalidateWorkoutPlan();
       }
       
@@ -59,21 +197,12 @@ export const PlanProvider = ({ children }) => {
       
       setCurrentPlan(cacheResult.data);
       setIsFromCache(cacheResult.fromCache);
-      
-      if (cacheResult.fromCache) {
-        console.log('⚡️ Loaded plan from cache (instant)');
-      } else {
-        console.log('🌐 Loaded plan from API (fresh)');
-      }
-      
+
     } catch (error) {
-      console.error('Error loading current plan:', error);
       setError(error.message);
       
-      // On error, try to load from cache as fallback
       const cachedPlan = await cacheService.getWorkoutPlan();
       if (cachedPlan) {
-        console.log('⚠️ API failed, using cached plan as fallback');
         setCurrentPlan(cachedPlan);
         setIsFromCache(true);
       }
@@ -107,10 +236,8 @@ export const PlanProvider = ({ children }) => {
           setCurrentPlan(saveResult.plan);
           setIsFromCache(false);
           
-          // Cache the new plan
           await cacheService.cacheWorkoutPlan(saveResult.plan);
-          console.log('💾 New plan cached for offline access');
-          
+
           // No longer persisting plan preferences to profile; preferences are managed in Plans only
           return { success: true, plan: saveResult.plan };
         } else {
@@ -120,7 +247,79 @@ export const PlanProvider = ({ children }) => {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('Error generating plan:', error);
+      setError(error.message);
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Apply AI coach plan modifications after user confirmation
+  const applyCoachPlanUpdate = async (preferenceUpdates = {}, coachSummary = '', options = {}) => {
+    if (!profile) {
+      setError('User profile not found');
+      return { success: false, error: 'User profile not found' };
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      await cacheService.invalidateWorkoutPlan();
+
+      const basePreferences = deepMergeObjects(
+        DEFAULT_PLAN_PREFERENCES,
+        isPlainObject(currentPlan?.preferences) ? currentPlan.preferences : {}
+      );
+      const mergedPreferences = deepMergeObjects(basePreferences, preferenceUpdates);
+      const daySafety = applyAvailableDaySafety(
+        basePreferences.availableDays,
+        mergedPreferences.availableDays,
+        options.userRequestText || '',
+        Boolean(currentPlan?.id)
+      );
+      mergedPreferences.availableDays = daySafety.availableDays;
+
+      const generatedResult = await planService.generatePlan(profile, mergedPreferences);
+      if (!generatedResult.success) {
+        throw new Error(generatedResult.error);
+      }
+
+      let persistedResult;
+      if (currentPlan?.id) {
+        persistedResult = await planService.updatePlan(currentPlan.id, {
+          title: generatedResult.plan.title,
+          description: generatedResult.plan.description,
+          start_date: generatedResult.plan.start_date,
+          end_date: generatedResult.plan.end_date,
+          status: 'active',
+          preferences: mergedPreferences,
+          weeks: generatedResult.plan.weeks
+        });
+      } else {
+        persistedResult = await planService.savePlan({
+          ...generatedResult.plan,
+          preferences: mergedPreferences,
+          status: 'active'
+        });
+      }
+
+      if (!persistedResult.success) {
+        throw new Error(persistedResult.error);
+      }
+
+      setCurrentPlan(persistedResult.plan);
+      setIsFromCache(false);
+      await cacheService.cacheWorkoutPlan(persistedResult.plan);
+
+      return {
+        success: true,
+        plan: persistedResult.plan,
+        preferences: mergedPreferences,
+        summary: coachSummary,
+        daySafety
+      };
+    } catch (error) {
       setError(error.message);
       return { success: false, error: error.message };
     } finally {
@@ -149,17 +348,14 @@ export const PlanProvider = ({ children }) => {
       if (result.success) {
         setCurrentPlan(result.plan);
         setIsFromCache(false);
-        
-        // Update cache with completed workout
+
         await cacheService.cacheWorkoutPlan(result.plan);
-        console.log('💾 Plan progress cached');
-        
+
         return { success: true, plan: result.plan };
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('Error completing workout:', error);
       setError(error.message);
       return { success: false, error: error.message };
     } finally {
@@ -292,6 +488,7 @@ export const PlanProvider = ({ children }) => {
     error,
     isFromCache,
     generatePlan,
+    applyCoachPlanUpdate,
     completeWorkout,
     loadCurrentPlan,
     getTodaysWorkout,

@@ -1,3 +1,4 @@
+// TODO: This component is currently unused and not rendered in any screen.
 import React, { useState } from 'react';
 import {
   View,
@@ -6,10 +7,10 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import colors from '../theme/colors';
 
 export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile }) {
   const [workoutPlan, setWorkoutPlan] = useState({
@@ -23,6 +24,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
 
   const [currentWeek, setCurrentWeek] = useState(1);
   const [currentDay, setCurrentDay] = useState('monday');
+  const [validationError, setValidationError] = useState(null);
 
   const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const weekNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -163,7 +165,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
           onPress={() => removeWorkout(workout.id)}
           style={styles.removeButton}
         >
-          <Ionicons name="close" size={20} color="#EF4444" />
+          <Ionicons name="close" size={20} color={colors.error} />
         </TouchableOpacity>
       </View>
 
@@ -211,7 +213,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
             onPress={() => addExercise(workout.id)}
             style={styles.addExerciseButton}
           >
-            <Ionicons name="add" size={16} color="#5AB3C1" />
+            <Ionicons name="add" size={16} color={colors.primary} />
             <Text style={styles.addExerciseText}>Add Exercise</Text>
           </TouchableOpacity>
         </View>
@@ -229,7 +231,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
                 onPress={() => removeExercise(workout.id, exercise.id)}
                 style={styles.removeExerciseButton}
               >
-                <Ionicons name="close" size={16} color="#EF4444" />
+                <Ionicons name="close" size={16} color={colors.error} />
               </TouchableOpacity>
             </View>
 
@@ -270,13 +272,16 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
   );
 
   const handleSave = () => {
+    setValidationError(null);
     if (!workoutPlan.title.trim()) {
-      Alert.alert('Error', 'Please enter a plan title');
+      setValidationError('Please enter a plan title');
+      setTimeout(() => setValidationError(null), 4000);
       return;
     }
 
     if (workoutPlan.workouts.length === 0) {
-      Alert.alert('Error', 'Please add at least one workout');
+      setValidationError('Please add at least one workout');
+      setTimeout(() => setValidationError(null), 4000);
       return;
     }
 
@@ -294,7 +299,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#6B7280" />
+            <Ionicons name="close" size={24} color={colors.textMedium} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Workout Builder</Text>
           <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
@@ -303,6 +308,14 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Validation Error */}
+          {validationError && (
+            <View style={styles.validationBanner}>
+              <Ionicons name="alert-circle" size={18} color={colors.error} />
+              <Text style={styles.validationText}>{validationError}</Text>
+            </View>
+          )}
+
           {/* Plan Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Plan Details</Text>
@@ -332,7 +345,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
                 {weekNames[weekDays.indexOf(currentDay)]} Workouts
               </Text>
               <TouchableOpacity onPress={addWorkout} style={styles.addWorkoutButton}>
-                <Ionicons name="add" size={20} color="#5AB3C1" />
+                <Ionicons name="add" size={20} color={colors.primary} />
                 <Text style={styles.addWorkoutText}>Add Workout</Text>
               </TouchableOpacity>
             </View>
@@ -348,7 +361,7 @@ export default function WorkoutBuilder({ isVisible, onClose, onSave, userProfile
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -357,9 +370,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   closeButton: {
     padding: 8,
@@ -367,16 +380,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   saveButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
   },
   content: {
@@ -384,7 +397,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   section: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
@@ -392,12 +405,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginBottom: 16,
   },
   titleInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -406,7 +419,7 @@ const styles = StyleSheet.create({
   },
   descriptionInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -414,7 +427,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   weekSelector: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
@@ -422,7 +435,7 @@ const styles = StyleSheet.create({
   selectorTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textBody,
     marginBottom: 12,
   },
   weekButtons: {
@@ -434,24 +447,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.white,
     alignItems: 'center',
   },
   weekButtonSelected: {
-    backgroundColor: '#5AB3C1',
-    borderColor: '#5AB3C1',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   weekButtonText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   weekButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
   },
   daySelector: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
@@ -465,20 +478,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.white,
   },
   dayButtonSelected: {
-    backgroundColor: '#5AB3C1',
-    borderColor: '#5AB3C1',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayButtonText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     fontWeight: '600',
   },
   dayButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   workoutsHeader: {
     flexDirection: 'row',
@@ -495,17 +508,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addWorkoutText: {
-    color: '#5AB3C1',
+    color: colors.primary,
     fontWeight: '600',
     marginLeft: 4,
   },
   workoutCard: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
     borderRadius: 8,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   workoutHeader: {
     flexDirection: 'row',
@@ -516,7 +529,7 @@ const styles = StyleSheet.create({
   workoutTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   removeButton: {
     padding: 4,
@@ -531,12 +544,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     width: 80,
   },
   detailInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -546,7 +559,7 @@ const styles = StyleSheet.create({
   },
   detailUnit: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginLeft: 4,
   },
   typeButtons: {
@@ -559,24 +572,24 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.white,
   },
   typeButtonSelected: {
-    backgroundColor: '#5AB3C1',
-    borderColor: '#5AB3C1',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   typeButtonText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   typeButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
   },
   exercisesSection: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border,
     paddingTop: 16,
   },
   exercisesHeader: {
@@ -588,7 +601,7 @@ const styles = StyleSheet.create({
   exercisesTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textBody,
   },
   addExerciseButton: {
     flexDirection: 'row',
@@ -599,18 +612,18 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   addExerciseText: {
-    color: '#5AB3C1',
+    color: colors.primary,
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
   },
   exerciseCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 6,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   exerciseHeader: {
     flexDirection: 'row',
@@ -621,7 +634,7 @@ const styles = StyleSheet.create({
   exerciseNameInput: {
     flex: 1,
     fontSize: 14,
-    color: '#1F2937',
+    color: colors.textDark,
     fontWeight: '500',
   },
   removeExerciseButton: {
@@ -637,12 +650,12 @@ const styles = StyleSheet.create({
   },
   exerciseDetailLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginRight: 4,
   },
   exerciseDetailInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -652,7 +665,24 @@ const styles = StyleSheet.create({
   },
   exerciseDetailUnit: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginLeft: 2,
+  },
+  validationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  validationText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.error,
+    marginLeft: 8,
   },
 });

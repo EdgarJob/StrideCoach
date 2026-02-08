@@ -9,13 +9,11 @@ export class PlanService {
   // Generate a 4-week workout plan using AI
   async generatePlan(userProfile, preferences = {}) {
     try {
-      console.log('Generating 4-week plan for user:', userProfile);
 
       // Call the AI to generate the workout plan
       const aiResult = await aiCoach.generateWorkoutPlan(userProfile, preferences);
       
       if (aiResult.success) {
-        console.log('✅ AI generated plan successfully');
         // Parse the AI response into structured plan format
         const plan = this.parsePlanResponse(aiResult.plan, userProfile, preferences);
         return {
@@ -23,8 +21,7 @@ export class PlanService {
           plan
         };
       } else {
-        console.log('❌ AI failed to generate plan');
-        // ✅ FIX: Return failure instead of generating fallback exercises
+        // Return failure instead of generating fallback exercises
         // User requirement: Display ONLY AI model exercises
         return { 
           success: false, 
@@ -32,7 +29,6 @@ export class PlanService {
         };
       }
     } catch (error) {
-      console.error('Error generating plan:', error);
       return { success: false, error: error.message };
     }
   }
@@ -41,25 +37,16 @@ export class PlanService {
   parsePlanResponse(aiResponse, userProfile, preferences) {
     const planId = `plan_${Date.now()}`;
     const startDate = new Date();
-    
-    console.log('🤖 Parsing AI response:', aiResponse.substring(0, 200) + '...');
-    
+
     // Try to parse the AI response
     let weeks;
     try {
       weeks = this.parseAIResponse(aiResponse, userProfile, preferences);
       
-      // ✅ FIX: Check if parsing returned empty weeks (parsing failed)
       if (!weeks || weeks.length === 0) {
-        console.log('❌ Parsing returned no weeks - AI response format issue');
         throw new Error('Failed to parse AI response: No workout weeks found');
       }
-      
-      console.log('✅ Successfully parsed AI response with', weeks.length, 'weeks');
     } catch (error) {
-      console.log('❌ Failed to parse AI response:', error.message);
-      // ✅ FIX: Don't generate fallback structure, throw error instead
-      // User requirement: Display ONLY AI model exercises
       throw error;
     }
     
@@ -83,32 +70,15 @@ export class PlanService {
   // Parse AI response into structured weeks
   parseAIResponse(aiResponse, userProfile, preferences) {
     const weeks = [];
-    
-    console.log('🔍 Starting to parse AI response...');
-    console.log('📄 AI Response length:', aiResponse.length);
-    console.log('📄 First 500 chars:', aiResponse.substring(0, 500));
-    
-    // Improved regex to match the actual AI format:
-    // ### Week X
-    // **Monday**
-    // - content
-    // We need to capture from ### Week X until the next ### Week or end of string
+
     const weekPattern = /### Week (\d+)\s*([\s\S]*?)(?=### Week \d+|$)/g;
     const weekMatches = [...aiResponse.matchAll(weekPattern)];
-    
-    console.log(`🔍 Week pattern matches found: ${weekMatches.length}`);
-    
+
     if (weekMatches.length > 0) {
-      console.log(`📅 Found ${weekMatches.length} week sections in AI response`);
-      
       weekMatches.forEach((match, index) => {
         const weekNumber = parseInt(match[1]);
-        const weekText = match[2]; // The content after "### Week X"
-        
-        console.log(`📝 Parsing Week ${weekNumber}...`);
-        console.log(`📝 Week ${weekNumber} text length: ${weekText.length}`);
-        console.log(`📝 Week ${weekNumber} first 200 chars:`, weekText.substring(0, 200));
-        
+        const weekText = match[2];
+
         weeks.push({
           week_number: weekNumber,
           focus: this.extractWeekFocus(weekText) || this.getWeekFocus(weekNumber),
@@ -116,23 +86,15 @@ export class PlanService {
         });
       });
     } else {
-      console.log('⚠️ No week sections found with improved regex, trying alternative approach...');
-      
       // Try to find any "Week X" pattern (even without ###)
       const alternativePattern = /Week (\d+)[:\s]*([\s\S]*?)(?=Week \d+|$)/gi;
       const altMatches = [...aiResponse.matchAll(alternativePattern)];
-      
-      console.log(`🔍 Alternative pattern matches: ${altMatches.length}`);
-      
+
       if (altMatches.length > 0) {
-        console.log(`📅 Found ${altMatches.length} week sections using alternative pattern`);
-        
         altMatches.forEach((match) => {
           const weekNumber = parseInt(match[1]);
           const weekText = match[2];
-          
-          console.log(`📝 Parsing Week ${weekNumber} (alt)...`);
-          
+
           weeks.push({
             week_number: weekNumber,
             focus: this.extractWeekFocus(weekText) || this.getWeekFocus(weekNumber),
@@ -140,14 +102,11 @@ export class PlanService {
           });
         });
       } else {
-        console.log('❌ No week sections found in AI response - parsing failed');
-        // ✅ FIX: Don't create fallback weeks with generated exercises
         // Return empty array to signal parsing failure
-        // User requirement: Display ONLY AI model exercises
         return [];
       }
     }
-    
+
     return weeks;
   }
   
@@ -198,8 +157,6 @@ export class PlanService {
   
   // Extract workout details for a specific day
   extractWorkoutForDay(weekText, dayName, preferences) {
-    console.log(`🔍 Looking for ${dayName} in week text...`);
-    
     // Try multiple patterns to find the day workout:
     // Pattern 1: **Monday: Title**
     // Pattern 2: **Monday**\n- content
@@ -216,10 +173,7 @@ export class PlanService {
     }
     
     if (dayMatch) {
-      console.log(`✅ Found workout section for ${dayName}`);
       const workoutContent = dayMatch[1].trim();
-      console.log(`📝 ${dayName} content length: ${workoutContent.length}`);
-      console.log(`📝 ${dayName} first 150 chars:`, workoutContent.substring(0, 150));
       
       // ✅ FIX: Use workout type from USER PREFERENCES, not from parsing content
       // This ensures the card shows what the user actually selected
@@ -257,9 +211,7 @@ export class PlanService {
         }
       }
       
-      // Extract exercises from the content first
       const exercises = this.extractExercisesFromText(workoutContent);
-      console.log(`📋 Extracted ${exercises.length} exercises for ${dayName}`);
       
       // ✅ FIX: Calculate total duration from exercises OR use user preference
       // Don't parse from text as it might match random durations like "2 minutes walking rest"
@@ -302,16 +254,12 @@ export class PlanService {
       };
     }
     
-    console.log(`⚠️ No specific workout found for ${dayName}`);
     return null;
   }
   
   // Extract exercises from workout text
   extractExercisesFromText(workoutText) {
     const exercises = [];
-    
-    console.log('🔍 Extracting exercises from text...');
-    console.log('📝 Text to parse:', workoutText.substring(0, 300));
     
     // Split by lines and process each line
     const lines = workoutText.split('\n');
@@ -520,11 +468,6 @@ export class PlanService {
           }
         }
       }
-    }
-    
-    console.log(`✅ Extracted ${exercises.length} exercises`);
-    if (exercises.length > 0) {
-      console.log('📋 First exercise:', exercises[0]);
     }
     
     return exercises;
@@ -1007,12 +950,88 @@ export class PlanService {
         plan: data
       };
     } catch (error) {
-      console.error('Error saving plan:', error);
       return {
         success: false,
         error: error.message
       };
     }
+  }
+
+  // Update an existing plan in database
+  async updatePlan(planId, updates = {}) {
+    try {
+      const sanitizedUpdates = this.sanitizePlanUpdateData(updates);
+      if (Object.keys(sanitizedUpdates).length <= 1) {
+        return {
+          success: false,
+          error: 'No valid plan updates provided'
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('workout_plans')
+        .update(sanitizedUpdates)
+        .eq('id', planId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      this.currentPlan = data;
+      return {
+        success: true,
+        plan: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  // Sanitize partial plan updates
+  sanitizePlanUpdateData(updates) {
+    const sanitized = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (typeof updates.title === 'string' && updates.title.trim()) {
+      sanitized.title = updates.title.trim();
+    }
+
+    if (typeof updates.description === 'string') {
+      sanitized.description = updates.description.trim();
+    }
+
+    if (typeof updates.start_date === 'string') {
+      const startDate = new Date(updates.start_date);
+      if (!Number.isNaN(startDate.getTime())) {
+        sanitized.start_date = startDate.toISOString();
+      }
+    }
+
+    if (typeof updates.end_date === 'string') {
+      const endDate = new Date(updates.end_date);
+      if (!Number.isNaN(endDate.getTime())) {
+        sanitized.end_date = endDate.toISOString();
+      }
+    }
+
+    const allowedStatuses = new Set(['active', 'completed', 'archived']);
+    if (typeof updates.status === 'string' && allowedStatuses.has(updates.status)) {
+      sanitized.status = updates.status;
+    }
+
+    if (updates.preferences !== undefined) {
+      sanitized.preferences = this.sanitizePreferences(updates.preferences || {});
+    }
+
+    if (updates.weeks !== undefined) {
+      sanitized.weeks = this.sanitizeWeeks(updates.weeks || []);
+    }
+
+    return sanitized;
   }
 
   // Sanitize plan data to remove circular references
@@ -1032,7 +1051,6 @@ export class PlanService {
       
       return sanitized;
     } catch (error) {
-      console.error('Error sanitizing plan data:', error);
       // Return a minimal safe structure
       return {
         user_id: plan.user_id,
@@ -1069,7 +1087,6 @@ export class PlanService {
           JSON.stringify(preferences[key]);
           sanitized[key] = preferences[key];
         } catch (error) {
-          console.warn(`Skipping circular reference in preferences.${key}`);
           sanitized[key] = null;
         }
       }
@@ -1090,7 +1107,6 @@ export class PlanService {
         JSON.stringify(week);
         return week;
       } catch (error) {
-        console.warn('Skipping circular reference in week data');
         return {
           weekNumber: week.weekNumber || 1,
           focus: week.focus || 'General Fitness',
@@ -1120,7 +1136,6 @@ export class PlanService {
         plan: data
       };
     } catch (error) {
-      console.error('Error getting current plan:', error);
       return {
         success: false,
         error: error.message
@@ -1131,11 +1146,45 @@ export class PlanService {
   // Update plan progress
   async updatePlanProgress(planId, weekNumber, dayNumber, progress) {
     try {
+      const { data: existingPlan, error: fetchError } = await supabase
+        .from('workout_plans')
+        .select('weeks')
+        .eq('id', planId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const weekIndex = weekNumber - 1;
+      const dayIndex = dayNumber - 1;
+      const existingWeeks = Array.isArray(existingPlan?.weeks) ? existingPlan.weeks : [];
+      const targetWeek = existingWeeks[weekIndex];
+
+      if (!targetWeek || !Array.isArray(targetWeek.days) || !targetWeek.days[dayIndex]) {
+        throw new Error('Workout day not found in plan');
+      }
+
+      const updatedWeeks = existingWeeks.map((week, wIdx) => {
+        if (wIdx !== weekIndex) return week;
+
+        const updatedDays = week.days.map((day, dIdx) => {
+          if (dIdx !== dayIndex) return day;
+          return {
+            ...day,
+            progress
+          };
+        });
+
+        return {
+          ...week,
+          days: updatedDays
+        };
+      });
+
       const { data, error } = await supabase
         .from('workout_plans')
         .update({
           updated_at: new Date().toISOString(),
-          [`weeks.${weekNumber - 1}.days.${dayNumber - 1}.progress`]: progress
+          weeks: updatedWeeks
         })
         .eq('id', planId)
         .select()
@@ -1148,7 +1197,6 @@ export class PlanService {
         plan: data
       };
     } catch (error) {
-      console.error('Error updating plan progress:', error);
       return {
         success: false,
         error: error.message
@@ -1170,7 +1218,6 @@ export class PlanService {
 
       return await this.updatePlanProgress(planId, weekNumber, dayNumber, progress);
     } catch (error) {
-      console.error('Error completing workout:', error);
       return {
         success: false,
         error: error.message

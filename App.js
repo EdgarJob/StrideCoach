@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, ActivityIndicator, Text, Animated } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Import our screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -25,12 +26,8 @@ const Tab = createBottomTabNavigator();
 function AppNavigator() {
   const { user, loading } = useAuth();
 
-  // Debug logging
-  console.log('AppNavigator render - user:', user ? 'logged in' : 'not logged in', 'loading:', loading);
-
   // Show loading screen while checking auth status
   if (loading) {
-    console.log('Showing loading screen');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
         <ActivityIndicator size="large" color="#5AB3C1" />
@@ -41,11 +38,8 @@ function AppNavigator() {
 
   // Show auth screen if user is not logged in
   if (!user) {
-    console.log('Showing auth screen - no user');
     return <AuthScreen />;
   }
-
-  console.log('Showing main app - user is logged in');
 
   // Show main app if user is logged in
   return (
@@ -105,6 +99,7 @@ function AppNavigator() {
           },
           tabBarActiveTintColor: '#5AB3C1',
           tabBarInactiveTintColor: '#9CA3AF',
+          tabBarHideOnKeyboard: true,
           tabBarStyle: {
             height: 65,
             paddingBottom: 8,
@@ -125,7 +120,6 @@ function AppNavigator() {
           },
           headerStyle: {
             backgroundColor: '#5AB3C1',
-            height: 70,
             elevation: 0,
             shadowOpacity: 0,
           },
@@ -187,12 +181,14 @@ function AppNavigator() {
 // Main App Component with Providers
 export default function App() {
   return (
-    <AuthProvider>
-      <PlanProvider>
-        <AICoachProvider>
-          <AppNavigator />
-        </AICoachProvider>
-      </PlanProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <PlanProvider>
+          <AICoachProvider>
+            <AppNavigator />
+          </AICoachProvider>
+        </PlanProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

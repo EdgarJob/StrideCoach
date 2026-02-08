@@ -1,15 +1,99 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { usePlan } from '../contexts/PlanContext';
+import colors from '../theme/colors';
 
 export default function ProgressScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState('week');
+  const { currentPlan, getPlanProgress, getWeekProgress } = usePlan();
 
   const periods = [
     { key: 'week', label: 'Week' },
     { key: 'month', label: 'Month' },
     { key: 'all', label: 'All Time' },
   ];
+
+  // Calculate real progress data from the plan
+  const planProgress = getPlanProgress();
+
+  // Calculate total active minutes from completed workouts
+  const calculateActiveMinutes = () => {
+    if (!currentPlan) return 0;
+    let total = 0;
+    currentPlan.weeks.forEach(week => {
+      week.days.forEach(day => {
+        if (day.is_workout_day && day.progress && day.progress.completed) {
+          total += day.progress.duration_minutes || day.workout?.duration_minutes || 0;
+        }
+      });
+    });
+    return total;
+  };
+
+  // Calculate streak from plan data
+  const calculateStreak = () => {
+    if (!currentPlan) return 0;
+    let streak = 0;
+    const today = new Date();
+    const startDate = new Date(currentPlan.start_date);
+    const daysDiff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+    for (let i = daysDiff; i >= 0; i--) {
+      const weekNumber = Math.floor(i / 7) + 1;
+      const dayNumber = (i % 7) + 1;
+      if (weekNumber > 4) continue;
+      const week = currentPlan.weeks[weekNumber - 1];
+      if (!week) continue;
+      const day = week.days[dayNumber - 1];
+      if (!day || !day.is_workout_day) continue;
+      if (day.progress && day.progress.completed) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  };
+
+  // Build recent activity list from plan data
+  const getRecentActivity = () => {
+    if (!currentPlan) return [];
+    const activities = [];
+    const today = new Date();
+    const startDate = new Date(currentPlan.start_date);
+    const daysDiff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+
+    for (let i = daysDiff; i >= 0 && activities.length < 5; i--) {
+      const weekNumber = Math.floor(i / 7) + 1;
+      const dayNumber = (i % 7) + 1;
+      if (weekNumber > 4) continue;
+      const week = currentPlan.weeks[weekNumber - 1];
+      if (!week) continue;
+      const day = week.days[dayNumber - 1];
+      if (!day || !day.is_workout_day) continue;
+
+      const daysAgo = daysDiff - i;
+      let dateLabel;
+      if (daysAgo === 0) dateLabel = 'Today';
+      else if (daysAgo === 1) dateLabel = 'Yesterday';
+      else dateLabel = `${daysAgo} days ago`;
+
+      const completed = day.progress && day.progress.completed;
+      const duration = day.workout?.duration_minutes || 0;
+      const type = day.workout?.type || 'Workout';
+
+      activities.push({
+        title: `${duration}-min ${type}`,
+        date: dateLabel,
+        completed,
+      });
+    }
+    return activities;
+  };
+
+  const activeMinutes = calculateActiveMinutes();
+  const streak = calculateStreak();
+  const recentActivity = getRecentActivity();
 
   return (
     <ScrollView style={styles.container}>
@@ -41,23 +125,23 @@ export default function ProgressScreen() {
         <Text style={styles.cardTitle}>Progress Overview</Text>
         <View style={styles.overviewGrid}>
           <View style={styles.overviewItem}>
-            <Ionicons name="walk" size={32} color="#5AB3C1" />
-            <Text style={styles.overviewNumber}>24.5</Text>
-            <Text style={styles.overviewLabel}>Miles Walked</Text>
+            <Ionicons name="checkmark-circle" size={32} color={colors.primary} />
+            <Text style={styles.overviewNumber}>{planProgress.completed}/{planProgress.total}</Text>
+            <Text style={styles.overviewLabel}>Workouts Done</Text>
           </View>
           <View style={styles.overviewItem}>
-            <Ionicons name="time" size={32} color="#10B981" />
-            <Text style={styles.overviewNumber}>180</Text>
+            <Ionicons name="time" size={32} color={colors.success} />
+            <Text style={styles.overviewNumber}>{activeMinutes}</Text>
             <Text style={styles.overviewLabel}>Minutes Active</Text>
           </View>
           <View style={styles.overviewItem}>
-            <Ionicons name="trending-up" size={32} color="#F59E0B" />
-            <Text style={styles.overviewNumber}>-2.1</Text>
-            <Text style={styles.overviewLabel}>Weight (lbs)</Text>
+            <Ionicons name="trending-up" size={32} color={colors.warning} />
+            <Text style={styles.overviewNumber}>{planProgress.percentage}%</Text>
+            <Text style={styles.overviewLabel}>Plan Complete</Text>
           </View>
           <View style={styles.overviewItem}>
-            <Ionicons name="flame" size={32} color="#EF4444" />
-            <Text style={styles.overviewNumber}>12</Text>
+            <Ionicons name="flame" size={32} color={colors.error} />
+            <Text style={styles.overviewNumber}>{streak}</Text>
             <Text style={styles.overviewLabel}>Day Streak</Text>
           </View>
         </View>
@@ -68,10 +152,10 @@ export default function ProgressScreen() {
         <Text style={styles.cardTitle}>Workout Adherence</Text>
         <View style={styles.chartContainer}>
           <Text style={styles.chartPlaceholder}>
-            📊 Chart will be implemented here
+            {planProgress.percentage}% adherence
           </Text>
           <Text style={styles.chartSubtext}>
-            Weekly adherence: 75%
+            {planProgress.completed} of {planProgress.total} workouts completed
           </Text>
         </View>
       </View>
@@ -80,38 +164,28 @@ export default function ProgressScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Recent Activity</Text>
         <View style={styles.activityList}>
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>60-min Walk</Text>
-              <Text style={styles.activityDate}>Yesterday, 5:00 PM</Text>
-            </View>
-            <Text style={styles.activityStatus}>Completed</Text>
-          </View>
-          
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>30-min Strength</Text>
-              <Text style={styles.activityDate}>2 days ago, 6:00 PM</Text>
-            </View>
-            <Text style={styles.activityStatus}>Completed</Text>
-          </View>
-          
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Ionicons name="close-circle" size={20} color="#EF4444" />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>45-min Walk</Text>
-              <Text style={styles.activityDate}>3 days ago, 5:30 PM</Text>
-            </View>
-            <Text style={styles.activityStatus}>Skipped</Text>
-          </View>
+          {recentActivity.length > 0 ? (
+            recentActivity.map((activity, index) => (
+              <View key={index} style={styles.activityItem}>
+                <View style={styles.activityIcon}>
+                  <Ionicons
+                    name={activity.completed ? 'checkmark-circle' : 'close-circle'}
+                    size={20}
+                    color={activity.completed ? colors.success : colors.error}
+                  />
+                </View>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityTitle}>{activity.title}</Text>
+                  <Text style={styles.activityDate}>{activity.date}</Text>
+                </View>
+                <Text style={styles.activityStatus}>
+                  {activity.completed ? 'Completed' : 'Pending'}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noActivityText}>No workout activity yet. Start a plan to track your progress!</Text>
+          )}
         </View>
       </View>
     </ScrollView>
@@ -121,15 +195,18 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   periodSelector: {
     flexDirection: 'row',
     margin: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 4,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+    }),
     elevation: 5,
   },
   periodButton: {
@@ -139,29 +216,32 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   periodButtonActive: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
   },
   periodButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   periodButtonTextActive: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     margin: 16,
     marginTop: 0,
     padding: 20,
     borderRadius: 12,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+    }),
     elevation: 5,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginBottom: 16,
   },
   overviewGrid: {
@@ -177,12 +257,12 @@ const styles = StyleSheet.create({
   overviewNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginTop: 8,
   },
   overviewLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -190,16 +270,16 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.cardBackground,
     borderRadius: 8,
   },
   chartPlaceholder: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   chartSubtext: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: colors.textLight,
     marginTop: 8,
   },
   activityList: {
@@ -210,7 +290,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.borderLight,
   },
   activityIcon: {
     marginRight: 12,
@@ -221,16 +301,22 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   activityDate: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginTop: 2,
   },
   activityStatus: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#10B981',
+    color: colors.success,
+  },
+  noActivityText: {
+    fontSize: 14,
+    color: colors.textMedium,
+    textAlign: 'center',
+    paddingVertical: 16,
   },
 });

@@ -41,7 +41,14 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Create client with user's JWT token so RLS policies work correctly
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
 
     const {
       data: { user },
@@ -131,7 +138,7 @@ serve(async (req) => {
 
     // 5. Log usage to ai_events table
     const cost = calculateCost(usage.prompt_tokens, usage.completion_tokens, OPENAI_MODEL);
-    await supabase.from("ai_events").insert({
+    const { error: insertError } = await supabase.from("ai_events").insert({
       user_id: user.id,
       kind: "plan",
       provider: "openai",
@@ -140,6 +147,13 @@ serve(async (req) => {
       completion_tokens: usage.completion_tokens,
       cost_usd: cost,
     });
+    
+    if (insertError) {
+      console.error("Failed to log AI usage to ai_events:", insertError);
+      // Don't fail the request if logging fails, but log the error
+    } else {
+      console.log("✅ AI usage logged successfully");
+    }
 
     const duration = Date.now() - startTime;
     console.log(`Plan generation completed in ${duration}ms`);
@@ -200,13 +214,13 @@ Preferences:
 - Workout Duration: ${preferences?.duration || 30} minutes
 - Intensity Level: ${preferences?.intensityLevel || "Beginner"}
 - Focus Areas: ${preferences?.focusAreas || "General fitness"}
-- Workout Types: ${preferences?.workoutTypes?.join(", ") || "Walking, Strength"}
+- Workout Types: ${Array.isArray(preferences?.workoutTypes) ? preferences.workoutTypes.join(", ") : (preferences?.workoutTypes || "Walking, Strength")}
 
 CRITICAL REQUIREMENTS:
 1. You MUST create workouts for EXACTLY these days ONLY: ${selectedDays || "Monday, Wednesday, Friday"}
 2. DO NOT include workouts for any other days
 3. Each workout should be approximately ${preferences?.duration || 30} minutes
-4. Focus on these workout types: ${preferences?.workoutTypes?.join(", ") || "Walking, Strength"}
+4. Focus on these workout types: ${Array.isArray(preferences?.workoutTypes) ? preferences.workoutTypes.join(", ") : (preferences?.workoutTypes || "Walking, Strength")}
 5. Difficulty should match: ${preferences?.intensityLevel || "Beginner"}
 6. Design VARIED workout types across the week (e.g., intervals, steady runs, tempo runs, etc.)
 7. Don't force all workouts into the same structure - vary them based on training principles

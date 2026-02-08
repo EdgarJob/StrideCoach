@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
 import WorkoutCalendar from '../components/WorkoutCalendar';
+import colors from '../theme/colors';
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { signOut, profile } = useAuth();
   const { dailyMotivation } = useAICoach();
   const { currentPlan, getTodaysWorkout, getPlanProgress, isFromCache, loadCurrentPlan } = usePlan();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -118,19 +123,21 @@ export default function HomeScreen() {
     return 'Not yet';
   };
 
-  const handleSignOut = async () => {
-    const confirmed = window.confirm('Are you sure you want to sign out?');
-    
-    if (confirmed) {
-      try {
-        const { error } = await signOut();
-        if (error) {
-          alert('Failed to sign out. Please try again.');
-        }
-      } catch (err) {
-        console.error('Sign out error:', err);
-        alert('Failed to sign out. Please try again.');
+  const handleSignOut = () => {
+    setShowSignOutConfirm(true);
+  };
+
+  const confirmSignOut = async () => {
+    setShowSignOutConfirm(false);
+    try {
+      const { error } = await signOut();
+      if (error) {
+        setStatusMessage({ type: 'error', text: 'Failed to sign out. Please try again.' });
+        setTimeout(() => setStatusMessage(null), 4000);
       }
+    } catch (err) {
+      setStatusMessage({ type: 'error', text: 'Failed to sign out. Please try again.' });
+      setTimeout(() => setStatusMessage(null), 4000);
     }
   };
 
@@ -139,7 +146,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* Colorful Header with Greeting and Profile Dropdown */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
           <Text style={styles.greeting}>{getGreeting()}! 👋</Text>
           <Text style={styles.subtitle}>Ready for your workout today?</Text>
@@ -153,12 +160,12 @@ export default function HomeScreen() {
             onBlur={() => setTimeout(() => setShowProfileMenu(false), 200)}
           >
             <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={20} color="#FFFFFF" />
+              <Ionicons name="person" size={20} color={colors.white} />
             </View>
             <Ionicons 
               name={showProfileMenu ? "chevron-up" : "chevron-down"} 
               size={16} 
-              color="#FFFFFF" 
+              color={colors.white} 
               style={{ marginLeft: 4 }}
             />
           </TouchableOpacity>
@@ -173,7 +180,7 @@ export default function HomeScreen() {
                   navigation.navigate('Profile');
                 }}
               >
-                <Ionicons name="person-outline" size={18} color="#1F2937" />
+                <Ionicons name="person-outline" size={18} color={colors.textDark} />
                 <Text style={styles.dropdownText}>My Profile</Text>
               </TouchableOpacity>
               
@@ -184,7 +191,7 @@ export default function HomeScreen() {
                   navigation.navigate('Plans');
                 }}
               >
-                <Ionicons name="calendar-outline" size={18} color="#1F2937" />
+                <Ionicons name="calendar-outline" size={18} color={colors.textDark} />
                 <Text style={styles.dropdownText}>My Plans</Text>
               </TouchableOpacity>
               
@@ -195,7 +202,7 @@ export default function HomeScreen() {
                   navigation.navigate('Progress');
                 }}
               >
-                <Ionicons name="trending-up-outline" size={18} color="#1F2937" />
+                <Ionicons name="trending-up-outline" size={18} color={colors.textDark} />
                 <Text style={styles.dropdownText}>Progress</Text>
               </TouchableOpacity>
               
@@ -208,7 +215,7 @@ export default function HomeScreen() {
                   handleSignOut();
                 }}
               >
-                <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                <Ionicons name="log-out-outline" size={18} color={colors.error} />
                 <Text style={[styles.dropdownText, styles.logoutText]}>Sign Out</Text>
               </TouchableOpacity>
             </View>
@@ -222,11 +229,11 @@ export default function HomeScreen() {
       <View style={styles.progressCard}>
         <View style={styles.cardHeader}>
           <View style={styles.headerTitleGroup}>
-            <Ionicons name="analytics" size={24} color="#5AB3C1" />
+            <Ionicons name="analytics" size={24} color={colors.primary} />
             <Text style={styles.cardTitle}>This Week's Progress</Text>
             {isFromCache && (
               <View style={styles.cacheIndicator}>
-                <Ionicons name="cloud-offline" size={14} color="#9CA3AF" />
+                <Ionicons name="cloud-offline" size={14} color={colors.textLight} />
                 <Text style={styles.cacheText}>Offline</Text>
               </View>
             )}
@@ -240,7 +247,7 @@ export default function HomeScreen() {
                 style={styles.refreshButton}
                 onPress={() => loadCurrentPlan(true)}
               >
-                <Ionicons name="refresh" size={18} color="#5AB3C1" />
+                <Ionicons name="refresh" size={18} color={colors.primary} />
               </TouchableOpacity>
             )}
           </View>
@@ -265,21 +272,21 @@ export default function HomeScreen() {
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
               </View>
               <Text style={styles.statNumber}>{progressData.completedWorkouts}/{progressData.totalWorkouts}</Text>
               <Text style={styles.statLabel}>Completed</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
-                <Ionicons name="flame" size={24} color="#FF9500" />
+                <Ionicons name="flame" size={24} color={colors.accent} />
               </View>
               <Text style={styles.statNumber}>{progressData.streak}</Text>
               <Text style={styles.statLabel}>Day Streak</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
-                <Ionicons name="trophy" size={24} color="#5AB3C1" />
+                <Ionicons name="trophy" size={24} color={colors.primary} />
               </View>
               <Text style={styles.statNumber}>{Math.max(0, progressData.totalWorkouts - progressData.completedWorkouts)}</Text>
               <Text style={styles.statLabel}>Left</Text>
@@ -300,29 +307,32 @@ export default function HomeScreen() {
         </View>
         
         {/* Compact Health Stats */}
+        {/* TODO: Replace hardcoded health values below with real data from HealthKit (iOS) / Google Fit (Android).
+            Requires a health data integration service (e.g., react-native-health or expo-health-connect)
+            to fetch steps, sleep, heart rate, and active minutes. */}
         <View style={styles.compactHealthSection}>
           <View style={styles.compactHealthHeader}>
-            <Ionicons name="pulse" size={16} color="#6B7280" />
+            <Ionicons name="pulse" size={16} color={colors.textMedium} />
             <Text style={styles.compactHealthTitle}>Today's Health</Text>
           </View>
           <View style={styles.compactHealthGrid}>
             <View style={styles.compactHealthItem}>
-              <Ionicons name="walk" size={14} color="#5AB3C1" />
+              <Ionicons name="walk" size={14} color={colors.primary} />
               <Text style={styles.compactHealthValue}>8.4k</Text>
               <Text style={styles.compactHealthLabel}>steps</Text>
             </View>
             <View style={styles.compactHealthItem}>
-              <Ionicons name="bed" size={14} color="#8B5CF6" />
+              <Ionicons name="bed" size={14} color={colors.purple} />
               <Text style={styles.compactHealthValue}>7.2h</Text>
               <Text style={styles.compactHealthLabel}>sleep</Text>
             </View>
             <View style={styles.compactHealthItem}>
-              <Ionicons name="heart" size={14} color="#EF4444" />
+              <Ionicons name="heart" size={14} color={colors.error} />
               <Text style={styles.compactHealthValue}>62</Text>
               <Text style={styles.compactHealthLabel}>bpm</Text>
             </View>
             <View style={styles.compactHealthItem}>
-              <Ionicons name="flame" size={14} color="#FF9500" />
+              <Ionicons name="flame" size={14} color={colors.accent} />
               <Text style={styles.compactHealthValue}>45</Text>
               <Text style={styles.compactHealthLabel}>active</Text>
             </View>
@@ -332,7 +342,7 @@ export default function HomeScreen() {
         {/* AI Coach Motivation Message */}
         <View style={styles.coachMotivation}>
           <View style={styles.coachMessageBubble}>
-            <Ionicons name="chatbubble-ellipses" size={20} color="#5AB3C1" />
+            <Ionicons name="chatbubble-ellipses" size={20} color={colors.primary} />
             <Text style={styles.coachMotivationText}>
               "{dailyMotivation || "The only bad workout is the one that didn't happen. You've got this! 💪"}"
             </Text>
@@ -341,7 +351,7 @@ export default function HomeScreen() {
             style={styles.askCoachButton}
             onPress={() => navigation.navigate('Chat')}
           >
-            <Ionicons name="chatbubble" size={16} color="#FFFFFF" />
+            <Ionicons name="chatbubble" size={16} color={colors.white} />
             <Text style={styles.askCoachButtonText}>Let's chat about your progress</Text>
           </TouchableOpacity>
         </View>
@@ -351,14 +361,14 @@ export default function HomeScreen() {
       {currentPlan ? (
         <View style={styles.calendarCard}>
           <View style={styles.cardHeader}>
-            <Ionicons name="calendar" size={24} color="#5AB3C1" />
+            <Ionicons name="calendar" size={24} color={colors.primary} />
             <Text style={styles.cardTitle}>Your Workout Calendar</Text>
             <TouchableOpacity 
               style={styles.viewAllButton}
               onPress={() => navigation.navigate('Plans')}
             >
               <Text style={styles.viewAllText}>View Full Plan</Text>
-              <Ionicons name="chevron-forward" size={16} color="#5AB3C1" />
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
           <WorkoutCalendar plan={currentPlan} />
@@ -366,7 +376,7 @@ export default function HomeScreen() {
       ) : (
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="calendar" size={24} color="#5AB3C1" />
+            <Ionicons name="calendar" size={24} color={colors.primary} />
             <Text style={styles.cardTitle}>No Active Plan</Text>
           </View>
           <View style={styles.noPlanContent}>
@@ -377,7 +387,7 @@ export default function HomeScreen() {
               style={styles.createPlanButton}
               onPress={() => navigation.navigate('Plans')}
             >
-              <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+              <Ionicons name="add-circle" size={20} color={colors.white} />
               <Text style={styles.createPlanButtonText}>Create Plan</Text>
             </TouchableOpacity>
           </View>
@@ -385,6 +395,32 @@ export default function HomeScreen() {
       )}
 
       </ScrollView>
+
+      {/* Status Message */}
+      {statusMessage && (
+        <View style={[styles.statusBanner, statusMessage.type === 'error' ? styles.errorBanner : styles.successBanner]}>
+          <Ionicons name={statusMessage.type === 'error' ? 'alert-circle' : 'checkmark-circle'} size={18} color={statusMessage.type === 'error' ? colors.error : colors.success} />
+          <Text style={[styles.statusText, statusMessage.type === 'error' ? styles.errorText : styles.successText]}>{statusMessage.text}</Text>
+        </View>
+      )}
+
+      {/* Sign Out Confirmation */}
+      {showSignOutConfirm && (
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmDialog}>
+            <Text style={styles.confirmTitle}>Sign Out</Text>
+            <Text style={styles.confirmMessage}>Are you sure you want to sign out?</Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowSignOutConfirm(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmButton} onPress={confirmSignOut}>
+                <Text style={styles.confirmButtonText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -392,7 +428,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flex: 1,
@@ -403,8 +439,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
-    backgroundColor: '#5AB3C1',
-    boxShadow: '0px 2px 8px rgba(90, 179, 193, 0.2)',
+    backgroundColor: colors.primary,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(90, 179, 193, 0.2)' },
+      default: { shadowColor: '#5AB3C1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
+    }),
     elevation: 3,
     zIndex: 1000,
   },
@@ -438,7 +477,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 52,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 12,
     minWidth: 200,
     shadowColor: '#000',
@@ -451,7 +490,7 @@ const styles = StyleSheet.create({
     elevation: 10,
     zIndex: 9999,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingVertical: 8,
   },
   dropdownItem: {
@@ -460,17 +499,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 12,
-    cursor: 'pointer',
-    backgroundColor: '#FFFFFF',
+    ...Platform.select({ web: { cursor: 'pointer' }, default: {} }),
+    backgroundColor: colors.white,
   },
   dropdownText: {
     fontSize: 15,
-    color: '#1F2937',
+    color: colors.textDark,
     fontWeight: '500',
   },
   dropdownDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     marginVertical: 4,
   },
   logoutItem: {
@@ -478,26 +517,29 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 12,
   },
   logoutText: {
-    color: '#EF4444',
+    color: colors.error,
   },
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: colors.white,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.white,
     opacity: 0.9,
   },
   progressCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     margin: 16,
     marginTop: 16,
     padding: 20,
     borderRadius: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+    }),
     elevation: 3,
   },
   cardHeader: {
@@ -514,7 +556,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   badgeGroup: {
     flexDirection: 'row',
@@ -522,7 +564,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   weekBadge: {
-    backgroundColor: '#E5F3FF',
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -530,13 +572,13 @@ const styles = StyleSheet.create({
   weekBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#5AB3C1',
+    color: colors.primary,
   },
   cacheIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -544,14 +586,14 @@ const styles = StyleSheet.create({
   },
   cacheText: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: colors.textLight,
     fontWeight: '500',
   },
   refreshButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E5F3FF',
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -570,7 +612,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -578,20 +620,20 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 8,
-    borderColor: '#5AB3C1',
+    borderColor: colors.primary,
   },
   bigPercentage: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#5AB3C1',
+    color: colors.primary,
   },
   percentageLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginTop: 4,
   },
   progressDot1: {
@@ -601,7 +643,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
   },
   progressDot2: {
     position: 'absolute',
@@ -610,7 +652,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.accent,
   },
   progressDot3: {
     position: 'absolute',
@@ -619,7 +661,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success,
   },
   statsGrid: {
     flex: 1,
@@ -630,26 +672,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     padding: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.cardBackground,
     borderRadius: 12,
   },
   statIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
   },
   statNumber: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     flex: 1,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   linearProgressContainer: {
     marginBottom: 20,
@@ -657,19 +699,19 @@ const styles = StyleSheet.create({
   linearProgressBackground: {
     width: '100%',
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 8,
   },
   linearProgressFill: {
     height: '100%',
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     borderRadius: 4,
   },
   progressPercentText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.textMedium,
     textAlign: 'center',
   },
   coachMotivation: {
@@ -680,13 +722,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
     padding: 16,
-    backgroundColor: '#E5F3FF',
+    backgroundColor: colors.primaryLight,
     borderRadius: 12,
   },
   coachMotivationText: {
     flex: 1,
     fontSize: 14,
-    color: '#1F2937',
+    color: colors.textDark,
     lineHeight: 20,
     fontStyle: 'italic',
   },
@@ -696,20 +738,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     padding: 12,
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.accent,
     borderRadius: 12,
   },
   askCoachButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.white,
   },
   // Compact Health Stats Styles
   compactHealthSection: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border,
   },
   compactHealthHeader: {
     flexDirection: 'row',
@@ -720,7 +762,7 @@ const styles = StyleSheet.create({
   compactHealthTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   compactHealthGrid: {
     flexDirection: 'row',
@@ -732,27 +774,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 6,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.cardBackground,
     borderRadius: 8,
   },
   compactHealthValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginTop: 4,
   },
   compactHealthLabel: {
     fontSize: 10,
-    color: '#9CA3AF',
+    color: colors.textLight,
     marginTop: 2,
   },
   calendarCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     margin: 16,
     marginTop: 0,
     padding: 20,
     borderRadius: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+    }),
     elevation: 3,
   },
   viewAllButton: {
@@ -763,15 +808,18 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5AB3C1',
+    color: colors.primary,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     margin: 16,
     marginTop: 0,
     padding: 20,
     borderRadius: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+    }),
     elevation: 3,
   },
   noPlanContent: {
@@ -780,7 +828,7 @@ const styles = StyleSheet.create({
   },
   noPlanText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     textAlign: 'center',
     marginBottom: 20,
     lineHeight: 20,
@@ -791,12 +839,107 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#FF9500',
+    backgroundColor: colors.accent,
     borderRadius: 12,
   },
   createPlanButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.white,
+  },
+  confirmOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  confirmDialog: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    maxWidth: 320,
+    alignItems: 'center',
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textDark,
+    marginBottom: 8,
+  },
+  confirmMessage: {
+    fontSize: 14,
+    color: colors.textMedium,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: colors.borderLight,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textDark,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: colors.error,
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  confirmButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
+  },
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+  },
+  errorBanner: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  successBanner: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  statusText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  errorText: {
+    color: colors.error,
+  },
+  successText: {
+    color: colors.success,
   },
 });

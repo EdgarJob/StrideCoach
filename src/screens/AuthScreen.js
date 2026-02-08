@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import colors from '../theme/colors';
 
 export default function AuthScreen() {
+  const passwordInputRef = useRef(null);
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,31 +30,57 @@ export default function AuthScreen() {
     sex: 'male',
   });
 
+  const [message, setMessage] = useState(null); // { type: 'error' | 'success', text: string }
+
   const { signIn, signUp, signInWithOAuth } = useAuth();
+
+  const updateField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const syncAutofillField = (field, event) => {
+    const nativeText = event?.nativeEvent?.text;
+    if (typeof nativeText === 'string') {
+      updateField(field, nativeText);
+    }
+  };
+
+  // Auto-clear messages after 5 seconds
+  React.useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  const showError = (text) => setMessage({ type: 'error', text });
+  const showSuccess = (text) => setMessage({ type: 'success', text });
 
   const handleOAuthSignIn = async (provider) => {
     setLoading(true);
+    setMessage(null);
     try {
       const { error } = await signInWithOAuth(provider);
       if (error) {
-        Alert.alert(`${provider} Sign In Error`, error.message || 'Failed to sign in. Please try again.');
+        showError(error.message || 'Failed to sign in. Please try again.');
       }
-      // OAuth will redirect the user, so no success message needed here
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSubmit = async () => {
+    setMessage(null);
+
     if (!formData.email || !formData.password) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showError('Please fill in all required fields.');
       return;
     }
 
     if (!isLogin && (!formData.displayName || !formData.age || !formData.height || !formData.weight)) {
-      Alert.alert('Error', 'Please fill in all profile fields');
+      showError('Please fill in all profile fields.');
       return;
     }
 
@@ -61,7 +90,7 @@ export default function AuthScreen() {
       if (isLogin) {
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
-          Alert.alert('Login Error', error.message);
+          showError(error.message || 'Invalid email or password.');
         }
       } else {
         const userData = {
@@ -72,8 +101,8 @@ export default function AuthScreen() {
           weight_kg: parseFloat(formData.weight),
           goal: {
             type: 'weight_loss',
-            target_weight: parseFloat(formData.weight) - 5, // Default: lose 5kg
-            deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 months from now
+            target_weight: parseFloat(formData.weight) - 5,
+            deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           },
           schedule: {
             days: ['Monday', 'Wednesday', 'Friday'],
@@ -94,21 +123,22 @@ export default function AuthScreen() {
 
         const { error } = await signUp(formData.email, formData.password, userData);
         if (error) {
-          Alert.alert('Signup Error', error.message);
+          showError(error.message || 'Failed to create account.');
         } else {
-          Alert.alert('Success', 'Account created! Please check your email to verify your account.');
+          showSuccess('Account created! Please check your email to verify your account.');
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <SafeAreaView style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -122,30 +152,72 @@ export default function AuthScreen() {
 
         {/* Form */}
         <View style={styles.form}>
+          {/* Inline message banner */}
+          {message && (
+            <View style={[
+              styles.messageBanner,
+              message.type === 'error' ? styles.errorBanner : styles.successBanner
+            ]}>
+              <Ionicons
+                name={message.type === 'error' ? 'alert-circle' : 'checkmark-circle'}
+                size={20}
+                color={message.type === 'error' ? colors.error : colors.success}
+                style={styles.messageIcon}
+              />
+              <Text style={[
+                styles.messageText,
+                message.type === 'error' ? styles.errorText : styles.successText
+              ]}>
+                {message.text}
+              </Text>
+              <TouchableOpacity onPress={() => setMessage(null)}>
+                <Ionicons name="close" size={18} color={colors.textMedium} />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Email */}
           <View style={styles.inputContainer}>
-            <Ionicons name="mail" size={20} color="#6B7280" style={styles.inputIcon} />
+            <Ionicons name="mail" size={20} color={colors.textMedium} style={styles.inputIcon} />
             <TextInput
+              key={`email-${isLogin ? 'login' : 'signup'}`}
               style={styles.input}
               placeholder="Email"
               value={formData.email}
-              onChangeText={(text) => setFormData({ ...formData, email: text })}
+              onChangeText={(text) => updateField('email', text)}
+              onChange={(event) => syncAutofillField('email', event)}
+              onEndEditing={(event) => syncAutofillField('email', event)}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              textContentType={isLogin ? 'username' : 'emailAddress'}
+              autoComplete={isLogin ? 'username' : 'email'}
+              importantForAutofill="yes"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
             />
           </View>
 
           {/* Password */}
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed" size={20} color="#6B7280" style={styles.inputIcon} />
+            <Ionicons name="lock-closed" size={20} color={colors.textMedium} style={styles.inputIcon} />
             <TextInput
+              key={`password-${isLogin ? 'login' : 'signup'}`}
+              ref={passwordInputRef}
               style={styles.input}
               placeholder="Password"
               value={formData.password}
-              onChangeText={(text) => setFormData({ ...formData, password: text })}
+              onChangeText={(text) => updateField('password', text)}
+              onChange={(event) => syncAutofillField('password', event)}
+              onEndEditing={(event) => syncAutofillField('password', event)}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
+              textContentType={isLogin ? 'password' : 'newPassword'}
+              autoComplete={isLogin ? 'password' : 'new-password'}
+              importantForAutofill="yes"
+              returnKeyType="go"
+              onSubmitEditing={handleSubmit}
             />
             <TouchableOpacity 
               onPress={() => setShowPassword(!showPassword)}
@@ -154,7 +226,7 @@ export default function AuthScreen() {
               <Ionicons 
                 name={showPassword ? "eye-off" : "eye"} 
                 size={20} 
-                color="#6B7280" 
+                color={colors.textMedium}
               />
             </TouchableOpacity>
           </View>
@@ -163,57 +235,57 @@ export default function AuthScreen() {
           {!isLogin && (
             <>
               <View style={styles.inputContainer}>
-                <Ionicons name="person" size={20} color="#6B7280" style={styles.inputIcon} />
+                <Ionicons name="person" size={20} color={colors.textMedium} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Full Name"
                   value={formData.displayName}
-                  onChangeText={(text) => setFormData({ ...formData, displayName: text })}
+                  onChangeText={(text) => updateField('displayName', text)}
                 />
               </View>
 
               <View style={styles.row}>
                 <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="calendar" size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Ionicons name="calendar" size={20} color={colors.textMedium} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Age"
                     value={formData.age}
-                    onChangeText={(text) => setFormData({ ...formData, age: text })}
+                    onChangeText={(text) => updateField('age', text)}
                     keyboardType="numeric"
                   />
                 </View>
 
                 <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="male-female" size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Ionicons name="male-female" size={20} color={colors.textMedium} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Sex (male/female)"
                     value={formData.sex}
-                    onChangeText={(text) => setFormData({ ...formData, sex: text })}
+                    onChangeText={(text) => updateField('sex', text)}
                   />
                 </View>
               </View>
 
               <View style={styles.row}>
                 <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="resize" size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Ionicons name="resize" size={20} color={colors.textMedium} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Height (cm)"
                     value={formData.height}
-                    onChangeText={(text) => setFormData({ ...formData, height: text })}
+                    onChangeText={(text) => updateField('height', text)}
                     keyboardType="numeric"
                   />
                 </View>
 
                 <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="fitness" size={20} color="#6B7280" style={styles.inputIcon} />
+                  <Ionicons name="fitness" size={20} color={colors.textMedium} style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
                     placeholder="Weight (kg)"
                     value={formData.weight}
-                    onChangeText={(text) => setFormData({ ...formData, weight: text })}
+                    onChangeText={(text) => updateField('weight', text)}
                     keyboardType="numeric"
                   />
                 </View>
@@ -268,13 +340,17 @@ export default function AuthScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -288,29 +364,32 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#5AB3C1',
+    color: colors.primary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   form: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 24,
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 2px 8px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+    }),
     elevation: 5,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: colors.inputBorder,
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.inputBackground,
   },
   inputIcon: {
     marginRight: 12,
@@ -319,8 +398,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     fontSize: 16,
-    color: '#1F2937',
-    outlineStyle: 'none', // Remove blue focus outline
+    color: colors.textDark,
+    ...Platform.select({ web: { outlineStyle: 'none' }, default: {} }),
   },
   passwordToggle: {
     padding: 8,
@@ -333,7 +412,7 @@ const styles = StyleSheet.create({
     width: '48%',
   },
   submitButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -341,10 +420,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   submitButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.textLight,
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -352,7 +431,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toggleButtonText: {
-    color: '#5AB3C1',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -364,11 +443,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: colors.inputBorder,
   },
   dividerText: {
     marginHorizontal: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -380,8 +459,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.inputBorder,
+    backgroundColor: colors.white,
   },
   googleButton: {
     borderColor: '#DB4437',
@@ -390,6 +469,36 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textDark,
+  },
+  messageBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  errorBanner: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  successBanner: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  messageIcon: {
+    marginRight: 8,
+  },
+  messageText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  errorText: {
+    color: colors.error,
+  },
+  successText: {
+    color: colors.success,
   },
 });

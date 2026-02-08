@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import colors from '../theme/colors';
 
 /**
  * CircularProgress Component
@@ -23,8 +24,8 @@ export default function CircularProgress({
   progress = 0, 
   size = 120, 
   strokeWidth = 8,
-  color = '#5AB3C1',
-  backgroundColor = '#E5E7EB',
+  color = colors.primary,
+  backgroundColor = colors.border,
   showPercentage = true 
 }) {
   const [animatedProgress, setAnimatedProgress] = useState(0);
@@ -54,7 +55,7 @@ export default function CircularProgress({
           strokeWidth={strokeWidth}
           fill="none"
         />
-        {/* Progress circle with glow effect */}
+        {/* Progress circle */}
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -66,19 +67,7 @@ export default function CircularProgress({
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          filter="url(#glow)"
         />
-        
-        {/* Glow filter definition */}
-        <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge> 
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
       </Svg>
       
       {showPercentage && (
@@ -108,7 +97,10 @@ const styles = StyleSheet.create({
   },
   percentageText: {
     fontWeight: '700',
-    color: '#1F2937',
-    textShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
+    color: colors.textDark,
+    ...Platform.select({
+      web: { textShadow: `0px 1px 2px ${colors.shadow}` },
+      default: {},
+    }),
   },
 });

@@ -8,21 +8,28 @@ import {
   TouchableOpacity, 
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
-  Alert
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAICoach } from '../contexts/AICoachContext';
+import colors from '../theme/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ChatScreen() {
+  const insets = useSafeAreaInsets();
   const { 
     isLoading, 
     conversationHistory, 
     sendMessage: sendAIMessage, 
-    clearConversation
+    clearConversation,
+    pendingPlanAction,
+    isApplyingPlanAction,
+    confirmPendingPlanAction,
+    dismissPendingPlanAction
   } = useAICoach();
   
   const [inputText, setInputText] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const scrollViewRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -42,28 +49,16 @@ export default function ChatScreen() {
   };
 
   const handleClearChat = () => {
-    console.log('Clear chat button pressed');
-    Alert.alert(
-      'Clear Chat',
-      'Are you sure you want to clear the conversation?',
-      [
-        { 
-          text: 'Cancel', 
-          style: 'cancel', 
-          onPress: () => console.log('Clear cancelled') 
-        },
-        { 
-          text: 'Clear', 
-          style: 'destructive', 
-          onPress: () => {
-            console.log('Clear confirmed, calling clearConversation');
-            clearConversation();
-            console.log('Clear conversation called, state should update now');
-          }
-        }
-      ],
-      { cancelable: true }
-    );
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearChat = () => {
+    setShowClearConfirm(false);
+    clearConversation();
+  };
+
+  const handleConfirmPlanAction = async () => {
+    await confirmPendingPlanAction();
   };
 
   const quickQuestions = [
@@ -100,16 +95,17 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
     >
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Ionicons name="bulb" size={24} color="#5AB3C1" />
+          <Ionicons name="bulb" size={24} color={colors.primary} />
           <Text style={styles.headerTitle}>AI Coach</Text>
         </View>
         <TouchableOpacity onPress={handleClearChat} style={styles.clearButton}>
-          <Ionicons name="trash-outline" size={20} color="#6B7280" />
+          <Ionicons name="trash-outline" size={20} color={colors.textMedium} />
           <Text style={styles.clearButtonText}>Clear</Text>
         </TouchableOpacity>
       </View>
@@ -121,10 +117,11 @@ export default function ChatScreen() {
         style={styles.messagesContainer}
         contentContainerStyle={styles.messagesContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {conversationHistory.length === 0 ? (
           <View style={styles.welcomeContainer}>
-            <Ionicons name="chatbubbles" size={48} color="#5AB3C1" />
+            <Ionicons name="chatbubbles" size={48} color={colors.primary} />
             <Text style={styles.welcomeTitle}>Welcome to your AI Coach!</Text>
             <Text style={styles.welcomeSubtitle}>
               I'm here to help you with your fitness journey. Ask me about workouts, 
@@ -148,39 +145,105 @@ export default function ChatScreen() {
         
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#5AB3C1" />
+            <ActivityIndicator size="small" color={colors.primary} />
             <Text style={styles.loadingText}>AI Coach is thinking...</Text>
           </View>
         )}
       </ScrollView>
 
+      {/* Pending plan update confirmation */}
+      {pendingPlanAction && (
+        <View style={styles.planActionContainer}>
+          <Text style={styles.planActionTitle}>Plan Update Proposal</Text>
+          <Text style={styles.planActionMessage}>
+            {pendingPlanAction.confirmationPrompt || 'Apply these workout plan updates?'}
+          </Text>
+          {pendingPlanAction.summary ? (
+            <Text style={styles.planActionSummary}>{pendingPlanAction.summary}</Text>
+          ) : null}
+          {pendingPlanAction.dayPreview ? (
+            <View style={styles.planActionPreview}>
+              <Text style={styles.planActionPreviewTitle}>Workout Days Change</Text>
+              <Text style={styles.planActionPreviewText}>
+                Current ({pendingPlanAction.dayPreview.currentCount}): {pendingPlanAction.dayPreview.currentDays.join(', ') || 'None'}
+              </Text>
+              <Text style={styles.planActionPreviewText}>
+                Proposed ({pendingPlanAction.dayPreview.proposedCount}): {pendingPlanAction.dayPreview.proposedDays.join(', ') || 'None'}
+              </Text>
+              {pendingPlanAction.dayPreview.proposedCount < (pendingPlanAction.dayPreview.currentCount - 2) ? (
+                <Text style={styles.planActionWarningText}>
+                  Large reduction detected. This will be safety-adjusted unless you explicitly ask for fewer days.
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+          <View style={styles.planActionButtons}>
+            <TouchableOpacity
+              style={styles.planActionDismissButton}
+              onPress={dismissPendingPlanAction}
+              disabled={isApplyingPlanAction || isLoading}
+            >
+              <Text style={styles.planActionDismissText}>Not now</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.planActionConfirmButton}
+              onPress={handleConfirmPlanAction}
+              disabled={isApplyingPlanAction || isLoading}
+            >
+              {isApplyingPlanAction ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <Text style={styles.planActionConfirmText}>Confirm</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Input Area */}
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, { paddingBottom: Math.max(12, insets.bottom) }]}>
         <TextInput
           style={styles.textInput}
           value={inputText}
           onChangeText={setInputText}
           placeholder="Ask your AI coach anything..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textLight}
           multiline
           maxLength={500}
-          editable={!isLoading}
+          editable={!isLoading && !isApplyingPlanAction}
         />
         <TouchableOpacity
           style={[
             styles.sendButton,
-            (inputText.trim() === '' || isLoading) && styles.sendButtonDisabled,
+            (inputText.trim() === '' || isLoading || isApplyingPlanAction) && styles.sendButtonDisabled,
           ]}
           onPress={sendMessage}
-          disabled={inputText.trim() === '' || isLoading}
+          disabled={inputText.trim() === '' || isLoading || isApplyingPlanAction}
         >
           <Ionicons 
             name="send" 
             size={20} 
-            color={(inputText.trim() === '' || isLoading) ? '#9CA3AF' : '#FFFFFF'} 
+            color={(inputText.trim() === '' || isLoading || isApplyingPlanAction) ? colors.textLight : colors.white}
           />
         </TouchableOpacity>
       </View>
+      {/* Clear Chat Confirmation */}
+      {showClearConfirm && (
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmDialog}>
+            <Text style={styles.confirmTitle}>Clear Chat</Text>
+            <Text style={styles.confirmMessage}>Are you sure you want to clear the conversation?</Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity style={styles.confirmCancelButton} onPress={() => setShowClearConfirm(false)}>
+                <Text style={styles.confirmCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmClearButton} onPress={confirmClearChat}>
+                <Text style={styles.confirmClearText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -188,16 +251,16 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -206,20 +269,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginLeft: 8,
   },
   clearButton: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     borderRadius: 8,
   },
   clearButtonText: {
     marginLeft: 4,
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     fontWeight: '500',
   },
   messagesContainer: {
@@ -235,13 +298,13 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginTop: 16,
     marginBottom: 8,
   },
   welcomeSubtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
@@ -253,14 +316,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   suggestionChip: {
-    backgroundColor: '#E0E7FF',
+    backgroundColor: colors.indigo,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
   suggestionText: {
     fontSize: 14,
-    color: '#5AB3C1',
+    color: colors.primary,
     fontWeight: '500',
   },
   loadingContainer: {
@@ -272,7 +335,88 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
+  },
+  planActionContainer: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: '#ECFEFF',
+    borderWidth: 1,
+    borderColor: '#A5F3FC',
+  },
+  planActionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  planActionMessage: {
+    fontSize: 14,
+    color: colors.textDark,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  planActionSummary: {
+    fontSize: 13,
+    color: colors.textMedium,
+    marginBottom: 10,
+  },
+  planActionPreview: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+  planActionPreviewTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textDark,
+    marginBottom: 4,
+  },
+  planActionPreviewText: {
+    fontSize: 12,
+    color: colors.textMedium,
+    marginBottom: 2,
+  },
+  planActionWarningText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: colors.warning,
+    fontWeight: '600',
+  },
+  planActionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  planActionDismissButton: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: colors.borderLight,
+  },
+  planActionDismissText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textDark,
+  },
+  planActionConfirmButton: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+  },
+  planActionConfirmText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.white,
   },
   messageContainer: {
     marginBottom: 16,
@@ -289,13 +433,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   userBubble: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderBottomLeftRadius: 4,
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 1px 2px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+    }),
     elevation: 2,
   },
   errorBubble: {
@@ -308,10 +455,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   userText: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   aiText: {
-    color: '#1F2937',
+    color: colors.textDark,
   },
   errorText: {
     color: '#DC2626',
@@ -319,30 +466,30 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     marginTop: 4,
-    color: '#9CA3AF',
+    color: colors.textLight,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border,
   },
   textInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: colors.inputBorder,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginRight: 8,
     maxHeight: 100,
     fontSize: 16,
-    color: '#1F2937',
+    color: colors.textDark,
   },
   sendButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -350,6 +497,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
+  },
+  confirmOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  confirmDialog: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    maxWidth: 320,
+    alignItems: 'center',
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textDark,
+    marginBottom: 8,
+  },
+  confirmMessage: {
+    fontSize: 14,
+    color: colors.textMedium,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  confirmCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: colors.borderLight,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  confirmCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textDark,
+  },
+  confirmClearButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: colors.error,
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  confirmClearText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
   },
 });

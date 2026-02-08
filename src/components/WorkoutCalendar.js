@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import colors from '../theme/colors';
 
 /**
  * WorkoutCalendar Component
@@ -30,6 +31,7 @@ export default function WorkoutCalendar({ plan }) {
   const [canScrollRight, setCanScrollRight] = useState(true);
   // State to track current visible card index
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [selectedDayDetail, setSelectedDayDetail] = useState(null);
 
   // If no plan exists, show a message
   if (!plan || !plan.weeks || plan.weeks.length === 0) {
@@ -67,19 +69,19 @@ export default function WorkoutCalendar({ plan }) {
   const getWorkoutIcon = (type) => {
     switch (type?.toLowerCase()) {
       case 'walking':
-        return { name: 'walk', color: '#10B981' };
+        return { name: 'walk', color: colors.success };
       case 'running':
-        return { name: 'fitness', color: '#F59E0B' };
+        return { name: 'fitness', color: colors.warning };
       case 'strength':
-        return { name: 'barbell', color: '#EF4444' };
+        return { name: 'barbell', color: colors.error };
       case 'yoga':
-        return { name: 'body', color: '#8B5CF6' };
+        return { name: 'body', color: colors.purple };
       case 'cycling':
         return { name: 'bicycle', color: '#3B82F6' };
       case 'swimming':
         return { name: 'water', color: '#06B6D4' };
       default:
-        return { name: 'fitness-outline', color: '#6B7280' };
+        return { name: 'fitness-outline', color: colors.textMedium };
     }
   };
 
@@ -137,49 +139,26 @@ export default function WorkoutCalendar({ plan }) {
    */
   const handleDayPress = (day, dayName) => {
     if (day.is_rest_day || !day.workout) {
-      Alert.alert(
-        '😴 Rest Day',
-        'Take this day to rest and recover. Your body needs time to rebuild and get stronger!',
-        [{ text: 'OK' }]
-      );
+      setSelectedDayDetail({
+        title: 'Rest Day',
+        isRest: true,
+        message: 'Take this day to rest and recover. Your body needs time to rebuild and get stronger!'
+      });
       return;
     }
 
     const workout = day.workout;
     const exercises = workout.exercises || [];
-    
-    // Format the exercise list for display
-    const exerciseList = exercises.map((ex, idx) => {
-      let details = `${idx + 1}. ${ex.name || ex.exercise}`;
-      if (ex.sets && ex.reps) {
-        details += `\n   ${ex.sets} sets × ${ex.reps} reps`;
-      } else if (ex.sets && ex.duration) {
-        details += `\n   ${ex.sets} sets - ${ex.duration} min`;
-      } else if (ex.duration) {
-        details += `\n   ${ex.duration} min`;
-      } else if (ex.sets) {
-        details += `\n   ${ex.sets} sets`;
-      }
-      return details;
-    }).join('\n\n');
 
-    const workoutInfo = `
-🏋️ Type: ${workout.type}
-⏱️ Duration: ${workout.duration_minutes} minutes
-📊 Difficulty: ${workout.difficulty || 'beginner'}
-${workout.notes ? `\n📝 Notes: ${workout.notes}` : ''}
-
-💪 Exercises (${exercises.length}):
-
-${exerciseList}
-    `.trim();
-
-    Alert.alert(
-      `${dayName} Workout`,
-      workoutInfo,
-      [{ text: 'Got it!' }],
-      { cancelable: true }
-    );
+    setSelectedDayDetail({
+      title: `${dayName} Workout`,
+      isRest: false,
+      type: workout.type,
+      duration: workout.duration_minutes,
+      difficulty: workout.difficulty || 'beginner',
+      notes: workout.notes,
+      exercises: exercises,
+    });
   };
 
   /**
@@ -232,13 +211,13 @@ ${exerciseList}
             {/* Workout duration and difficulty */}
             <View style={styles.workoutMeta}>
               <View style={styles.durationBadge}>
-                <Ionicons name="time-outline" size={14} color="#6B7280" />
+                <Ionicons name="time-outline" size={14} color={colors.textMedium} />
                 <Text style={styles.durationText}>
                   {day.workout.duration_minutes} min
                 </Text>
               </View>
               <View style={styles.difficultyBadge}>
-                <Ionicons name="fitness-outline" size={14} color="#F59E0B" />
+                <Ionicons name="fitness-outline" size={14} color={colors.warning} />
                 <Text style={styles.difficultyText}>
                   {day.workout.difficulty || 'beginner'}
                 </Text>
@@ -366,7 +345,7 @@ ${exerciseList}
           <Ionicons 
             name="chevron-back" 
             size={24} 
-            color={selectedWeek === 0 ? '#CBD5E1' : '#5AB3C1'} 
+            color={selectedWeek === 0 ? '#CBD5E1' : colors.primary}
           />
         </TouchableOpacity>
 
@@ -388,7 +367,7 @@ ${exerciseList}
           <Ionicons 
             name="chevron-forward" 
             size={24} 
-            color={selectedWeek === plan.weeks.length - 1 ? '#CBD5E1' : '#5AB3C1'} 
+            color={selectedWeek === plan.weeks.length - 1 ? '#CBD5E1' : colors.primary}
           />
         </TouchableOpacity>
       </View>
@@ -429,7 +408,7 @@ ${exerciseList}
             activeOpacity={0.6}
           >
             <View style={styles.navArrowInner}>
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+              <Ionicons name="chevron-back" size={24} color={colors.white} />
             </View>
           </TouchableOpacity>
         )}
@@ -442,11 +421,56 @@ ${exerciseList}
             activeOpacity={0.6}
           >
             <View style={styles.navArrowInner}>
-              <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
+              <Ionicons name="chevron-forward" size={24} color={colors.white} />
             </View>
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Day Detail Overlay */}
+      {selectedDayDetail && (
+        <View style={styles.detailOverlay}>
+          <View style={styles.detailDialog}>
+            <Text style={styles.detailTitle}>{selectedDayDetail.title}</Text>
+            {selectedDayDetail.isRest ? (
+              <Text style={styles.detailMessage}>{selectedDayDetail.message}</Text>
+            ) : (
+              <View>
+                <Text style={styles.detailMeta}>Type: {selectedDayDetail.type}</Text>
+                <Text style={styles.detailMeta}>Duration: {selectedDayDetail.duration} minutes</Text>
+                <Text style={styles.detailMeta}>Difficulty: {selectedDayDetail.difficulty}</Text>
+                {selectedDayDetail.notes && (
+                  <Text style={styles.detailMeta}>Notes: {selectedDayDetail.notes}</Text>
+                )}
+                {selectedDayDetail.exercises && selectedDayDetail.exercises.length > 0 && (
+                  <View style={styles.detailExercises}>
+                    <Text style={styles.detailExercisesTitle}>Exercises ({selectedDayDetail.exercises.length}):</Text>
+                    <ScrollView style={styles.detailExercisesList}>
+                      {selectedDayDetail.exercises.map((ex, idx) => {
+                        const name = (ex.name || ex.exercise || '').trim();
+                        if (!name || name === '.') return null;
+                        let detail = '';
+                        if (ex.sets && ex.reps) detail = `${ex.sets} sets x ${ex.reps} reps`;
+                        else if (ex.sets && ex.duration) detail = `${ex.sets} sets - ${ex.duration} min`;
+                        else if (ex.duration) detail = `${ex.duration} min`;
+                        else if (ex.duration_minutes) detail = `${ex.duration_minutes} min`;
+                        return (
+                          <Text key={idx} style={styles.detailExerciseItem}>
+                            {idx + 1}. {name}{detail ? ` — ${detail}` : ''}
+                          </Text>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+            )}
+            <TouchableOpacity style={styles.detailCloseButton} onPress={() => setSelectedDayDetail(null)}>
+              <Text style={styles.detailCloseText}>Got it!</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -458,7 +482,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
     textAlign: 'center',
     padding: 32,
   },
@@ -468,7 +492,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
     borderRadius: 12,
     marginBottom: 12,
   },
@@ -484,11 +508,11 @@ const styles = StyleSheet.create({
   weekTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   weekFocus: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginTop: 2,
   },
   weekProgress: {
@@ -502,11 +526,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
   },
   weekDotActive: {
     width: 24,
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
   },
   calendarContainer: {
     position: 'relative',
@@ -534,7 +558,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(90, 179, 193, 0.3)', // Much more transparent (30% opacity)
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.15)',
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 6px rgba(0, 0, 0, 0.15)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6 },
+    }),
     elevation: 3,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
@@ -549,17 +576,20 @@ const styles = StyleSheet.create({
   },
   dayCard: {
     width: 280,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     overflow: 'hidden',
     height: 520,
-    boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.15)',
+    ...Platform.select({
+      web: { boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.15)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 6 },
+    }),
     elevation: 5,
   },
   dayHeader: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     paddingVertical: 10,
     alignItems: 'center',
   },
@@ -569,7 +599,7 @@ const styles = StyleSheet.create({
   dayLabel: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.white,
   },
   restDayContent: {
     padding: 20,
@@ -626,7 +656,7 @@ const styles = StyleSheet.create({
   },
   durationText: {
     fontSize: 11,
-    color: '#5AB3C1',
+    color: colors.primary,
     fontWeight: '600',
   },
   difficultyBadge: {
@@ -640,7 +670,7 @@ const styles = StyleSheet.create({
   },
   difficultyText: {
     fontSize: 11,
-    color: '#F59E0B',
+    color: colors.warning,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
@@ -648,10 +678,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border,
   },
   sectionHeader: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -661,7 +691,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.textDark,
     textTransform: 'capitalize',
   },
   // ✅ NEW: Styles for repeat group headers (e.g., "4 Rounds", "Repeat x3")
@@ -673,12 +703,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: 4,
     borderLeftWidth: 3,
-    borderLeftColor: '#5AB3C1',  // Indigo accent
+    borderLeftColor: colors.primary,  // Indigo accent
   },
   repeatGroupTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5AB3C1',  // Indigo text
+    color: colors.primary,  // Indigo text
     fontStyle: 'italic',
   },
   exercisesHeader: {
@@ -690,23 +720,23 @@ const styles = StyleSheet.create({
   exercisesTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#374151',
+    color: colors.textBody,
   },
   exerciseItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     padding: 10,
     paddingLeft: 12,
     borderRadius: 6,
     borderLeftWidth: 3,
-    borderLeftColor: '#5AB3C1',
+    borderLeftColor: colors.primary,
   },
   exerciseNumber: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#5AB3C1',
+    color: colors.primary,
     marginRight: 10,
     marginTop: 2,
   },
@@ -715,14 +745,14 @@ const styles = StyleSheet.create({
   },
   exerciseName: {
     fontSize: 14,
-    color: '#1F2937',
+    color: colors.textDark,
     fontWeight: '600',
     lineHeight: 20,
     marginBottom: 4,
   },
   exerciseInfo: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     fontWeight: '500',
     lineHeight: 18,
   },
@@ -739,8 +769,77 @@ const styles = StyleSheet.create({
   },
   moreExercisesText: {
     fontSize: 12,
-    color: '#5AB3C1',
+    color: colors.primary,
     fontWeight: '600',
+  },
+  detailOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 200,
+  },
+  detailDialog: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 360,
+    maxHeight: '80%',
+  },
+  detailTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textDark,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  detailMessage: {
+    fontSize: 14,
+    color: colors.textMedium,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  detailMeta: {
+    fontSize: 14,
+    color: colors.textBody,
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  detailExercises: {
+    marginTop: 12,
+  },
+  detailExercisesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textDark,
+    marginBottom: 8,
+  },
+  detailExercisesList: {
+    maxHeight: 200,
+  },
+  detailExerciseItem: {
+    fontSize: 13,
+    color: colors.textBody,
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  detailCloseButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  detailCloseText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
   },
 });
 

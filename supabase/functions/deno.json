@@ -1,18 +1,19 @@
 {
   "compilerOptions": {
     "strict": false,
-    "allowJs": true,
-    "lib": ["deno.window", "deno.unstable", "esnext"],
-    "types": ["https://deno.land/x/types/index.d.ts"]
+    "lib": ["deno.ns", "deno.window", "esnext", "dom"],
+    "noImplicitAny": false
   },
   "imports": {
-    "supabase": "https://esm.sh/@supabase/supabase-js@2",
-    "std/": "https://deno.land/std@0.168.0/"
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "std/http/": "https://deno.land/std@0.208.0/http/",
+    "std/": "https://deno.land/std@0.208.0/"
   },
   "lint": {
     "rules": {
-      "exclude": ["no-explicit-any"]
+      "exclude": ["no-explicit-any", "require-await"]
     }
-  }
+  },
+  "lock": false
 }
 

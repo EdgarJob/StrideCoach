@@ -34,6 +34,9 @@ yarn-error.*
 .env
 .env*.local
 
+# project credentials (contains API keys & passwords)
+PROJECT_CREDENTIALS.md
+
 # typescript
 *.tsbuildinfo
 

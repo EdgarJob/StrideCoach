@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import * as Linking from 'expo-linking';
 import { supabase } from '../services/supabase';
 
 // Create the Auth Context
@@ -49,10 +51,9 @@ export const AuthProvider = ({ children }) => {
     // Set a timeout to prevent infinite loading
     const timeout = setTimeout(() => {
       if (loading) {
-        console.log('Loading timeout reached, setting loading to false');
         setLoading(false);
       }
-    }, 3000); // 3 second timeout
+    }, 3000);
 
     return () => {
       subscription.unsubscribe();
@@ -63,7 +64,6 @@ export const AuthProvider = ({ children }) => {
   // Load user profile from database
   const loadUserProfile = async (userId) => {
     try {
-      console.log('Loading profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -71,19 +71,12 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (error) {
-        console.error('Error loading profile:', error);
-        // If profile doesn't exist, create a basic one
-        console.log('Profile not found, creating basic profile...');
         await createBasicProfile(userId);
         return;
       }
 
-      console.log('Profile loaded successfully:', data);
       setProfile(data);
     } catch (error) {
-      console.error('Error loading profile:', error);
-      // Create a basic profile if loading fails
-      console.log('Creating basic profile due to error...');
       await createBasicProfile(userId);
     }
   };
@@ -91,7 +84,6 @@ export const AuthProvider = ({ children }) => {
   // Create basic profile if it doesn't exist
   const createBasicProfile = async (userId) => {
     try {
-      console.log('Creating basic profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .insert({
@@ -123,14 +115,10 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (error) {
-        console.error('Error creating basic profile:', error);
-        // If it's a duplicate key error (409), try to load the existing profile
         if (error.code === '23505' || error.status === 409) {
-          console.log('Profile already exists, loading it...');
           await loadUserProfile(userId);
           return;
         }
-        // Set a default profile even if creation fails
         setProfile({
           user_id: userId,
           display_name: 'New User',
@@ -145,12 +133,9 @@ export const AuthProvider = ({ children }) => {
           consent: { health_data: true, ai_coaching: true, analytics: true }
         });
       } else {
-        console.log('Basic profile created:', data);
         setProfile(data);
       }
     } catch (error) {
-      console.error('Error creating basic profile:', error);
-      // Set a default profile even if creation fails
       setProfile({
         user_id: userId,
         display_name: 'New User',
@@ -170,9 +155,6 @@ export const AuthProvider = ({ children }) => {
   // Sign up function
   const signUp = async (email, password, userData) => {
     try {
-      setLoading(true);
-      console.log('Starting signup process...');
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -182,15 +164,11 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (error) {
-        console.error('Auth signup error:', error);
         throw error;
       }
 
-      console.log('Auth signup successful:', data);
-
       // Create profile if signup successful
       if (data.user) {
-        console.log('Creating user profile...');
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -209,19 +187,13 @@ export const AuthProvider = ({ children }) => {
           .select();
 
         if (profileError) {
-          console.error('Error creating profile:', profileError);
-          // Don't throw error here, just log it
-        } else {
-          console.log('Profile created successfully:', profileData);
+          // Profile creation failed but don't block signup
         }
       }
 
       return { data, error };
     } catch (error) {
-      console.error('Sign up error:', error);
       return { data: null, error };
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -229,25 +201,21 @@ export const AuthProvider = ({ children }) => {
   const signInWithOAuth = async (provider) => {
     try {
       setLoading(true);
-      console.log(`Starting ${provider} OAuth sign in...`);
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider, // 'google' or 'apple'
+        provider: provider,
         options: {
-          redirectTo: window.location.origin, // Redirect back to current URL
+          redirectTo: Platform.OS === 'web' ? window.location.origin : Linking.createURL('/'),
           skipBrowserRedirect: false,
         },
       });
 
       if (error) {
-        console.error(`${provider} OAuth sign in error:`, error);
         throw error;
       }
 
-      console.log(`${provider} OAuth initiated:`, data);
       return { data, error: null };
     } catch (error) {
-      console.error(`${provider} OAuth error:`, error);
       return { data: null, error };
     } finally {
       setLoading(false);
@@ -257,32 +225,22 @@ export const AuthProvider = ({ children }) => {
   // Sign in function
   const signIn = async (email, password) => {
     try {
-      setLoading(true);
-      console.log('Starting sign in process...');
-      
-      const { data, error} = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('Auth sign in error:', error);
         throw error;
       }
 
-      console.log('Auth sign in successful:', data);
-      
-      // Load user profile after successful sign in
       if (data.user) {
         await loadUserProfile(data.user.id);
       }
 
       return { data, error };
     } catch (error) {
-      console.error('Sign in error:', error);
       return { data: null, error };
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -290,21 +248,16 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      console.log('Starting sign out process...');
-      
-      // Clear user and profile state immediately
+
       setUser(null);
       setProfile(null);
-      
+
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('Sign out error:', error);
         return { error };
       }
-      console.log('Sign out successful');
       return { error: null };
     } catch (error) {
-      console.error('Sign out error:', error);
       return { error };
     } finally {
       setLoading(false);
@@ -328,7 +281,6 @@ export const AuthProvider = ({ children }) => {
 
       return { data, error };
     } catch (error) {
-      console.error('Update profile error:', error);
       return { data: null, error };
     }
   };

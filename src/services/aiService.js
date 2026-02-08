@@ -32,7 +32,7 @@ export class AICoachService {
 
         return await response.json();
       } catch (error) {
-        console.error(`Attempt ${i + 1}/${retries} failed:`, error);
+        // Retry on failure with exponential backoff
         if (i === retries - 1) throw error;
         // Exponential backoff: wait 1s, 2s, 4s
         await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
@@ -43,8 +43,6 @@ export class AICoachService {
   // Generate a personalized workout plan via Edge Function
   async generateWorkoutPlan(userProfile, preferences) {
     try {
-      console.log('📝 Calling generate-plan Edge Function...');
-      
       const response = await this.callEdgeFunction('generate-plan', {
         userProfile,
         preferences
@@ -54,14 +52,12 @@ export class AICoachService {
         throw new Error(response.error || 'Plan generation failed');
       }
 
-      console.log('✅ Plan generated successfully');
       return {
         success: true,
         plan: response.plan,
         usage: response.usage
       };
     } catch (error) {
-      console.error('❌ Error generating workout plan:', error);
       return {
         success: false,
         error: error.message
@@ -72,14 +68,6 @@ export class AICoachService {
   // Chat with the AI coach via Edge Function
   async chatWithCoach(message, userProfile, currentPlan = null) {
     try {
-      console.log('💬 Calling chat-coach Edge Function...');
-      
-      // Add user message to conversation history
-      this.conversationHistory.push({
-        role: "user",
-        content: message
-      });
-
       const response = await this.callEdgeFunction('chat-coach', {
         message,
         userProfile,
@@ -92,6 +80,12 @@ export class AICoachService {
       }
 
       const aiResponse = response.message;
+
+      // Persist the successful turn for future context
+      this.conversationHistory.push({
+        role: "user",
+        content: message
+      });
       
       // Add AI response to conversation history
       this.conversationHistory.push({
@@ -99,14 +93,13 @@ export class AICoachService {
         content: aiResponse
       });
 
-      console.log('✅ Chat response received');
       return {
         success: true,
         message: aiResponse,
-        usage: response.usage
+        usage: response.usage,
+        planAction: response.planAction || null
       };
     } catch (error) {
-      console.error('❌ Error chatting with AI coach:', error);
       return {
         success: false,
         error: error.message
@@ -117,8 +110,6 @@ export class AICoachService {
   // Get daily motivation and tips via Edge Function
   async getDailyMotivation(userProfile, progressData = {}) {
     try {
-      console.log('✨ Calling daily-motivation Edge Function...');
-      
       // Ensure progressData is not null
       if (!progressData || typeof progressData !== 'object') {
         progressData = {};
@@ -133,14 +124,12 @@ export class AICoachService {
         throw new Error(response.error || 'Motivation generation failed');
       }
 
-      console.log('✅ Motivation generated');
       return {
         success: true,
         motivation: response.motivation,
         usage: response.usage
       };
     } catch (error) {
-      console.error('❌ Error getting daily motivation:', error);
       return {
         success: false,
         error: error.message
@@ -246,12 +235,8 @@ GUIDELINES:
     plan.weeks.forEach(week => {
       if (week.days) {
         week.days.forEach(day => {
-          if (day.workouts) {
-            day.workouts.forEach(workout => {
-              if (workout.type) {
-                workoutTypes.add(workout.type);
-              }
-            });
+          if (day.workout?.type) {
+            workoutTypes.add(day.workout.type);
           }
         });
       }
@@ -268,8 +253,8 @@ GUIDELINES:
     plan.weeks.forEach(week => {
       if (week.days) {
         week.days.forEach(day => {
-          if (day.dayName) {
-            availableDays.add(day.dayName);
+          if (day.day_name) {
+            availableDays.add(day.day_name);
           }
         });
       }

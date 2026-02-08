@@ -5,13 +5,14 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Switch,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
+import colors from '../theme/colors';
 
 export default function PreferencesScreen({ currentPreferences, onSave, onCancel }) {
   const [preferences, setPreferences] = useState(currentPreferences || {
@@ -57,6 +58,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     if (currentPreferences) {
@@ -91,8 +93,8 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
         onSave(preferences);
       }
     } catch (error) {
-      console.error('Error generating plan:', error);
-      Alert.alert('Error', `Failed to generate plan. ${error.message || ''}`.trim());
+      setErrorMessage(`Failed to generate plan. ${error.message || ''}`.trim());
+      setTimeout(() => setErrorMessage(null), 5000);
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +114,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             <Ionicons 
               name={getWorkoutIcon(type)} 
               size={24} 
-              color={selected ? '#5AB3C1' : '#9CA3AF'} 
+              color={selected ? colors.primary : colors.textLight} 
             />
             <Text style={[styles.optionText, selected && styles.selectedText]}>
               {getWorkoutLabel(type)}
@@ -121,8 +123,8 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
           <Switch
             value={selected}
             onValueChange={(value) => updatePreference('workoutTypes', type, value)}
-            trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-            thumbColor={selected ? '#5AB3C1' : '#F3F4F6'}
+            trackColor={{ false: colors.border, true: colors.switchTrack }}
+            thumbColor={selected ? colors.primary : colors.borderLight}
           />
         </TouchableOpacity>
       ))}
@@ -149,7 +151,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
                 <Ionicons 
                   name="calendar" 
                   size={24} 
-                  color={selected ? '#5AB3C1' : '#9CA3AF'} 
+                  color={selected ? colors.primary : colors.textLight} 
                 />
                 <Text style={[styles.optionText, selected && styles.selectedText]}>
                   {day.charAt(0).toUpperCase() + day.slice(1)}
@@ -158,8 +160,8 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
               <Switch
                 value={selected}
                 onValueChange={(value) => updatePreference('availableDays', day, value)}
-                trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-                thumbColor={selected ? '#5AB3C1' : '#F3F4F6'}
+                trackColor={{ false: colors.border, true: colors.switchTrack }}
+                thumbColor={selected ? colors.primary : colors.borderLight}
               />
             </TouchableOpacity>
           );
@@ -267,7 +269,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             <Ionicons 
               name={getEquipmentIcon(equipment)} 
               size={24} 
-              color={selected ? '#5AB3C1' : '#9CA3AF'} 
+              color={selected ? colors.primary : colors.textLight} 
             />
             <Text style={[styles.optionText, selected && styles.selectedText]}>
               {getEquipmentLabel(equipment)}
@@ -276,8 +278,8 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
           <Switch
             value={selected}
             onValueChange={(value) => updatePreference('hasEquipment', equipment, value)}
-            trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-            thumbColor={selected ? '#5AB3C1' : '#F3F4F6'}
+            trackColor={{ false: colors.border, true: colors.switchTrack }}
+            thumbColor={selected ? colors.primary : colors.borderLight}
           />
         </TouchableOpacity>
       ))}
@@ -305,7 +307,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
             <Ionicons 
               name={time.icon} 
               size={24} 
-              color={preferences.preferredTime === time.key ? '#FFFFFF' : '#5AB3C1'} 
+              color={preferences.preferredTime === time.key ? colors.white : colors.primary}
             />
             <Text style={[
               styles.timingButtonText,
@@ -326,7 +328,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
           style={styles.backButton}
           onPress={onCancel || (() => {})}
         >
-          <Ionicons name="arrow-back" size={24} color="#5AB3C1" />
+          <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Workout Preferences</Text>
         <TouchableOpacity
@@ -334,7 +336,7 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
           onPress={generatePlan}
           disabled={isLoading}
         >
-          <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+          <Ionicons name="sparkles" size={20} color={colors.white} />
           <Text style={styles.generateButtonText}>
             {isLoading ? 'Generating...' : 'Generate Plan'}
           </Text>
@@ -342,6 +344,17 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Error Message */}
+        {errorMessage && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={18} color={colors.error} />
+            <Text style={styles.errorBannerText}>{errorMessage}</Text>
+            <TouchableOpacity onPress={() => setErrorMessage(null)}>
+              <Ionicons name="close" size={18} color={colors.textMedium} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {renderWorkoutTypes()}
         {renderAvailableDays()}
         {renderWorkoutSettings()}
@@ -406,7 +419,7 @@ const getEquipmentLabel = (equipment) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -415,9 +428,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   backButton: {
     padding: 8,
@@ -425,10 +438,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   generateButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
@@ -437,7 +450,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   generateButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
     fontSize: 16,
   },
@@ -446,21 +459,24 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   section: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+    }),
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginBottom: 16,
   },
   optionRow: {
@@ -469,7 +485,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.borderLight,
   },
   optionContent: {
     flexDirection: 'row',
@@ -478,11 +494,11 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
-    color: '#374151',
+    color: colors.textBody,
     marginLeft: 12,
   },
   selectedText: {
-    color: '#5AB3C1',
+    color: colors.primary,
     fontWeight: '600',
   },
   settingRow: {
@@ -491,7 +507,7 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textBody,
     marginBottom: 12,
   },
   durationContainer: {
@@ -504,19 +520,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.white,
   },
   durationButtonSelected: {
-    backgroundColor: '#5AB3C1',
-    borderColor: '#5AB3C1',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   durationButtonText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   durationButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
   },
   difficultyContainer: {
@@ -528,20 +544,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.white,
     alignItems: 'center',
   },
   difficultyButtonSelected: {
-    backgroundColor: '#5AB3C1',
-    borderColor: '#5AB3C1',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   difficultyButtonText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   difficultyButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
   },
   goalContainer: {
@@ -554,19 +570,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.white,
   },
   goalButtonSelected: {
-    backgroundColor: '#5AB3C1',
-    borderColor: '#5AB3C1',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   goalButtonText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   goalButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '600',
   },
   timingContainer: {
@@ -581,23 +597,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#5AB3C1',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
     alignItems: 'center',
   },
   timingButtonSelected: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
   },
   timingButtonText: {
     fontSize: 14,
-    color: '#5AB3C1',
+    color: colors.primary,
     marginTop: 4,
     fontWeight: '600',
   },
   timingButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   bottomSpacing: {
     height: 40,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.error,
+    marginLeft: 8,
   },
 });

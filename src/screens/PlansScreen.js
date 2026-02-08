@@ -5,13 +5,15 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
-  Modal
+  Modal,
+  Platform
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlan } from '../contexts/PlanContext';
 import { useAuth } from '../contexts/AuthContext';
+import colors from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import PreferencesScreen from './PreferencesScreen';
 import WorkoutCalendar from '../components/WorkoutCalendar';
@@ -37,29 +39,22 @@ export default function PlansScreen() {
   const [generationStep, setGenerationStep] = useState('');
   const [generationProgress, setGenerationProgress] = useState(0);
   const [showGenerationModal, setShowGenerationModal] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
   
-  // ✅ Check if user is truly new (just signed up) and hasn't seen onboarding
+  // Check if user is truly new (just signed up) and hasn't seen onboarding
   useEffect(() => {
     if (!profile) return;
-    
-    // Create a unique key for this user's onboarding status
-    const onboardingKey = `onboarding_completed_${profile.id}`;
-    const hasCompletedOnboarding = localStorage.getItem(onboardingKey);
-    
-    console.log('🎯 Checking onboarding status:', {
-      userId: profile.id,
-      hasPreferences: !!profile.workout_preferences,
-      hasCompletedOnboarding: !!hasCompletedOnboarding,
-      shouldShowModal: !hasCompletedOnboarding && !profile.workout_preferences
-    });
-    
-    // Only show modal if:
-    // 1. User has never completed onboarding for this account AND
-    // 2. User has no workout preferences set
-    if (!hasCompletedOnboarding && !profile.workout_preferences) {
-      console.log('🌟 New user detected - showing onboarding modal');
-      setShowNewUserModal(true);
-    }
+
+    const checkOnboarding = async () => {
+      const onboardingKey = `onboarding_completed_${profile.id}`;
+      const hasCompletedOnboarding = await AsyncStorage.getItem(onboardingKey);
+
+      if (!hasCompletedOnboarding && !profile.workout_preferences) {
+        setShowNewUserModal(true);
+      }
+    };
+
+    checkOnboarding();
   }, [profile]);
 
   // Store user preferences for plan generation
@@ -95,14 +90,10 @@ export default function PlansScreen() {
   });
 
   const handleGeneratePlan = async (customPreferences = null) => {
-    console.log('🚀 Starting plan generation...');
     setIsGenerating(true);
     setShowGenerationModal(true);
-    
-    // Use custom preferences or the saved preferences from state
-    const preferences = customPreferences || savedPreferences;
 
-    console.log('Generating plan with preferences:', preferences);
+    const preferences = customPreferences || savedPreferences;
 
     try {
       // Step 1: Preparing your preferences
@@ -160,10 +151,7 @@ export default function PlansScreen() {
       setGenerationProgress(90);
       const result = await generatePlan(preferences);
       
-      console.log('Plan generation result:', result);
-      
       if (result.success) {
-        console.log('✅ Plan generated successfully!');
         setGenerationStep('Saving your personalized plan...');
         setGenerationProgress(95);
         await new Promise(resolve => setTimeout(resolve, 600));
@@ -173,28 +161,18 @@ export default function PlansScreen() {
         await new Promise(resolve => setTimeout(resolve, 1200));
         
         setShowGenerationModal(false);
-        Alert.alert(
-          'Plan Generated!',
-          'Your personalized 4-week fitness plan has been created successfully!',
-          [{ text: 'OK', onPress: () => setShowPlanModal(true) }]
-        );
+        setStatusMessage({ type: 'success', text: 'Your personalized 4-week fitness plan has been created successfully!' });
+        setTimeout(() => setStatusMessage(null), 5000);
+        setShowPlanModal(true);
       } else {
-        console.log('❌ Plan generation failed:', result.error);
         setShowGenerationModal(false);
-        Alert.alert(
-          'Error',
-          `Failed to generate plan: ${result.error}`,
-          [{ text: 'OK' }]
-        );
+        setStatusMessage({ type: 'error', text: `Failed to generate plan: ${result.error}` });
+        setTimeout(() => setStatusMessage(null), 5000);
       }
     } catch (error) {
-      console.log('❌ Plan generation error:', error);
       setShowGenerationModal(false);
-      Alert.alert(
-        'Error',
-        `An error occurred while generating your plan: ${error.message}`,
-        [{ text: 'OK' }]
-      );
+      setStatusMessage({ type: 'error', text: `An error occurred while generating your plan: ${error.message}` });
+      setTimeout(() => setStatusMessage(null), 5000);
     }
     
     setIsGenerating(false);
@@ -203,32 +181,22 @@ export default function PlansScreen() {
   };
 
   const handleSaveCustomPlan = (customPlan) => {
-    // Here you would save the custom plan to your database
-    Alert.alert(
-      'Plan Saved!',
-      'Your custom workout plan has been saved successfully!',
-      [{ text: 'OK' }]
-    );
-    console.log('Custom plan saved:', customPlan);
+    setStatusMessage({ type: 'success', text: 'Your custom workout plan has been saved successfully!' });
+    setTimeout(() => setStatusMessage(null), 5000);
   };
 
   const handlePreferencesSaved = async (newPreferences) => {
-    console.log('Preferences saved, updating state:', newPreferences);
     setSavedPreferences(newPreferences);
     setShowPreferences(false);
-    
-    // Always generate a plan when preferences are saved
+
     if (showNewUserModal) {
       setShowNewUserModal(false);
-      // Mark onboarding as completed
       if (profile) {
         const onboardingKey = `onboarding_completed_${profile.id}`;
-        localStorage.setItem(onboardingKey, 'true');
-        console.log('✅ Onboarding marked as completed for user:', profile.id);
+        await AsyncStorage.setItem(onboardingKey, 'true');
       }
     }
-    
-    // Generate plan with the new preferences
+
     await handleGeneratePlan(newPreferences);
   };
 
@@ -236,7 +204,7 @@ export default function PlansScreen() {
     if (!currentPlan) {
       return (
         <View style={styles.noPlanContainer}>
-          <Ionicons name="fitness" size={64} color="#5AB3C1" />
+          <Ionicons name="fitness" size={64} color={colors.primary} />
           <Text style={styles.noPlanTitle}>No Active Plan</Text>
           <Text style={styles.noPlanSubtitle}>
             Generate a personalized 4-week fitness plan to get started with your fitness journey!
@@ -247,10 +215,10 @@ export default function PlansScreen() {
             disabled={isGenerating}
           >
             {isGenerating ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={colors.white} />
             ) : (
               <>
-                <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+                <Ionicons name="add-circle" size={20} color={colors.white} />
                 <Text style={styles.generateButtonText}>Generate Plan</Text>
               </>
             )}
@@ -267,7 +235,7 @@ export default function PlansScreen() {
         {/* Plan Header */}
         <View style={styles.planHeader}>
           <View style={styles.planTitleContainer}>
-            <Ionicons name="calendar" size={24} color="#5AB3C1" />
+            <Ionicons name="calendar" size={24} color={colors.primary} />
             <Text style={styles.planTitle}>{currentPlan.title}</Text>
           </View>
           <TouchableOpacity
@@ -275,7 +243,7 @@ export default function PlansScreen() {
             onPress={() => setShowPlanModal(true)}
           >
             <Text style={styles.viewDetailsText}>View Details</Text>
-            <Ionicons name="chevron-forward" size={16} color="#5AB3C1" />
+            <Ionicons name="chevron-forward" size={16} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -321,7 +289,7 @@ export default function PlansScreen() {
             style={styles.primaryButton}
             onPress={() => setShowPlanModal(true)}
           >
-            <Ionicons name="eye" size={20} color="#FFFFFF" />
+            <Ionicons name="eye" size={20} color={colors.white} />
             <Text style={styles.primaryButtonText}>View Plan</Text>
           </TouchableOpacity>
           
@@ -330,7 +298,7 @@ export default function PlansScreen() {
         {/* Workout Calendar - Shows the plan in a visual calendar format */}
         <View style={styles.calendarSection}>
           <View style={styles.calendarHeader}>
-            <Ionicons name="calendar" size={24} color="#5AB3C1" />
+            <Ionicons name="calendar" size={24} color={colors.primary} />
             <Text style={styles.calendarTitle}>Your Workout Calendar</Text>
           </View>
           <WorkoutCalendar plan={currentPlan} />
@@ -357,12 +325,12 @@ export default function PlansScreen() {
                   <Text style={styles.dayName}>{day.day_name}</Text>
                   {day.is_workout_day ? (
                     <View style={styles.workoutBadge}>
-                      <Ionicons name="fitness" size={16} color="#FFFFFF" />
+                      <Ionicons name="fitness" size={16} color={colors.white} />
                       <Text style={styles.workoutBadgeText}>Workout</Text>
                     </View>
                   ) : (
                     <View style={styles.restBadge}>
-                      <Ionicons name="bed" size={16} color="#6B7280" />
+                      <Ionicons name="bed" size={16} color={colors.textMedium} />
                       <Text style={styles.restBadgeText}>Rest</Text>
                     </View>
                   )}
@@ -409,18 +377,18 @@ export default function PlansScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="calendar" size={24} color="#5AB3C1" />
+        <Ionicons name="calendar" size={24} color={colors.primary} />
         <Text style={styles.headerTitle}>Workout Plans</Text>
       </View>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#5AB3C1" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading your plan...</Text>
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={48} color="#EF4444" />
+          <Ionicons name="alert-circle" size={48} color={colors.error} />
           <Text style={styles.errorTitle}>Error</Text>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleGeneratePlan}>
@@ -437,11 +405,22 @@ export default function PlansScreen() {
           style={styles.actionButton}
           onPress={() => setShowPreferences(true)}
         >
-          <Ionicons name="settings" size={20} color="#5AB3C1" />
+          <Ionicons name="settings" size={20} color={colors.primary} />
           <Text style={styles.actionButtonText}>Preferences</Text>
         </TouchableOpacity>
         
       </View>
+
+      {/* Status Message */}
+      {statusMessage && (
+        <View style={[styles.statusBanner, statusMessage.type === 'error' ? styles.errorBanner : styles.successBanner]}>
+          <Ionicons name={statusMessage.type === 'error' ? 'alert-circle' : 'checkmark-circle'} size={18} color={statusMessage.type === 'error' ? colors.error : colors.success} />
+          <Text style={[styles.statusText, statusMessage.type === 'error' ? styles.errorStatusText : styles.successStatusText]}>{statusMessage.text}</Text>
+          <TouchableOpacity onPress={() => setStatusMessage(null)}>
+            <Ionicons name="close" size={18} color={colors.textMedium} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Plan Details Modal */}
       <Modal
@@ -456,7 +435,7 @@ export default function PlansScreen() {
               style={styles.closeButton}
               onPress={() => setShowPlanModal(false)}
             >
-              <Ionicons name="close" size={24} color="#6B7280" />
+              <Ionicons name="close" size={24} color={colors.textMedium} />
             </TouchableOpacity>
           </View>
           {renderPlanDetails()}
@@ -490,7 +469,7 @@ export default function PlansScreen() {
                 progress={generationProgress}
                 size={140}
                 strokeWidth={10}
-                color="#5AB3C1"
+                color={colors.primary}
                 backgroundColor="#E5E7EB"
                 showPercentage={true}
               />
@@ -501,7 +480,7 @@ export default function PlansScreen() {
               <Text style={styles.generationStep}>{generationStep}</Text>
               
               <View style={styles.generationWarning}>
-                <Ionicons name="warning" size={20} color="#F59E0B" />
+                <Ionicons name="warning" size={20} color={colors.warning} />
                 <Text style={styles.generationWarningText}>
                   Please don't close the app or leave this page while we create your personalized workout plan.
                 </Text>
@@ -522,21 +501,19 @@ export default function PlansScreen() {
           {/* Close Button */}
           <TouchableOpacity
             style={styles.newUserCloseButton}
-            onPress={() => {
+            onPress={async () => {
               setShowNewUserModal(false);
-              // Mark onboarding as completed even if user closes without setting preferences
               if (profile) {
                 const onboardingKey = `onboarding_completed_${profile.id}`;
-                localStorage.setItem(onboardingKey, 'true');
-                console.log('✅ Onboarding dismissed for user:', profile.id);
+                await AsyncStorage.setItem(onboardingKey, 'true');
               }
             }}
           >
-            <Ionicons name="close" size={24} color="#6B7280" />
+            <Ionicons name="close" size={24} color={colors.textMedium} />
           </TouchableOpacity>
           
           <View style={styles.newUserHeader}>
-            <Ionicons name="sparkles" size={48} color="#5AB3C1" />
+            <Ionicons name="sparkles" size={48} color={colors.primary} />
             <Text style={styles.newUserTitle}>Welcome to StrideCoach!</Text>
             <Text style={styles.newUserSubtitle}>
               Let's set up your personalized workout preferences to create your perfect fitness plan.
@@ -546,19 +523,19 @@ export default function PlansScreen() {
           <View style={styles.newUserContent}>
             <View style={styles.featureList}>
               <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
                 <Text style={styles.featureText}>Customized workout types</Text>
               </View>
               <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
                 <Text style={styles.featureText}>Flexible schedule options</Text>
               </View>
               <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
                 <Text style={styles.featureText}>AI-powered plan generation</Text>
               </View>
               <View style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.success} />
                 <Text style={styles.featureText}>Progress tracking</Text>
               </View>
             </View>
@@ -574,7 +551,7 @@ export default function PlansScreen() {
                 // it will be marked when preferences are saved
               }}
             >
-              <Ionicons name="settings" size={20} color="#FFFFFF" />
+              <Ionicons name="settings" size={20} color={colors.white} />
               <Text style={styles.newUserButtonText}>Set My Preferences</Text>
             </TouchableOpacity>
           </View>
@@ -588,20 +565,20 @@ export default function PlansScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginLeft: 8,
   },
   loadingContainer: {
@@ -612,7 +589,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   errorContainer: {
     flex: 1,
@@ -623,24 +600,24 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#EF4444',
+    color: colors.error,
     marginTop: 16,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
     textAlign: 'center',
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -653,19 +630,19 @@ const styles = StyleSheet.create({
   noPlanTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginTop: 16,
     marginBottom: 8,
   },
   noPlanSubtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
   },
   generateButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -673,7 +650,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   generateButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -699,7 +676,7 @@ const styles = StyleSheet.create({
   planTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginLeft: 8,
     flex: 1,
   },
@@ -708,17 +685,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewDetailsText: {
-    color: '#5AB3C1',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
     marginRight: 4,
   },
   progressContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     padding: 20,
     borderRadius: 12,
     marginBottom: 20,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+    }),
   },
   progressHeader: {
     flexDirection: 'row',
@@ -729,27 +709,27 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   progressPercentage: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#5AB3C1',
+    color: colors.primary,
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: 4,
     marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     borderRadius: 4,
   },
   progressText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   weeksContainer: {
     marginBottom: 20,
@@ -757,7 +737,7 @@ const styles = StyleSheet.create({
   weeksTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textDark,
     marginBottom: 12,
   },
   weeksGrid: {
@@ -766,45 +746,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   weekCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     padding: 16,
     borderRadius: 12,
     width: '48%',
     marginBottom: 12,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+    }),
   },
   weekNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
     marginBottom: 4,
   },
   weekFocus: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginBottom: 12,
   },
   weekProgressBar: {
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: 2,
     marginBottom: 8,
   },
   weekProgressFill: {
     height: '100%',
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     borderRadius: 2,
   },
   weekProgressText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   primaryButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -815,13 +798,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   secondaryButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -832,28 +815,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryButtonText: {
-    color: '#5AB3C1',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   closeButton: {
     padding: 8,
@@ -871,19 +854,22 @@ const styles = StyleSheet.create({
   weekTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   weekFocus: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginTop: 4,
   },
   dayCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    ...Platform.select({
+      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+    }),
   },
   dayHeader: {
     flexDirection: 'row',
@@ -894,10 +880,10 @@ const styles = StyleSheet.create({
   dayName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   workoutBadge: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -905,13 +891,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   workoutBadgeText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
   },
   restBadge: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -919,7 +905,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   restBadgeText: {
-    color: '#6B7280',
+    color: colors.textMedium,
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
@@ -930,17 +916,17 @@ const styles = StyleSheet.create({
   workoutType: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textDark,
     marginBottom: 4,
   },
   workoutDuration: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginBottom: 4,
   },
   workoutDifficulty: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginBottom: 8,
   },
   exercisesList: {
@@ -949,26 +935,26 @@ const styles = StyleSheet.create({
   exercisesTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textDark,
     marginBottom: 4,
   },
   exerciseItem: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textMedium,
     marginBottom: 2,
   },
   moreExercises: {
     fontSize: 12,
-    color: '#5AB3C1',
+    color: colors.primary,
     fontStyle: 'italic',
   },
   actionButtons: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border,
     gap: 12,
   },
   actionButton: {
@@ -980,13 +966,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border,
+    backgroundColor: colors.white,
   },
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5AB3C1',
+    color: colors.primary,
     marginLeft: 6,
   },
   calendarSection: {
@@ -1004,12 +990,12 @@ const styles = StyleSheet.create({
   calendarTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.textDark,
   },
   // New User Modal Styles
   newUserModalContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
@@ -1021,17 +1007,17 @@ const styles = StyleSheet.create({
     zIndex: 1,
     padding: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
   },
   // Generation Progress Modal Styles
   generationModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.modalOverlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
   generationModalContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 32,
     margin: 20,
@@ -1046,7 +1032,7 @@ const styles = StyleSheet.create({
   generationTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.textDark,
     marginTop: 16,
   },
   generationContent: {
@@ -1067,7 +1053,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
+    borderLeftColor: colors.warning,
   },
   generationWarningText: {
     fontSize: 14,
@@ -1083,14 +1069,14 @@ const styles = StyleSheet.create({
   newUserTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.textDark,
     marginTop: 16,
     marginBottom: 12,
     textAlign: 'center',
   },
   newUserSubtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textMedium,
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 20,
@@ -1100,7 +1086,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   featureList: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.cardBackground,
     borderRadius: 16,
     padding: 24,
     marginHorizontal: 20,
@@ -1112,7 +1098,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 16,
-    color: '#374151',
+    color: colors.textBody,
     marginLeft: 12,
     fontWeight: '500',
   },
@@ -1120,7 +1106,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   newUserButton: {
-    backgroundColor: '#5AB3C1',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -1130,9 +1116,38 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   newUserButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderWidth: 1,
+  },
+  errorBanner: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  successBanner: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  statusText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  errorStatusText: {
+    color: colors.error,
+  },
+  successStatusText: {
+    color: colors.success,
   },
 });

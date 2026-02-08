@@ -6,6 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-4o-mini";
+const MAX_REQUESTS_PER_DAY = 50;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -33,7 +34,14 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Create client with user's JWT token so RLS policies work correctly
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
 
     const {
       data: { user },
@@ -45,6 +53,27 @@ serve(async (req) => {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    // Rate limiting
+    const { data: recentRequests } = await supabase
+      .from("ai_events")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .eq("kind", "motivation")
+      .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+    if (recentRequests && recentRequests.length >= MAX_REQUESTS_PER_DAY) {
+      return new Response(
+        JSON.stringify({
+          error: "Rate limit exceeded",
+          message: `Maximum ${MAX_REQUESTS_PER_DAY} motivation requests per day`,
+        }),
+        {
+          status: 429,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const body = await req.json();
