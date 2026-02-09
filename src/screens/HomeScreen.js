@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -171,7 +171,6 @@ export default function HomeScreen() {
           <TouchableOpacity 
             style={styles.profileButton} 
             onPress={() => setShowProfileMenu(!showProfileMenu)}
-            onBlur={() => setTimeout(() => setShowProfileMenu(false), 200)}
           >
             <View style={styles.profileAvatar}>
               <Ionicons name="person" size={20} color={colors.white} />
@@ -183,59 +182,69 @@ export default function HomeScreen() {
               style={{ marginLeft: 4 }}
             />
           </TouchableOpacity>
-          
-          {/* Dropdown Menu */}
-          {showProfileMenu && (
-            <View style={styles.dropdownMenu}>
-              <TouchableOpacity 
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setShowProfileMenu(false);
-                  navigation.navigate('Profile');
-                }}
-              >
-                <Ionicons name="person-outline" size={18} color={colors.textDark} />
-                <Text style={styles.dropdownText}>My Profile</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setShowProfileMenu(false);
-                  navigation.navigate('Plans');
-                }}
-              >
-                <Ionicons name="calendar-outline" size={18} color={colors.textDark} />
-                <Text style={styles.dropdownText}>My Plans</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setShowProfileMenu(false);
-                  navigation.navigate('Progress');
-                }}
-              >
-                <Ionicons name="trending-up-outline" size={18} color={colors.textDark} />
-                <Text style={styles.dropdownText}>Progress</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.dropdownDivider} />
-              
-              <TouchableOpacity 
-                style={[styles.dropdownItem, styles.logoutItem]}
-                onPress={() => {
-                  setShowProfileMenu(false);
-                  handleSignOut();
-                }}
-              >
-                <Ionicons name="log-out-outline" size={18} color={colors.error} />
-                <Text style={[styles.dropdownText, styles.logoutText]}>Sign Out</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </LinearGradient>
+
+      {/* Dropdown Menu (Modal to ensure it renders above ScrollView on all platforms) */}
+      <Modal
+        transparent
+        visible={showProfileMenu}
+        animationType="fade"
+        onRequestClose={() => setShowProfileMenu(false)}
+      >
+        <Pressable style={styles.menuOverlay} onPress={() => setShowProfileMenu(false)}>
+          <Pressable
+            style={[styles.dropdownMenu, { top: insets.top + 76, right: 16 }]}
+            onPress={() => {}}
+          >
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => {
+                setShowProfileMenu(false);
+                navigation.navigate('Profile');
+              }}
+            >
+              <Ionicons name="person-outline" size={18} color={colors.textDark} />
+              <Text style={styles.dropdownText}>My Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => {
+                setShowProfileMenu(false);
+                navigation.navigate('Plans');
+              }}
+            >
+              <Ionicons name="calendar-outline" size={18} color={colors.textDark} />
+              <Text style={styles.dropdownText}>My Plans</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => {
+                setShowProfileMenu(false);
+                navigation.navigate('Progress');
+              }}
+            >
+              <Ionicons name="trending-up-outline" size={18} color={colors.textDark} />
+              <Text style={styles.dropdownText}>Progress</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dropdownDivider} />
+
+            <TouchableOpacity
+              style={[styles.dropdownItem, styles.logoutItem]}
+              onPress={() => {
+                setShowProfileMenu(false);
+                handleSignOut();
+              }}
+            >
+              <Ionicons name="log-out-outline" size={18} color={colors.error} />
+              <Text style={[styles.dropdownText, styles.logoutText]}>Sign Out</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <ScrollView style={styles.scrollContent}>
 
@@ -485,10 +494,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   dropdownMenu: {
     position: 'absolute',
-    top: 52,
-    right: 0,
     backgroundColor: colors.white,
     borderRadius: 12,
     minWidth: 200,

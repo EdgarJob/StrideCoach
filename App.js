@@ -4,8 +4,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, ActivityIndicator, Text, Animated } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts, Sora_400Regular, Sora_600SemiBold, Sora_700Bold, Sora_800ExtraBold } from '@expo-google-fonts/sora';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Import our screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -29,6 +30,8 @@ const Tab = createBottomTabNavigator();
 // Main App Navigator Component
 function AppNavigator() {
   const { user, loading } = useAuth();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = 68 + insets.bottom;
 
   // Show loading screen while checking auth status
   if (loading) {
@@ -88,41 +91,80 @@ function AppNavigator() {
             }
 
             return (
-              <Animated.View style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 60,
-                height: 40,
-                borderRadius: 12,
-                backgroundColor: focused ? colors.primaryLight : 'transparent',
-                transform: [{ scale: scaleValue }],
-                opacity: Animated.add(opacityValue, 0.3),
-              }}>
-                <Ionicons name={iconName} size={iconSize} color={color} />
-              </Animated.View>
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <Animated.View
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 52,
+                    height: 36,
+                    borderRadius: 18,
+                    backgroundColor: focused ? 'rgba(252, 76, 2, 0.10)' : 'transparent',
+                    borderWidth: focused ? 1 : 0,
+                    borderColor: focused ? 'rgba(252, 76, 2, 0.18)' : 'transparent',
+                    transform: [{ scale: scaleValue }],
+                  }}
+                >
+                  <Ionicons name={iconName} size={iconSize} color={color} />
+                </Animated.View>
+                <Animated.View
+                  style={{
+                    marginTop: 6,
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: colors.accent,
+                    opacity: opacityValue,
+                    transform: [
+                      {
+                        scale: opacityValue.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.6, 1],
+                        }),
+                      },
+                    ],
+                  }}
+                />
+              </View>
             );
           },
-          tabBarActiveTintColor: colors.primary,
+          tabBarActiveTintColor: colors.textDark,
           tabBarInactiveTintColor: colors.textLight,
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
-            height: 72,
-            paddingBottom: 10,
+            height: tabBarHeight,
+            paddingBottom: Math.max(12, insets.bottom + 10),
             paddingTop: 10,
-            borderTopWidth: 1,
-            borderTopColor: colors.borderLight,
-            backgroundColor: colors.white,
-            elevation: 8,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
+            borderTopWidth: 0,
+            backgroundColor: 'transparent',
+            shadowColor: '#0B1220',
+            shadowOffset: { width: 0, height: -10 },
+            shadowOpacity: 0.12,
+            shadowRadius: 24,
+            elevation: 16,
+          },
+          tabBarBackground: () => (
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.94)', 'rgba(243, 246, 250, 0.94)']}
+              start={{ x: 0.12, y: 0 }}
+              end={{ x: 0.9, y: 1 }}
+              style={{
+                flex: 1,
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
+                borderTopWidth: 1,
+                borderColor: colors.borderLight,
+              }}
+            />
+          ),
+          tabBarItemStyle: {
+            paddingTop: 2,
           },
           tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-            marginTop: -4,
+            fontSize: 10,
+            marginTop: 2,
             fontFamily: fonts.emphasis,
+            fontWeight: 'normal',
           },
           // Smooth screen transitions
           animation: 'shift',
