@@ -33,7 +33,8 @@ const TAB_ICON_MAP = {
   Plans: { active: 'calendar', inactive: 'calendar-outline' },
   Progress: { active: 'trending-up', inactive: 'trending-up-outline' },
   Chat: { active: 'chatbubbles', inactive: 'chatbubbles-outline' },
-  Profile: { active: 'person-circle', inactive: 'person-circle-outline' },
+  // Use thicker icons here; the circle-outline can look too faint at small sizes.
+  Profile: { active: 'person', inactive: 'person-outline' },
 };
 
 function TabIcon({ routeName, focused, color }) {
@@ -111,7 +112,7 @@ function AppNavigator() {
             <TabIcon routeName={route.name} focused={focused} color={color} />
           ),
           tabBarActiveTintColor: colors.accent,
-          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.62)',
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.86)',
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
             position: 'absolute',
@@ -124,8 +125,9 @@ function AppNavigator() {
             borderRadius: 24,
             overflow: 'hidden',
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.10)',
-            backgroundColor: 'rgba(11, 18, 32, 0.88)',
+            borderColor: 'rgba(255, 255, 255, 0.14)',
+            // Charcoal instead of near-black: closer to Apple Music while keeping contrast.
+            backgroundColor: 'rgba(28, 28, 30, 0.78)',
             shadowColor: '#0B1220',
             shadowOffset: { width: 0, height: 18 },
             shadowOpacity: 0.28,
@@ -135,11 +137,11 @@ function AppNavigator() {
           tabBarBackground: () => (
             <View pointerEvents="none" style={StyleSheet.absoluteFill}>
               {Platform.OS !== 'web' ? (
-                <BlurView tint="dark" intensity={34} style={StyleSheet.absoluteFill} />
+                <BlurView tint="dark" intensity={40} style={StyleSheet.absoluteFill} />
               ) : null}
 
               {/* Keep it dark even over white screens; blur alone can wash out. */}
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(11, 18, 32, 0.78)' }]} />
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(28, 28, 30, 0.56)' }]} />
 
               {/* Subtle depth + brand hint (no bright fade on the right). */}
               <LinearGradient
