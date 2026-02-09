@@ -160,7 +160,13 @@ export const HealthProvider = ({ children }) => {
 
       if (cancelled) return;
       setSupported(isSupported);
-      setConnected(wasConnected);
+      const nextConnected = isSupported ? wasConnected : false;
+      setConnected(nextConnected);
+
+      // If the build/device can't support health sync, make sure we don't present "connected".
+      if (!isSupported && wasConnected) {
+        persistConnected(userId, false);
+      }
 
       const cached = await cacheService.get(healthCacheKeyForUser(userId));
       if (!cancelled && cached) {
@@ -169,7 +175,7 @@ export const HealthProvider = ({ children }) => {
       }
 
       // If connected, refresh in background (do not block UI).
-      if (wasConnected && isSupported && !cancelled) {
+      if (nextConnected && isSupported && !cancelled) {
         refresh({ syncToSupabase: true });
       }
     };

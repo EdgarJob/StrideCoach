@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 import { data as supabaseData } from './supabase';
 
@@ -27,6 +28,14 @@ const getSleepWindow = (now = new Date()) => {
 let cachedHealthkit;
 const getHealthkitModule = () => {
   if (cachedHealthkit !== undefined) return cachedHealthkit;
+
+  // Expo Go cannot load Nitro modules (HealthKit/Health Connect libraries).
+  // Avoid requiring the native module entirely to prevent runtime errors.
+  if (Constants?.appOwnership === 'expo') {
+    cachedHealthkit = null;
+    return cachedHealthkit;
+  }
+
   try {
     // Avoid breaking web builds by requiring only at runtime on iOS.
     // eslint-disable-next-line global-require
@@ -40,6 +49,14 @@ const getHealthkitModule = () => {
 let cachedHealthConnect;
 const getHealthConnectModule = () => {
   if (cachedHealthConnect !== undefined) return cachedHealthConnect;
+
+  // Expo Go cannot load Nitro modules (HealthKit/Health Connect libraries).
+  // Avoid requiring the native module entirely to prevent runtime errors.
+  if (Constants?.appOwnership === 'expo') {
+    cachedHealthConnect = null;
+    return cachedHealthConnect;
+  }
+
   try {
     // eslint-disable-next-line global-require
     cachedHealthConnect = require('react-native-health-connect');
@@ -280,6 +297,9 @@ const getIOSTodaySummary = async () => {
 
 export const healthService = {
   isSupported: async () => {
+    // Keep the rest of the app usable in Expo Go by disabling native health sync.
+    if (Constants?.appOwnership === 'expo') return false;
+
     if (Platform.OS === 'ios') {
       const hk = getHealthkitModule();
       if (!hk) return false;
@@ -309,6 +329,10 @@ export const healthService = {
 
   requestPermissions: async () => {
     try {
+      if (Constants?.appOwnership === 'expo') {
+        return { success: false, error: 'Health sync is not supported in Expo Go. Use a dev build (expo run:* / EAS dev client) to enable it.' };
+      }
+
       if (Platform.OS === 'ios') {
         await requestIOSPermissions();
         return { success: true };
@@ -326,6 +350,10 @@ export const healthService = {
   },
 
   getTodaySummary: async () => {
+    if (Constants?.appOwnership === 'expo') {
+      throw new Error('Health sync is not supported in Expo Go. Use a dev build (expo run:* / EAS dev client) to enable it.');
+    }
+
     if (Platform.OS === 'ios') return await getIOSTodaySummary();
     if (Platform.OS === 'android') return await getAndroidTodaySummary();
     throw new Error('Health sync is not supported on this platform.');
@@ -355,4 +383,3 @@ export const healthService = {
 };
 
 export default healthService;
-

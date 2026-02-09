@@ -156,7 +156,7 @@ export default function AuthScreen() {
             >
               <Text style={styles.title}>StrideCoach</Text>
               <Text style={styles.subtitle}>
-                {isLogin ? \"Back on track. Let's keep it rolling.\" : 'Your plan, your pace, your coach.'}
+                {isLogin ? "Back on track. Let's keep it rolling." : 'Your plan, your pace, your coach.'}
               </Text>
               <View style={styles.heroChips}>
                 <View style={styles.heroChip}>
