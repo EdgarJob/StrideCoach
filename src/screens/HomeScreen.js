@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, Pressable, InteractionManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -163,8 +163,8 @@ export default function HomeScreen() {
 
   const navigateFromMenu = (routeName) => {
     setShowProfileMenu(false);
-    // Give the modal a beat to dismiss before switching tabs (iOS can glitch otherwise).
-    setTimeout(() => navigation.navigate(routeName), 50);
+    // Wait until the modal close animation completes before switching tabs.
+    InteractionManager.runAfterInteractions(() => navigation.navigate(routeName));
   };
 
   return (
@@ -207,11 +207,9 @@ export default function HomeScreen() {
         animationType="fade"
         onRequestClose={() => setShowProfileMenu(false)}
       >
-        <Pressable style={styles.menuOverlay} onPress={() => setShowProfileMenu(false)}>
-          <Pressable
-            style={[styles.dropdownMenu, { top: insets.top + 76, right: 16 }]}
-            onPress={(e) => e.stopPropagation()}
-          >
+        <View style={styles.menuOverlay}>
+          <Pressable style={styles.menuBackdrop} onPress={() => setShowProfileMenu(false)} />
+          <View style={[styles.dropdownMenu, { top: insets.top + 76, right: 16 }]}>
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => {
@@ -254,8 +252,8 @@ export default function HomeScreen() {
               <Ionicons name="log-out-outline" size={18} color={colors.error} />
               <Text style={[styles.dropdownText, styles.logoutText]}>Sign Out</Text>
             </TouchableOpacity>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
 
       <ScrollView style={styles.scrollContent}>
@@ -508,6 +506,10 @@ const styles = StyleSheet.create({
   },
   menuOverlay: {
     flex: 1,
+    backgroundColor: 'transparent',
+  },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',
   },
   dropdownMenu: {

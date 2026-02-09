@@ -3,10 +3,11 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, ActivityIndicator, Text, Animated } from 'react-native';
+import { View, ActivityIndicator, Text, Animated, Platform, StyleSheet } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts, Sora_400Regular, Sora_600SemiBold, Sora_700Bold, Sora_800ExtraBold } from '@expo-google-fonts/sora';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 // Import our screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -37,22 +38,14 @@ const TAB_ICON_MAP = {
 
 function TabIcon({ routeName, focused, color }) {
   const scaleValue = React.useRef(new Animated.Value(focused ? 1 : 0.92)).current;
-  const opacityValue = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
 
   React.useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleValue, {
-        toValue: focused ? 1 : 0.92,
-        friction: 6,
-        tension: 120,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityValue, {
-        toValue: focused ? 1 : 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.spring(scaleValue, {
+      toValue: focused ? 1 : 0.92,
+      friction: 7,
+      tension: 120,
+      useNativeDriver: true,
+    }).start();
   }, [focused]);
 
   const iconSpec = TAB_ICON_MAP[routeName] || { active: 'ellipse', inactive: 'ellipse-outline' };
@@ -68,32 +61,14 @@ function TabIcon({ routeName, focused, color }) {
           width: 52,
           height: 36,
           borderRadius: 18,
-          backgroundColor: focused ? 'rgba(255, 255, 255, 0.10)' : 'transparent',
+          backgroundColor: focused ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
           borderWidth: focused ? 1 : 0,
-          borderColor: focused ? 'rgba(255, 255, 255, 0.16)' : 'transparent',
+          borderColor: focused ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
           transform: [{ scale: scaleValue }],
         }}
       >
         <Ionicons name={iconName} size={iconSize} color={color} />
       </Animated.View>
-      <Animated.View
-        style={{
-          marginTop: 6,
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: colors.accent,
-          opacity: opacityValue,
-          transform: [
-            {
-              scale: opacityValue.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.6, 1],
-              }),
-            },
-          ],
-        }}
-      />
     </View>
   );
 }
@@ -102,7 +77,10 @@ function TabIcon({ routeName, focused, color }) {
 function AppNavigator() {
   const { user, loading } = useAuth();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 68 + insets.bottom;
+  // Floating Apple Music-like pill above the home indicator.
+  const tabBarBottom = Math.max(insets.bottom, 10);
+  const tabBarHeight = 68;
+  const scenePaddingBottom = tabBarBottom + tabBarHeight + 12;
 
   // Show loading screen while checking auth status
   if (loading) {
@@ -126,38 +104,69 @@ function AppNavigator() {
       <Tab.Navigator
         detachInactiveScreens={false}
         lazy={false}
-        sceneContainerStyle={{ backgroundColor: 'transparent' }}
+        sceneContainerStyle={{ backgroundColor: 'transparent', paddingBottom: scenePaddingBottom }}
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarIcon: ({ focused, color }) => (
             <TabIcon routeName={route.name} focused={focused} color={color} />
           ),
-          tabBarActiveTintColor: colors.white,
-          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.60)',
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.62)',
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
+            position: 'absolute',
+            left: 14,
+            right: 14,
+            bottom: tabBarBottom,
             height: tabBarHeight,
-            paddingBottom: Math.max(12, insets.bottom + 10),
             paddingTop: 10,
-            borderTopWidth: 0,
-            backgroundColor: 'transparent',
+            paddingBottom: 10,
+            borderRadius: 24,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.10)',
+            backgroundColor: 'rgba(11, 18, 32, 0.88)',
             shadowColor: '#0B1220',
-            shadowOffset: { width: 0, height: -10 },
-            shadowOpacity: 0.12,
-            shadowRadius: 24,
-            elevation: 16,
+            shadowOffset: { width: 0, height: 18 },
+            shadowOpacity: 0.28,
+            shadowRadius: 26,
+            elevation: 24,
           },
           tabBarBackground: () => (
-            <LinearGradient
-              colors={[colors.textDark, 'rgba(11, 18, 32, 0.92)', 'rgba(90, 179, 193, 0.14)']}
-              start={{ x: 0.12, y: 0 }}
-              end={{ x: 0.9, y: 1 }}
-              style={{
-                flex: 1,
-                borderTopWidth: 1,
-                borderTopColor: 'rgba(255, 255, 255, 0.08)',
-              }}
-            />
+            <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+              {Platform.OS !== 'web' ? (
+                <BlurView tint="dark" intensity={34} style={StyleSheet.absoluteFill} />
+              ) : null}
+
+              {/* Keep it dark even over white screens; blur alone can wash out. */}
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(11, 18, 32, 0.78)' }]} />
+
+              {/* Subtle depth + brand hint (no bright fade on the right). */}
+              <LinearGradient
+                colors={[
+                  'rgba(255, 255, 255, 0.10)',
+                  'rgba(255, 255, 255, 0.04)',
+                  'rgba(0, 0, 0, 0.22)',
+                ]}
+                locations={[0, 0.55, 1]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <LinearGradient
+                colors={[
+                  'rgba(90, 179, 193, 0.14)',
+                  'rgba(11, 18, 32, 0.0)',
+                  'rgba(11, 18, 32, 0.0)',
+                ]}
+                locations={[0, 0.7, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+
+              <View style={styles.tabBarHairline} />
+            </View>
           ),
           tabBarItemStyle: {
             paddingTop: 2,
@@ -247,3 +256,14 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBarHairline: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+  },
+});
