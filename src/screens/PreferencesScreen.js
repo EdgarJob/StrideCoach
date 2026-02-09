@@ -7,14 +7,17 @@ import {
   TouchableOpacity,
   Switch,
   TextInput,
-  Platform
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../services/supabase';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 export default function PreferencesScreen({ currentPreferences, onSave, onCancel }) {
+  const insets = useSafeAreaInsets();
   const [preferences, setPreferences] = useState(currentPreferences || {
     // Workout Types
     workoutTypes: {
@@ -322,48 +325,55 @@ export default function PreferencesScreen({ currentPreferences, onSave, onCancel
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onCancel || (() => {})}
+    <PremiumBackground>
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onCancel || (() => {})}
+          >
+            <Ionicons name="arrow-back" size={20} color={colors.textDark} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Workout Preferences</Text>
+          <TouchableOpacity
+            style={styles.generateButton}
+            onPress={generatePlan}
+            disabled={isLoading}
+          >
+            <Ionicons name="sparkles" size={18} color={colors.white} />
+            <Text style={styles.generateButtonText}>
+              {isLoading ? 'Generating...' : 'Generate'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: Math.max(24, insets.bottom + 16) }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Workout Preferences</Text>
-        <TouchableOpacity
-          style={styles.generateButton}
-          onPress={generatePlan}
-          disabled={isLoading}
-        >
-          <Ionicons name="sparkles" size={20} color={colors.white} />
-          <Text style={styles.generateButtonText}>
-            {isLoading ? 'Generating...' : 'Generate Plan'}
-          </Text>
-        </TouchableOpacity>
+          {/* Error Message */}
+          {errorMessage && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="alert-circle" size={18} color={colors.error} />
+              <Text style={styles.errorBannerText}>{errorMessage}</Text>
+              <TouchableOpacity onPress={() => setErrorMessage(null)}>
+                <Ionicons name="close" size={18} color={colors.textMedium} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {renderWorkoutTypes()}
+          {renderAvailableDays()}
+          {renderWorkoutSettings()}
+          {renderEquipment()}
+          {renderTiming()}
+
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
       </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Error Message */}
-        {errorMessage && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="alert-circle" size={18} color={colors.error} />
-            <Text style={styles.errorBannerText}>{errorMessage}</Text>
-            <TouchableOpacity onPress={() => setErrorMessage(null)}>
-              <Ionicons name="close" size={18} color={colors.textMedium} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {renderWorkoutTypes()}
-        {renderAvailableDays()}
-        {renderWorkoutSettings()}
-        {renderEquipment()}
-        {renderTiming()}
-        
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-    </View>
+    </PremiumBackground>
   );
 }
 
@@ -419,58 +429,77 @@ const getEquipmentLabel = (equipment) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: colors.white,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 12px 30px rgba(15, 23, 42, 0.08)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16 },
+    }),
+    elevation: 3,
   },
   backButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.cardBackground,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   generateButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   generateButtonText: {
     color: colors.white,
-    fontWeight: '600',
-    fontSize: 16,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
+    fontSize: 14,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
   section: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
+    elevation: 4,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 4,
   },
@@ -478,6 +507,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMedium,
     marginBottom: 16,
+    fontFamily: fonts.body,
   },
   optionRow: {
     flexDirection: 'row',
@@ -494,19 +524,22 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
+    fontFamily: fonts.body,
     color: colors.textBody,
     marginLeft: 12,
   },
   selectedText: {
     color: colors.primary,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   settingRow: {
     marginBottom: 20,
   },
   settingLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textBody,
     marginBottom: 12,
   },
@@ -521,7 +554,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   durationButtonSelected: {
     backgroundColor: colors.primary,
@@ -529,11 +562,14 @@ const styles = StyleSheet.create({
   },
   durationButtonText: {
     fontSize: 14,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textMedium,
   },
   durationButtonTextSelected: {
     color: colors.white,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   difficultyContainer: {
     flexDirection: 'row',
@@ -545,7 +581,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     alignItems: 'center',
   },
   difficultyButtonSelected: {
@@ -554,11 +590,14 @@ const styles = StyleSheet.create({
   },
   difficultyButtonText: {
     fontSize: 14,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textMedium,
   },
   difficultyButtonTextSelected: {
     color: colors.white,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   goalContainer: {
     flexDirection: 'row',
@@ -571,7 +610,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   goalButtonSelected: {
     backgroundColor: colors.primary,
@@ -579,11 +618,14 @@ const styles = StyleSheet.create({
   },
   goalButtonText: {
     fontSize: 12,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textMedium,
   },
   goalButtonTextSelected: {
     color: colors.white,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   timingContainer: {
     flexDirection: 'row',
@@ -597,8 +639,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.white,
+    borderColor: colors.borderLight,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     alignItems: 'center',
   },
   timingButtonSelected: {
@@ -606,9 +648,10 @@ const styles = StyleSheet.create({
   },
   timingButtonText: {
     fontSize: 14,
-    color: colors.primary,
+    color: colors.textDark,
     marginTop: 4,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   timingButtonTextSelected: {
     color: colors.white,
@@ -629,7 +672,8 @@ const styles = StyleSheet.create({
   errorBannerText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.error,
     marginLeft: 8,
   },

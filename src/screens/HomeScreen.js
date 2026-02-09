@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
 import { useHealth } from '../contexts/HealthContext';
 import WorkoutCalendar from '../components/WorkoutCalendar';
+import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -150,11 +153,16 @@ export default function HomeScreen() {
   const healthActive = healthConnected ? healthFormat.active(todayHealth?.activeMinutes) : '--';
 
   return (
-    <View style={styles.container}>
-      {/* Colorful Header with Greeting and Profile Dropdown */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+    <PremiumBackground>
+      {/* Header */}
+      <LinearGradient
+        colors={[colors.textDark, colors.primary]}
+        start={{ x: 0.12, y: 0 }}
+        end={{ x: 0.95, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 12 }]}
+      >
         <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>{getGreeting()}! 👋</Text>
+          <Text style={styles.greeting}>{getGreeting()}</Text>
           <Text style={styles.subtitle}>Ready for your workout today?</Text>
         </View>
         
@@ -227,7 +235,7 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.scrollContent}>
 
@@ -430,14 +438,13 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
-    </View>
+    </PremiumBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     flex: 1,
@@ -447,13 +454,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: colors.primary,
-    ...Platform.select({
-      web: { boxShadow: '0px 2px 8px rgba(90, 179, 193, 0.2)' },
-      default: { shadowColor: '#5AB3C1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
-    }),
-    elevation: 3,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.14)',
     zIndex: 1000,
   },
   headerLeft: {
@@ -470,9 +473,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
   },
   profileAvatar: {
     width: 36,
@@ -514,7 +517,8 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: 15,
     color: colors.textDark,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   dropdownDivider: {
     height: 1,
@@ -529,8 +533,9 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.white,
     marginBottom: 4,
   },
@@ -538,18 +543,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.white,
     opacity: 0.9,
+    fontFamily: fonts.body,
   },
   progressCard: {
     backgroundColor: colors.white,
     margin: 16,
     marginTop: 16,
-    padding: 20,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
-    elevation: 3,
+    elevation: 5,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -564,7 +572,8 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   badgeGroup: {
@@ -580,7 +589,8 @@ const styles = StyleSheet.create({
   },
   weekBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.primary,
   },
   cacheIndicator: {
@@ -637,7 +647,8 @@ const styles = StyleSheet.create({
   },
   bigPercentage: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.primary,
   },
   percentageLabel: {
@@ -694,7 +705,8 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     flex: 1,
   },
@@ -752,7 +764,8 @@ const styles = StyleSheet.create({
   },
   askCoachButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.white,
   },
   // Compact Health Stats Styles
@@ -770,13 +783,15 @@ const styles = StyleSheet.create({
   },
   compactHealthTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textMedium,
   },
   compactHealthHint: {
     marginLeft: 'auto',
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textLight,
   },
   compactHealthGrid: {
@@ -794,7 +809,8 @@ const styles = StyleSheet.create({
   },
   compactHealthValue: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginTop: 4,
   },
@@ -812,13 +828,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     margin: 16,
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
-    elevation: 3,
+    elevation: 5,
   },
   viewAllButton: {
     flexDirection: 'row',
@@ -827,20 +845,23 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.primary,
   },
   card: {
     backgroundColor: colors.white,
     margin: 16,
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
-    elevation: 3,
+    elevation: 5,
   },
   noPlanContent: {
     alignItems: 'center',
@@ -864,7 +885,8 @@ const styles = StyleSheet.create({
   },
   createPlanButtonText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.white,
   },
   confirmOverlay: {
@@ -888,7 +910,8 @@ const styles = StyleSheet.create({
   },
   confirmTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 8,
   },

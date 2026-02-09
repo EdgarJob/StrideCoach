@@ -13,7 +13,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAICoach } from '../contexts/AICoachContext';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PremiumBackground from '../components/PremiumBackground';
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
@@ -93,13 +95,14 @@ export default function ChatScreen() {
   );
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
-    >
-      {/* Header */}
-      <View style={styles.header}>
+    <PremiumBackground>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
           <Ionicons name="bulb" size={24} color={colors.primary} />
           <Text style={styles.headerTitle}>AI Coach</Text>
@@ -108,7 +111,7 @@ export default function ChatScreen() {
           <Ionicons name="trash-outline" size={20} color={colors.textMedium} />
           <Text style={styles.clearButtonText}>Clear</Text>
         </TouchableOpacity>
-      </View>
+        </View>
 
 
       {/* Chat Messages */}
@@ -244,23 +247,28 @@ export default function ChatScreen() {
           </View>
         </View>
       )}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </PremiumBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 12px 30px rgba(15, 23, 42, 0.08)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16 },
+    }),
+    elevation: 3,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -268,7 +276,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginLeft: 8,
   },
@@ -276,14 +285,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 8,
-    backgroundColor: colors.borderLight,
-    borderRadius: 8,
+    backgroundColor: colors.cardBackground,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   clearButtonText: {
     marginLeft: 4,
     fontSize: 14,
     color: colors.textMedium,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   messagesContainer: {
     flex: 1,
@@ -297,7 +309,8 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginTop: 16,
     marginBottom: 8,
@@ -316,15 +329,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   suggestionChip: {
-    backgroundColor: colors.indigo,
+    backgroundColor: 'rgba(255, 255, 255, 0.86)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   suggestionText: {
     fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
+    color: colors.textDark,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -336,19 +352,21 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: colors.textMedium,
+    fontFamily: fonts.body,
   },
   planActionContainer: {
     marginHorizontal: 16,
     marginBottom: 12,
     padding: 14,
-    borderRadius: 12,
-    backgroundColor: '#ECFEFF',
+    borderRadius: 16,
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#A5F3FC',
+    borderColor: colors.borderLight,
   },
   planActionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.primary,
     marginBottom: 4,
     textTransform: 'uppercase',
@@ -357,7 +375,8 @@ const styles = StyleSheet.create({
   planActionMessage: {
     fontSize: 14,
     color: colors.textDark,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     marginBottom: 4,
   },
   planActionSummary: {
@@ -368,14 +387,15 @@ const styles = StyleSheet.create({
   planActionPreview: {
     backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-    borderRadius: 10,
+    borderColor: colors.borderLight,
+    borderRadius: 12,
     padding: 10,
     marginBottom: 10,
   },
   planActionPreviewTitle: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 4,
   },
@@ -388,7 +408,8 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     color: colors.warning,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   planActionButtons: {
     flexDirection: 'row',
@@ -403,7 +424,8 @@ const styles = StyleSheet.create({
   },
   planActionDismissText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   planActionConfirmButton: {
@@ -415,7 +437,8 @@ const styles = StyleSheet.create({
   },
   planActionConfirmText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.white,
   },
   messageContainer: {
@@ -439,11 +462,13 @@ const styles = StyleSheet.create({
   aiBubble: {
     backgroundColor: colors.white,
     borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 1px 2px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+      web: { boxShadow: '0px 10px 24px rgba(15, 23, 42, 0.08)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 12 },
     }),
-    elevation: 2,
+    elevation: 3,
   },
   errorBubble: {
     backgroundColor: '#FEE2E2',
@@ -453,6 +478,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 20,
+    fontFamily: fonts.body,
   },
   userText: {
     color: colors.white,
@@ -467,14 +493,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     color: colors.textLight,
+    fontFamily: fonts.body,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 16,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.borderLight,
   },
   textInput: {
     flex: 1,
@@ -487,6 +514,9 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     fontSize: 16,
     color: colors.textDark,
+    backgroundColor: colors.inputBackground,
+    fontFamily: fonts.body,
+    textAlignVertical: 'top',
   },
   sendButton: {
     backgroundColor: colors.primary,
@@ -520,7 +550,8 @@ const styles = StyleSheet.create({
   },
   confirmTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 8,
   },
@@ -545,7 +576,8 @@ const styles = StyleSheet.create({
   },
   confirmCancelText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   confirmClearButton: {
@@ -558,7 +590,8 @@ const styles = StyleSheet.create({
   },
   confirmClearText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.white,
   },
 });

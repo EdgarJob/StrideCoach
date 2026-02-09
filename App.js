@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, ActivityIndicator, Text, Animated } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts, Sora_400Regular, Sora_600SemiBold, Sora_700Bold, Sora_800ExtraBold } from '@expo-google-fonts/sora';
 
 // Import our screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -19,6 +20,8 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AICoachProvider } from './src/contexts/AICoachContext';
 import { PlanProvider } from './src/contexts/PlanContext';
 import { HealthProvider } from './src/contexts/HealthContext';
+import colors from './src/theme/colors';
+import { fonts } from './src/theme/typography';
 
 // Create the tab navigator
 const Tab = createBottomTabNavigator();
@@ -45,9 +48,10 @@ function AppNavigator() {
   // Show main app if user is logged in
   return (
     <NavigationContainer>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
       <Tab.Navigator
         screenOptions={({ route }) => ({
+          headerShown: false,
           tabBarIcon: ({ focused, color, size }) => {
             const scaleValue = React.useRef(new Animated.Value(focused ? 1 : 0.9)).current;
             const opacityValue = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
@@ -90,7 +94,7 @@ function AppNavigator() {
                 width: 60,
                 height: 40,
                 borderRadius: 12,
-                backgroundColor: focused ? '#E5F3FF' : 'transparent',
+                backgroundColor: focused ? colors.primaryLight : 'transparent',
                 transform: [{ scale: scaleValue }],
                 opacity: Animated.add(opacityValue, 0.3),
               }}>
@@ -98,16 +102,16 @@ function AppNavigator() {
               </Animated.View>
             );
           },
-          tabBarActiveTintColor: '#5AB3C1',
-          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textLight,
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
-            height: 65,
-            paddingBottom: 8,
-            paddingTop: 8,
+            height: 72,
+            paddingBottom: 10,
+            paddingTop: 10,
             borderTopWidth: 1,
-            borderTopColor: '#E5E7EB',
-            backgroundColor: '#FFFFFF',
+            borderTopColor: colors.borderLight,
+            backgroundColor: colors.white,
             elevation: 8,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: -2 },
@@ -118,16 +122,7 @@ function AppNavigator() {
             fontSize: 11,
             fontWeight: '600',
             marginTop: -4,
-          },
-          headerStyle: {
-            backgroundColor: '#5AB3C1',
-            elevation: 0,
-            shadowOpacity: 0,
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-            fontSize: 20,
+            fontFamily: fonts.emphasis,
           },
           // Smooth screen transitions
           animation: 'shift',
@@ -181,6 +176,22 @@ function AppNavigator() {
 
 // Main App Component with Providers
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Sora_400Regular,
+    Sora_600SemiBold,
+    Sora_700Bold,
+    Sora_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 12, fontSize: 14, color: colors.textMedium, fontFamily: fonts.emphasis }}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <AuthProvider>

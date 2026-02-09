@@ -3,8 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from '
 import { Ionicons } from '@expo/vector-icons';
 import { usePlan } from '../contexts/PlanContext';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PremiumBackground from '../components/PremiumBackground';
 
 export default function ProgressScreen() {
+  const insets = useSafeAreaInsets();
   const [selectedPeriod, setSelectedPeriod] = useState('week');
   const { currentPlan, getPlanProgress, getWeekProgress } = usePlan();
 
@@ -96,7 +100,18 @@ export default function ProgressScreen() {
   const recentActivity = getRecentActivity();
 
   return (
-    <ScrollView style={styles.container}>
+    <PremiumBackground>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: Math.max(24, insets.bottom + 16) }]}
+        showsVerticalScrollIndicator={false}
+      >
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <Text style={styles.headerTitle}>Progress</Text>
+        <Text style={styles.headerSubtitle}>Consistency beats intensity.</Text>
+      </View>
+
       {/* Period Selector */}
       <View style={styles.periodSelector}>
         {periods.map((period) => (
@@ -189,23 +204,45 @@ export default function ProgressScreen() {
         </View>
       </View>
     </ScrollView>
+    </PremiumBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  content: {
+    paddingTop: 8,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    color: colors.textDark,
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
+    letterSpacing: -0.2,
+  },
+  headerSubtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    color: colors.textMedium,
+    fontFamily: fonts.body,
   },
   periodSelector: {
     flexDirection: 'row',
     margin: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    borderRadius: 16,
     padding: 4,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
     elevation: 5,
   },
@@ -220,7 +257,8 @@ const styles = StyleSheet.create({
   },
   periodButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textMedium,
   },
   periodButtonTextActive: {
@@ -230,17 +268,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     margin: 16,
     marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
     elevation: 5,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 16,
   },
@@ -256,7 +297,8 @@ const styles = StyleSheet.create({
   },
   overviewNumber: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginTop: 8,
   },
@@ -265,6 +307,7 @@ const styles = StyleSheet.create({
     color: colors.textMedium,
     marginTop: 4,
     textAlign: 'center',
+    fontFamily: fonts.body,
   },
   chartContainer: {
     height: 120,
@@ -276,11 +319,14 @@ const styles = StyleSheet.create({
   chartPlaceholder: {
     fontSize: 16,
     color: colors.textMedium,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   chartSubtext: {
     fontSize: 14,
     color: colors.textLight,
     marginTop: 8,
+    fontFamily: fonts.body,
   },
   activityList: {
     marginTop: 8,
@@ -300,17 +346,20 @@ const styles = StyleSheet.create({
   },
   activityTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   activityDate: {
     fontSize: 14,
     color: colors.textMedium,
     marginTop: 2,
+    fontFamily: fonts.body,
   },
   activityStatus: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.success,
   },
   noActivityText: {
@@ -318,5 +367,6 @@ const styles = StyleSheet.create({
     color: colors.textMedium,
     textAlign: 'center',
     paddingVertical: 16,
+    fontFamily: fonts.body,
   },
 });

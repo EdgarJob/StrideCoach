@@ -12,8 +12,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
+import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 export default function AuthScreen() {
   const passwordInputRef = useRef(null);
@@ -136,248 +139,308 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>StrideCoach</Text>
-          <Text style={styles.subtitle}>
-            {isLogin ? 'Welcome back!' : 'Start your fitness journey'}
-          </Text>
-        </View>
-
-        {/* Form */}
-        <View style={styles.form}>
-          {/* Inline message banner */}
-          {message && (
-            <View style={[
-              styles.messageBanner,
-              message.type === 'error' ? styles.errorBanner : styles.successBanner
-            ]}>
-              <Ionicons
-                name={message.type === 'error' ? 'alert-circle' : 'checkmark-circle'}
-                size={20}
-                color={message.type === 'error' ? colors.error : colors.success}
-                style={styles.messageIcon}
-              />
-              <Text style={[
-                styles.messageText,
-                message.type === 'error' ? styles.errorText : styles.successText
-              ]}>
-                {message.text}
-              </Text>
-              <TouchableOpacity onPress={() => setMessage(null)}>
-                <Ionicons name="close" size={18} color={colors.textMedium} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Email */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail" size={20} color={colors.textMedium} style={styles.inputIcon} />
-            <TextInput
-              key={`email-${isLogin ? 'login' : 'signup'}`}
-              style={styles.input}
-              placeholder="Email"
-              value={formData.email}
-              onChangeText={(text) => updateField('email', text)}
-              onChange={(event) => syncAutofillField('email', event)}
-              onEndEditing={(event) => syncAutofillField('email', event)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType={isLogin ? 'username' : 'emailAddress'}
-              autoComplete={isLogin ? 'username' : 'email'}
-              importantForAutofill="yes"
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => passwordInputRef.current?.focus()}
-            />
-          </View>
-
-          {/* Password */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed" size={20} color={colors.textMedium} style={styles.inputIcon} />
-            <TextInput
-              key={`password-${isLogin ? 'login' : 'signup'}`}
-              ref={passwordInputRef}
-              style={styles.input}
-              placeholder="Password"
-              value={formData.password}
-              onChangeText={(text) => updateField('password', text)}
-              onChange={(event) => syncAutofillField('password', event)}
-              onEndEditing={(event) => syncAutofillField('password', event)}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              textContentType={isLogin ? 'password' : 'newPassword'}
-              autoComplete={isLogin ? 'password' : 'new-password'}
-              importantForAutofill="yes"
-              returnKeyType="go"
-              onSubmitEditing={handleSubmit}
-            />
-            <TouchableOpacity 
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.passwordToggle}
+    <PremiumBackground>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+            {/* Hero */}
+            <LinearGradient
+              colors={[colors.textDark, colors.primary]}
+              start={{ x: 0.12, y: 0 }}
+              end={{ x: 0.95, y: 1 }}
+              style={styles.hero}
             >
-              <Ionicons 
-                name={showPassword ? "eye-off" : "eye"} 
-                size={20} 
-                color={colors.textMedium}
-              />
-            </TouchableOpacity>
-          </View>
+              <Text style={styles.title}>StrideCoach</Text>
+              <Text style={styles.subtitle}>
+                {isLogin ? \"Back on track. Let's keep it rolling.\" : 'Your plan, your pace, your coach.'}
+              </Text>
+              <View style={styles.heroChips}>
+                <View style={styles.heroChip}>
+                  <Ionicons name="sparkles" size={14} color={colors.white} />
+                  <Text style={styles.heroChipText}>AI Coach</Text>
+                </View>
+                <View style={styles.heroChip}>
+                  <Ionicons name="calendar" size={14} color={colors.white} />
+                  <Text style={styles.heroChipText}>4-week Plans</Text>
+                </View>
+                <View style={styles.heroChip}>
+                  <Ionicons name="heart" size={14} color={colors.white} />
+                  <Text style={styles.heroChipText}>Health Sync</Text>
+                </View>
+              </View>
+            </LinearGradient>
 
-          {/* Profile fields for signup */}
-          {!isLogin && (
-            <>
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Inline message banner */}
+              {message && (
+                <View style={[
+                  styles.messageBanner,
+                  message.type === 'error' ? styles.errorBanner : styles.successBanner
+                ]}>
+                  <Ionicons
+                    name={message.type === 'error' ? 'alert-circle' : 'checkmark-circle'}
+                    size={20}
+                    color={message.type === 'error' ? colors.error : colors.success}
+                    style={styles.messageIcon}
+                  />
+                  <Text style={[
+                    styles.messageText,
+                    message.type === 'error' ? styles.errorText : styles.successText
+                  ]}>
+                    {message.text}
+                  </Text>
+                  <TouchableOpacity onPress={() => setMessage(null)}>
+                    <Ionicons name="close" size={18} color={colors.textMedium} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Email */}
               <View style={styles.inputContainer}>
-                <Ionicons name="person" size={20} color={colors.textMedium} style={styles.inputIcon} />
+                <Ionicons name="mail" size={18} color={colors.textMedium} style={styles.inputIcon} />
                 <TextInput
+                  key={`email-${isLogin ? 'login' : 'signup'}`}
                   style={styles.input}
-                  placeholder="Full Name"
-                  value={formData.displayName}
-                  onChangeText={(text) => updateField('displayName', text)}
+                  placeholder="Email"
+                  value={formData.email}
+                  onChangeText={(text) => updateField('email', text)}
+                  onChange={(event) => syncAutofillField('email', event)}
+                  onEndEditing={(event) => syncAutofillField('email', event)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType={isLogin ? 'username' : 'emailAddress'}
+                  autoComplete={isLogin ? 'username' : 'email'}
+                  importantForAutofill="yes"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
                 />
               </View>
 
-              <View style={styles.row}>
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="calendar" size={20} color={colors.textMedium} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Age"
-                    value={formData.age}
-                    onChangeText={(text) => updateField('age', text)}
-                    keyboardType="numeric"
+              {/* Password */}
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                <TextInput
+                  key={`password-${isLogin ? 'login' : 'signup'}`}
+                  ref={passwordInputRef}
+                  style={styles.input}
+                  placeholder="Password"
+                  value={formData.password}
+                  onChangeText={(text) => updateField('password', text)}
+                  onChange={(event) => syncAutofillField('password', event)}
+                  onEndEditing={(event) => syncAutofillField('password', event)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  textContentType={isLogin ? 'password' : 'newPassword'}
+                  autoComplete={isLogin ? 'password' : 'new-password'}
+                  importantForAutofill="yes"
+                  returnKeyType="go"
+                  onSubmitEditing={handleSubmit}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.passwordToggle}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={20}
+                    color={colors.textMedium}
                   />
-                </View>
-
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="male-female" size={20} color={colors.textMedium} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Sex (male/female)"
-                    value={formData.sex}
-                    onChangeText={(text) => updateField('sex', text)}
-                  />
-                </View>
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.row}>
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="resize" size={20} color={colors.textMedium} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Height (cm)"
-                    value={formData.height}
-                    onChangeText={(text) => updateField('height', text)}
-                    keyboardType="numeric"
-                  />
-                </View>
+              {/* Profile fields for signup */}
+              {!isLogin && (
+                <>
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="person" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Full Name"
+                      value={formData.displayName}
+                      onChangeText={(text) => updateField('displayName', text)}
+                    />
+                  </View>
 
-                <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Ionicons name="fitness" size={20} color={colors.textMedium} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Weight (kg)"
-                    value={formData.weight}
-                    onChangeText={(text) => updateField('weight', text)}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-            </>
-          )}
+                  <View style={styles.row}>
+                    <View style={[styles.inputContainer, styles.halfWidth]}>
+                      <Ionicons name="calendar" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Age"
+                        value={formData.age}
+                        onChangeText={(text) => updateField('age', text)}
+                        keyboardType="numeric"
+                      />
+                    </View>
 
-          {/* Submit Button */}
-          <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <Text style={styles.submitButtonText}>
-              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
-            </Text>
-          </TouchableOpacity>
+                    <View style={[styles.inputContainer, styles.halfWidth]}>
+                      <Ionicons name="male-female" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Sex (male/female)"
+                        value={formData.sex}
+                        onChangeText={(text) => updateField('sex', text)}
+                      />
+                    </View>
+                  </View>
 
-          {/* Divider */}
-          {isLogin && (
-            <>
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>OR</Text>
-                <View style={styles.dividerLine} />
-              </View>
+                  <View style={styles.row}>
+                    <View style={[styles.inputContainer, styles.halfWidth]}>
+                      <Ionicons name="resize" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Height (cm)"
+                        value={formData.height}
+                        onChangeText={(text) => updateField('height', text)}
+                        keyboardType="numeric"
+                      />
+                    </View>
 
-              {/* OAuth Buttons */}
+                    <View style={[styles.inputContainer, styles.halfWidth]}>
+                      <Ionicons name="fitness" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Weight (kg)"
+                        value={formData.weight}
+                        onChangeText={(text) => updateField('weight', text)}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
+
+              {/* Submit Button */}
               <TouchableOpacity
-                style={[styles.oauthButton, styles.googleButton]}
-                onPress={() => handleOAuthSignIn('google')}
+                style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+                onPress={handleSubmit}
                 disabled={loading}
               >
-                <Ionicons name="logo-google" size={20} color="#DB4437" />
-                <Text style={styles.oauthButtonText}>Continue with Google</Text>
+                <Text style={styles.submitButtonText}>
+                  {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+                </Text>
               </TouchableOpacity>
-            </>
-          )}
 
-          {/* Toggle Login/Signup */}
-          <TouchableOpacity
-            style={styles.toggleButton}
-            onPress={() => setIsLogin(!isLogin)}
-          >
-            <Text style={styles.toggleButtonText}>
-              {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"
-              }
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-    </SafeAreaView>
+              {/* Divider */}
+              {isLogin && (
+                <>
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>OR</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  {/* OAuth Buttons */}
+                  <TouchableOpacity
+                    style={[styles.oauthButton, styles.googleButton]}
+                    onPress={() => handleOAuthSignIn('google')}
+                    disabled={loading}
+                  >
+                    <Ionicons name="logo-google" size={20} color="#DB4437" />
+                    <Text style={styles.oauthButtonText}>Continue with Google</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* Toggle Login/Signup */}
+              <TouchableOpacity
+                style={styles.toggleButton}
+                onPress={() => setIsLogin(!isLogin)}
+              >
+                <Text style={styles.toggleButtonText}>
+                  {isLogin
+                    ? "Don't have an account? Sign up"
+                    : 'Already have an account? Sign in'
+                  }
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </PremiumBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   flex: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
+    padding: 18,
+    paddingTop: 14,
+    paddingBottom: 24,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
+  hero: {
+    borderRadius: 22,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.headerBorder,
+    marginBottom: 14,
+    ...Platform.select({
+      web: { boxShadow: '0px 18px 50px rgba(15, 23, 42, 0.16)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.16, shadowRadius: 24 },
+    }),
+    elevation: 6,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 8,
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
+    color: colors.white,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 16,
-    color: colors.textMedium,
+    marginTop: 10,
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.82)',
+    fontFamily: fonts.body,
+    lineHeight: 20,
+  },
+  heroChips: {
+    marginTop: 14,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  heroChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    borderWidth: 1,
+    borderColor: colors.headerBorder,
+  },
+  heroChipText: {
+    fontSize: 12,
+    color: colors.white,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   form: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 8px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
     elevation: 5,
   },
@@ -386,7 +449,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.inputBorder,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
     paddingHorizontal: 16,
     backgroundColor: colors.inputBackground,
@@ -396,9 +459,10 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 14,
     fontSize: 16,
     color: colors.textDark,
+    fontFamily: fonts.body,
     ...Platform.select({ web: { outlineStyle: 'none' }, default: {} }),
   },
   passwordToggle: {
@@ -412,12 +476,17 @@ const styles = StyleSheet.create({
     width: '48%',
   },
   submitButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
+    ...Platform.select({
+      web: { boxShadow: '0px 18px 40px rgba(252, 76, 2, 0.22)' },
+      default: { shadowColor: '#FC4C02', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.22, shadowRadius: 18 },
+    }),
+    elevation: 5,
   },
   submitButtonDisabled: {
     backgroundColor: colors.textLight,
@@ -425,7 +494,8 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   toggleButton: {
     alignItems: 'center',
@@ -433,7 +503,8 @@ const styles = StyleSheet.create({
   toggleButtonText: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   divider: {
     flexDirection: 'row',
@@ -449,7 +520,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     color: colors.textMedium,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   oauthButton: {
     flexDirection: 'row',
@@ -460,7 +532,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.inputBorder,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.86)',
   },
   googleButton: {
     borderColor: '#DB4437',
@@ -468,7 +540,8 @@ const styles = StyleSheet.create({
   oauthButtonText: {
     marginLeft: 12,
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   messageBanner: {
@@ -493,7 +566,8 @@ const styles = StyleSheet.create({
   messageText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   errorText: {
     color: colors.error,

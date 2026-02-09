@@ -4,24 +4,27 @@
 const colors = {
   // Brand
   primary: '#5AB3C1',
-  accent: '#FF9500',
+  // Strava-like orange for punchy CTAs/highlights
+  accent: '#FC4C02',
 
   // Backgrounds
-  background: '#F8FAFC',
+  // Slightly warmer/lower-contrast background for a more premium feel
+  background: '#F7F8FB',
+  bgTop: '#EAF7FF',
   white: '#FFFFFF',
-  cardBackground: '#F9FAFB',
-  inputBackground: '#F9FAFB',
+  cardBackground: '#F3F6FA',
+  inputBackground: '#F3F6FA',
 
   // Text
-  textDark: '#1F2937',
-  textBody: '#374151',
+  textDark: '#0B1220',
+  textBody: '#1F2937',
   textMedium: '#6B7280',
   textLight: '#9CA3AF',
 
   // Borders / Dividers
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
-  inputBorder: '#D1D5DB',
+  border: '#E6EAF0',
+  borderLight: '#EEF2F7',
+  inputBorder: '#D6DEE8',
 
   // Semantic
   success: '#10B981',
@@ -30,16 +33,20 @@ const colors = {
 
   // Accent colors
   purple: '#8B5CF6',
-  indigo: '#E0E7FF',
-  primaryLight: '#E5F3FF',
+  indigo: '#E0F2FE',
+  primaryLight: '#E6F7FA',
   switchTrack: '#C7D2FE',
 
   // Transparent overlays
   headerOverlay: 'rgba(255, 255, 255, 0.2)',
   headerBorder: 'rgba(255, 255, 255, 0.3)',
-  shadow: 'rgba(0, 0, 0, 0.1)',
+  shadow: 'rgba(15, 23, 42, 0.10)',
   primaryShadow: 'rgba(90, 179, 193, 0.2)',
   modalOverlay: 'rgba(0, 0, 0, 0.5)',
+
+  // Alpha helpers (used for gradients/blobs)
+  primaryAlpha20: 'rgba(90, 179, 193, 0.20)',
+  accentAlpha14: 'rgba(252, 76, 2, 0.14)',
 };
 
 export default colors;

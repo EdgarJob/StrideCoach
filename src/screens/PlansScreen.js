@@ -14,13 +14,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePlan } from '../contexts/PlanContext';
 import { useAuth } from '../contexts/AuthContext';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PreferencesScreen from './PreferencesScreen';
 import WorkoutCalendar from '../components/WorkoutCalendar';
 import CircularProgress from '../components/CircularProgress';
+import PremiumBackground from '../components/PremiumBackground';
 
 export default function PlansScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const {
     currentPlan,
@@ -375,8 +379,8 @@ export default function PlansScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <PremiumBackground>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Ionicons name="calendar" size={24} color={colors.primary} />
         <Text style={styles.headerTitle}>Workout Plans</Text>
       </View>
@@ -558,26 +562,31 @@ export default function PlansScreen() {
         </View>
       </Modal>
 
-    </View>
+    </PremiumBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderLight,
+    ...Platform.select({
+      web: { boxShadow: '0px 12px 30px rgba(15, 23, 42, 0.08)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16 },
+    }),
+    elevation: 3,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginLeft: 8,
   },
@@ -590,6 +599,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: colors.textMedium,
+    fontFamily: fonts.body,
   },
   errorContainer: {
     flex: 1,
@@ -599,7 +609,8 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.error,
     marginTop: 16,
     marginBottom: 8,
@@ -609,17 +620,19 @@ const styles = StyleSheet.create({
     color: colors.textMedium,
     textAlign: 'center',
     marginBottom: 24,
+    fontFamily: fonts.body,
   },
   retryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   retryButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   noPlanContainer: {
     flex: 1,
@@ -629,7 +642,8 @@ const styles = StyleSheet.create({
   },
   noPlanTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginTop: 16,
     marginBottom: 8,
@@ -640,19 +654,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
+    fontFamily: fonts.body,
   },
   generateButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
   },
   generateButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     marginLeft: 8,
   },
   scrollContainer: {
@@ -675,7 +691,8 @@ const styles = StyleSheet.create({
   },
   planTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginLeft: 8,
     flex: 1,
@@ -687,18 +704,22 @@ const styles = StyleSheet.create({
   viewDetailsText: {
     color: colors.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     marginRight: 4,
   },
   progressContainer: {
     backgroundColor: colors.white,
-    padding: 20,
-    borderRadius: 12,
+    padding: 18,
+    borderRadius: 20,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
+    elevation: 5,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -708,12 +729,14 @@ const styles = StyleSheet.create({
   },
   progressTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   progressPercentage: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.primary,
   },
   progressBar: {
@@ -730,13 +753,15 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 14,
     color: colors.textMedium,
+    fontFamily: fonts.body,
   },
   weeksContainer: {
     marginBottom: 20,
   },
   weeksTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 12,
   },
@@ -748,17 +773,21 @@ const styles = StyleSheet.create({
   weekCard: {
     backgroundColor: colors.white,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 18,
     width: '48%',
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+      web: { boxShadow: '0px 14px 32px rgba(15, 23, 42, 0.08)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16 },
     }),
+    elevation: 4,
   },
   weekNumber: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 4,
   },
@@ -781,6 +810,7 @@ const styles = StyleSheet.create({
   weekProgressText: {
     fontSize: 12,
     color: colors.textMedium,
+    fontFamily: fonts.body,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -835,7 +865,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   closeButton: {
@@ -853,7 +884,8 @@ const styles = StyleSheet.create({
   },
   weekTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   weekFocus: {
@@ -864,12 +896,15 @@ const styles = StyleSheet.create({
   dayCard: {
     backgroundColor: colors.white,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 18,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+      web: { boxShadow: '0px 14px 32px rgba(15, 23, 42, 0.08)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 16 },
     }),
+    elevation: 4,
   },
   dayHeader: {
     flexDirection: 'row',
@@ -879,7 +914,8 @@ const styles = StyleSheet.create({
   },
   dayName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   workoutBadge: {
@@ -893,7 +929,8 @@ const styles = StyleSheet.create({
   workoutBadgeText: {
     color: colors.white,
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     marginLeft: 4,
   },
   restBadge: {
@@ -907,7 +944,8 @@ const styles = StyleSheet.create({
   restBadgeText: {
     color: colors.textMedium,
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     marginLeft: 4,
   },
   workoutDetails: {

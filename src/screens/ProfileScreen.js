@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { useAuth } from '../contexts/AuthContext';
 import { useHealth } from '../contexts/HealthContext';
+import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
+import { fonts } from '../theme/typography';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
@@ -67,203 +73,305 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
-          <Ionicons name="person" size={40} color={colors.primary} />
-        </View>
-        <Text style={styles.userName}>{user?.user_metadata?.display_name || 'User'}</Text>
-        <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
-      </View>
-
-      {/* Health Stats */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Health Stats</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{formatHeight(profile?.height_cm)}</Text>
-            <Text style={styles.statLabel}>Height</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{formatWeight(profile?.weight_kg)}</Text>
-            <Text style={styles.statLabel}>Current Weight</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{formatWeight(profile?.goal?.target_weight)}</Text>
-            <Text style={styles.statLabel}>Goal Weight</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{profile?.age ?? '--'}</Text>
-            <Text style={styles.statLabel}>Age</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Settings */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Settings</Text>
-        
-        <View style={styles.settingItem}>
-          <View style={styles.settingLeft}>
-            <Ionicons name="notifications" size={24} color={colors.primary} />
-            <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Notifications</Text>
-              <Text style={styles.settingSubtitle}>Workout reminders</Text>
-            </View>
-          </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
-            trackColor={{ false: colors.inputBorder, true: colors.primary }}
-            thumbColor={notificationsEnabled ? colors.white : colors.borderLight}
-          />
-        </View>
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingLeft}>
-            <Ionicons name="fitness" size={24} color={colors.success} />
-            <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Health Data</Text>
-              <Text style={styles.settingSubtitle}>Apple Health / Health Connect (Google Fit)</Text>
-            </View>
-          </View>
-          <TouchableOpacity 
-            style={[
-              styles.connectButton,
-              healthDataConnected && styles.connectButtonConnected
-            ]}
-            onPress={handleHealthConnectPress}
-            disabled={healthLoading}
+    <PremiumBackground>
+      <View style={styles.root}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingBottom: Math.max(24, insets.bottom + 16) }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <LinearGradient
+            colors={[colors.textDark, colors.primary]}
+            start={{ x: 0.1, y: 0 }}
+            end={{ x: 0.95, y: 1 }}
+            style={[styles.profileHeader, { paddingTop: insets.top + 16 }]}
           >
-            <Text style={[
-              styles.connectButtonText,
-              healthDataConnected && styles.connectButtonTextConnected
-            ]}>
-              {healthLoading ? 'Working...' : (healthDataConnected ? 'Connected' : 'Connect')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.profileHeaderRow}>
+              <View style={styles.avatarRing}>
+                <View style={styles.avatar}>
+                  <Ionicons name="person" size={34} color={colors.white} />
+                </View>
+              </View>
+              <View style={styles.profileHeaderText}>
+                <Text style={styles.userName}>{user?.user_metadata?.display_name || 'User'}</Text>
+                <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+              </View>
+            </View>
 
-        <View style={styles.settingItem}>
-          <View style={styles.settingLeft}>
-            <Ionicons name="time" size={24} color={colors.warning} />
-            <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>Workout Time</Text>
-              <Text style={styles.settingSubtitle}>5:00 PM</Text>
+            <View style={styles.profileChips}>
+              <View style={[styles.chip, healthDataConnected ? styles.chipOn : styles.chipOff]}>
+                <Ionicons
+                  name={healthDataConnected ? 'heart' : 'heart-outline'}
+                  size={14}
+                  color={colors.white}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.chipText}>
+                  {healthDataConnected ? 'Health Connected' : 'Health Not Connected'}
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* Health Stats */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Body Stats</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{formatHeight(profile?.height_cm)}</Text>
+                <Text style={styles.statLabel}>Height</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{formatWeight(profile?.weight_kg)}</Text>
+                <Text style={styles.statLabel}>Current Weight</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{formatWeight(profile?.goal?.target_weight)}</Text>
+                <Text style={styles.statLabel}>Goal Weight</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{profile?.age ?? '--'}</Text>
+                <Text style={styles.statLabel}>Age</Text>
+              </View>
             </View>
           </View>
-          <TouchableOpacity>
-            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Removed workout preferences summary to keep preferences managed only from Plans */}
+          {/* Settings */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Settings</Text>
 
-      {/* App Info */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>App Information</Text>
-        
-        <TouchableOpacity style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Privacy Policy</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Terms of Service</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Support</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-        </TouchableOpacity>
-        
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Version</Text>
-          <Text style={styles.infoValue}>1.0.0</Text>
-        </View>
-      </View>
+            <View style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: colors.primaryAlpha20 }]}>
+                  <Ionicons name="notifications" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.settingText}>
+                  <Text style={styles.settingTitle}>Notifications</Text>
+                  <Text style={styles.settingSubtitle}>Workout reminders</Text>
+                </View>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                trackColor={{ false: colors.inputBorder, true: colors.primary }}
+                thumbColor={notificationsEnabled ? colors.white : colors.borderLight}
+              />
+            </View>
 
-      {/* Status Message */}
-      {statusMessage && (
-        <View style={[styles.statusBanner, statusMessage.type === 'error' ? styles.errorBanner : styles.successBanner]}>
-          <Ionicons name={statusMessage.type === 'error' ? 'alert-circle' : 'checkmark-circle'} size={18} color={statusMessage.type === 'error' ? colors.error : colors.success} />
-          <Text style={[styles.statusText, statusMessage.type === 'error' ? styles.errorText : styles.successText]}>{statusMessage.text}</Text>
-        </View>
-      )}
-
-      {/* Sign Out Button */}
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
-
-      {/* Sign Out Confirmation */}
-      {showSignOutConfirm && (
-        <View style={styles.confirmOverlay}>
-          <View style={styles.confirmDialog}>
-            <Text style={styles.confirmTitle}>Sign Out</Text>
-            <Text style={styles.confirmMessage}>Are you sure you want to sign out?</Text>
-            <View style={styles.confirmButtons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setShowSignOutConfirm(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+            <View style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: colors.accentAlpha14 }]}>
+                  <Ionicons name="fitness" size={18} color={colors.accent} />
+                </View>
+                <View style={styles.settingText}>
+                  <Text style={styles.settingTitle}>Health Data</Text>
+                  <Text style={styles.settingSubtitle}>Apple Health / Health Connect</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.connectButton,
+                  healthDataConnected && styles.connectButtonConnected,
+                ]}
+                onPress={handleHealthConnectPress}
+                disabled={healthLoading}
+              >
+                <Text
+                  style={[
+                    styles.connectButtonText,
+                    healthDataConnected && styles.connectButtonTextConnected,
+                  ]}
+                >
+                  {healthLoading ? 'Working...' : (healthDataConnected ? 'Connected' : 'Connect')}
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmButton} onPress={confirmSignOut}>
-                <Text style={styles.confirmButtonText}>Sign Out</Text>
+            </View>
+
+            <View style={[styles.settingItem, styles.settingItemLast]}>
+              <View style={styles.settingLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: 'rgba(245, 158, 11, 0.14)' }]}>
+                  <Ionicons name="time" size={18} color={colors.warning} />
+                </View>
+                <View style={styles.settingText}>
+                  <Text style={styles.settingTitle}>Workout Time</Text>
+                  <Text style={styles.settingSubtitle}>5:00 PM</Text>
+                </View>
+              </View>
+              <TouchableOpacity>
+                <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
-    </ScrollView>
+
+          {/* App Info */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>App Information</Text>
+
+            <TouchableOpacity style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Privacy Policy</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Terms of Service</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Support</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            <View style={[styles.infoItem, styles.infoItemLast]}>
+              <Text style={styles.infoLabel}>Version</Text>
+              <Text style={styles.infoValue}>1.0.0</Text>
+            </View>
+          </View>
+
+          {/* Status Message */}
+          {statusMessage && (
+            <View style={[styles.statusBanner, statusMessage.type === 'error' ? styles.errorBanner : styles.successBanner]}>
+              <Ionicons
+                name={statusMessage.type === 'error' ? 'alert-circle' : 'checkmark-circle'}
+                size={18}
+                color={statusMessage.type === 'error' ? colors.error : colors.success}
+              />
+              <Text style={[styles.statusText, statusMessage.type === 'error' ? styles.errorText : styles.successText]}>
+                {statusMessage.text}
+              </Text>
+            </View>
+          )}
+
+          {/* Sign Out Button */}
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <Ionicons name="log-out-outline" size={18} color={colors.white} style={{ marginRight: 8 }} />
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Sign Out Confirmation */}
+        {showSignOutConfirm && (
+          <View style={styles.confirmOverlay}>
+            <View style={styles.confirmDialog}>
+              <Text style={styles.confirmTitle}>Sign Out</Text>
+              <Text style={styles.confirmMessage}>Are you sure you want to sign out?</Text>
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity style={styles.cancelButton} onPress={() => setShowSignOutConfirm(false)}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.confirmButton} onPress={confirmSignOut}>
+                  <Text style={styles.confirmButtonText}>Sign Out</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
+    </PremiumBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
+  },
+  content: {
+    paddingBottom: 12,
   },
   profileHeader: {
-    backgroundColor: colors.primary,
-    padding: 24,
+    paddingHorizontal: 16,
+    paddingBottom: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.headerBorder,
+  },
+  profileHeaderRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+  },
+  avatarRing: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1,
+    borderColor: colors.headerBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.indigo,
-    justifyContent: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0, 0, 0, 0.14)',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'center',
+  },
+  profileHeaderText: {
+    flex: 1,
+    marginLeft: 14,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.white,
-    marginBottom: 4,
+    letterSpacing: -0.2,
   },
   userEmail: {
-    fontSize: 16,
-    color: colors.indigo,
+    marginTop: 4,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.82)',
+    fontFamily: fonts.body,
+  },
+  profileChips: {
+    marginTop: 14,
+    flexDirection: 'row',
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.headerBorder,
+    backgroundColor: colors.headerOverlay,
+  },
+  chipOn: {
+    backgroundColor: 'rgba(16, 185, 129, 0.22)',
+  },
+  chipOff: {
+    backgroundColor: colors.headerOverlay,
+  },
+  chipText: {
+    fontSize: 12,
+    color: colors.white,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   card: {
-    backgroundColor: colors.white,
-    margin: 16,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     ...Platform.select({
-      web: { boxShadow: `0 2px 4px ${colors.shadow}` },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 },
+      web: { boxShadow: '0px 14px 40px rgba(15, 23, 42, 0.10)' },
+      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.10, shadowRadius: 18 },
     }),
-    elevation: 5,
+    elevation: 4,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 16,
   },
@@ -278,14 +386,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontFamily: fonts.display,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   statLabel: {
     fontSize: 12,
     color: colors.textMedium,
     marginTop: 4,
+    fontFamily: fonts.body,
   },
   settingItem: {
     flexDirection: 'row',
@@ -295,56 +405,59 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
+  settingItemLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+  settingIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    marginRight: 12,
+  },
   settingText: {
-    marginLeft: 12,
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   settingSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textMedium,
     marginTop: 2,
+    fontFamily: fonts.body,
   },
   connectButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: colors.borderLight,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: colors.accent,
   },
   connectButtonConnected: {
-    backgroundColor: colors.success,
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
   },
   connectButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: colors.primary,
-  },
-  connectButtonTextConnected: {
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.white,
   },
-  preferenceItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  preferenceLabel: {
-    fontSize: 16,
-    color: colors.textBody,
-  },
-  preferenceValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textDark,
+  connectButtonTextConnected: {
+    color: colors.success,
   },
   infoItem: {
     flexDirection: 'row',
@@ -354,25 +467,35 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
+  infoItemLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
   infoLabel: {
     fontSize: 16,
+    fontFamily: fonts.body,
     color: colors.textBody,
   },
   infoValue: {
     fontSize: 16,
     color: colors.textMedium,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   signOutButton: {
     backgroundColor: colors.error,
     margin: 16,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   signOutText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
   },
   confirmOverlay: {
     position: 'absolute',
@@ -395,7 +518,8 @@ const styles = StyleSheet.create({
   },
   confirmTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: fonts.title,
+    fontWeight: 'normal',
     color: colors.textDark,
     marginBottom: 8,
   },
@@ -404,6 +528,7 @@ const styles = StyleSheet.create({
     color: colors.textMedium,
     textAlign: 'center',
     marginBottom: 20,
+    fontFamily: fonts.body,
   },
   confirmButtons: {
     flexDirection: 'row',
@@ -420,7 +545,8 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.textDark,
   },
   confirmButton: {
@@ -433,7 +559,8 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     color: colors.white,
   },
   statusBanner: {
@@ -456,7 +583,8 @@ const styles = StyleSheet.create({
   statusText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
     marginLeft: 8,
   },
   errorText: {
