@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlan } from '../contexts/PlanContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +26,13 @@ import PremiumBackground from '../components/PremiumBackground';
 export default function PlansScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const {
+    onScroll,
+    onScrollBeginDrag,
+    onScrollEndDrag,
+    onMomentumScrollBegin,
+    onMomentumScrollEnd,
+  } = useTabBarMotion();
   const { profile } = useAuth();
   const {
     currentPlan,
@@ -235,7 +243,16 @@ export default function PlansScreen() {
     const isCompleted = isPlanCompleted();
 
     return (
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.planContainer}>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.planContainer}
+        onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
+        onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
+        onScrollEndDrag={onScrollEndDrag}
+        onMomentumScrollBegin={onMomentumScrollBegin}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        scrollEventThrottle={16}
+      >
         {/* Plan Header */}
         <View style={styles.planHeader}>
           <View style={styles.planTitleContainer}>

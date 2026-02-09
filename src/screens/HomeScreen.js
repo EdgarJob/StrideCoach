@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
 import { useHealth } from '../contexts/HealthContext';
+import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import WorkoutCalendar from '../components/WorkoutCalendar';
 import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
@@ -16,6 +17,13 @@ import { fonts } from '../theme/typography';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const {
+    onScroll,
+    onScrollBeginDrag,
+    onScrollEndDrag,
+    onMomentumScrollBegin,
+    onMomentumScrollEnd,
+  } = useTabBarMotion();
   const { signOut, profile } = useAuth();
   const { dailyMotivation } = useAICoach();
   const { currentPlan, getTodaysWorkout, getPlanProgress, isFromCache, loadCurrentPlan } = usePlan();
@@ -256,7 +264,15 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      <ScrollView style={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollContent}
+        onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
+        onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
+        onScrollEndDrag={onScrollEndDrag}
+        onMomentumScrollBegin={onMomentumScrollBegin}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        scrollEventThrottle={16}
+      >
 
       {/* Modern Progress Dashboard */}
       <View style={styles.progressCard}>

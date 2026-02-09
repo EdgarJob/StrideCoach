@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAICoach } from '../contexts/AICoachContext';
+import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +20,13 @@ import PremiumBackground from '../components/PremiumBackground';
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
+  const {
+    onScroll,
+    onScrollBeginDrag,
+    onScrollEndDrag,
+    onMomentumScrollBegin,
+    onMomentumScrollEnd,
+  } = useTabBarMotion();
   const { 
     isLoading, 
     conversationHistory, 
@@ -121,6 +129,12 @@ export default function ChatScreen() {
         contentContainerStyle={styles.messagesContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
+        onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
+        onScrollEndDrag={onScrollEndDrag}
+        onMomentumScrollBegin={onMomentumScrollBegin}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        scrollEventThrottle={16}
       >
         {conversationHistory.length === 0 ? (
           <View style={styles.welcomeContainer}>

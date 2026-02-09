@@ -6,12 +6,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useHealth } from '../contexts/HealthContext';
+import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const {
+    onScroll,
+    onScrollBeginDrag,
+    onScrollEndDrag,
+    onMomentumScrollBegin,
+    onMomentumScrollEnd,
+  } = useTabBarMotion();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
@@ -79,6 +87,12 @@ export default function ProfileScreen() {
           style={styles.container}
           contentContainerStyle={[styles.content, { paddingBottom: Math.max(24, insets.bottom + 16) }]}
           showsVerticalScrollIndicator={false}
+          onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
+          onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
+          onScrollEndDrag={onScrollEndDrag}
+          onMomentumScrollBegin={onMomentumScrollBegin}
+          onMomentumScrollEnd={onMomentumScrollEnd}
+          scrollEventThrottle={16}
         >
           {/* Header */}
           <LinearGradient
