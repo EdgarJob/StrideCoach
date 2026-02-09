@@ -27,6 +27,77 @@ import { fonts } from './src/theme/typography';
 // Create the tab navigator
 const Tab = createBottomTabNavigator();
 
+const TAB_ICON_MAP = {
+  Home: { active: 'home', inactive: 'home-outline' },
+  Plans: { active: 'calendar', inactive: 'calendar-outline' },
+  Progress: { active: 'trending-up', inactive: 'trending-up-outline' },
+  Chat: { active: 'chatbubbles', inactive: 'chatbubbles-outline' },
+  Profile: { active: 'person-circle', inactive: 'person-circle-outline' },
+};
+
+function TabIcon({ routeName, focused, color }) {
+  const scaleValue = React.useRef(new Animated.Value(focused ? 1 : 0.92)).current;
+  const opacityValue = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scaleValue, {
+        toValue: focused ? 1 : 0.92,
+        friction: 6,
+        tension: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityValue, {
+        toValue: focused ? 1 : 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [focused]);
+
+  const iconSpec = TAB_ICON_MAP[routeName] || { active: 'ellipse', inactive: 'ellipse-outline' };
+  const iconName = focused ? iconSpec.active : iconSpec.inactive;
+  const iconSize = focused ? 26 : 24;
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 52,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: focused ? 'rgba(255, 255, 255, 0.10)' : 'transparent',
+          borderWidth: focused ? 1 : 0,
+          borderColor: focused ? 'rgba(255, 255, 255, 0.16)' : 'transparent',
+          transform: [{ scale: scaleValue }],
+        }}
+      >
+        <Ionicons name={iconName} size={iconSize} color={color} />
+      </Animated.View>
+      <Animated.View
+        style={{
+          marginTop: 6,
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: colors.accent,
+          opacity: opacityValue,
+          transform: [
+            {
+              scale: opacityValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.6, 1],
+              }),
+            },
+          ],
+        }}
+      />
+    </View>
+  );
+}
+
 // Main App Navigator Component
 function AppNavigator() {
   const { user, loading } = useAuth();
@@ -53,83 +124,16 @@ function AppNavigator() {
     <NavigationContainer>
       <StatusBar style="dark" />
       <Tab.Navigator
+        detachInactiveScreens={false}
+        lazy={false}
+        sceneContainerStyle={{ backgroundColor: 'transparent' }}
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarIcon: ({ focused, color, size }) => {
-            const scaleValue = React.useRef(new Animated.Value(focused ? 1 : 0.9)).current;
-            const opacityValue = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
-
-            React.useEffect(() => {
-              Animated.parallel([
-                Animated.spring(scaleValue, {
-                  toValue: focused ? 1 : 0.9,
-                  friction: 5,
-                  tension: 100,
-                  useNativeDriver: true,
-                }),
-                Animated.timing(opacityValue, {
-                  toValue: focused ? 1 : 0,
-                  duration: 200,
-                  useNativeDriver: true,
-                }),
-              ]).start();
-            }, [focused]);
-
-            let iconName;
-            let iconSize = focused ? 28 : 24;
-
-            if (route.name === 'Home') {
-              iconName = focused ? 'home' : 'home-outline';
-            } else if (route.name === 'Plans') {
-              iconName = focused ? 'calendar' : 'calendar-outline';
-            } else if (route.name === 'Progress') {
-              iconName = focused ? 'trending-up' : 'trending-up-outline';
-            } else if (route.name === 'Chat') {
-              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-            } else if (route.name === 'Profile') {
-              iconName = focused ? 'person-circle' : 'person-circle-outline';
-            }
-
-            return (
-              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Animated.View
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 52,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: focused ? 'rgba(252, 76, 2, 0.10)' : 'transparent',
-                    borderWidth: focused ? 1 : 0,
-                    borderColor: focused ? 'rgba(252, 76, 2, 0.18)' : 'transparent',
-                    transform: [{ scale: scaleValue }],
-                  }}
-                >
-                  <Ionicons name={iconName} size={iconSize} color={color} />
-                </Animated.View>
-                <Animated.View
-                  style={{
-                    marginTop: 6,
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: colors.accent,
-                    opacity: opacityValue,
-                    transform: [
-                      {
-                        scale: opacityValue.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0.6, 1],
-                        }),
-                      },
-                    ],
-                  }}
-                />
-              </View>
-            );
-          },
-          tabBarActiveTintColor: colors.textDark,
-          tabBarInactiveTintColor: colors.textLight,
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon routeName={route.name} focused={focused} color={color} />
+          ),
+          tabBarActiveTintColor: colors.white,
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.60)',
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
             height: tabBarHeight,
@@ -145,15 +149,13 @@ function AppNavigator() {
           },
           tabBarBackground: () => (
             <LinearGradient
-              colors={['rgba(255, 255, 255, 0.94)', 'rgba(243, 246, 250, 0.94)']}
+              colors={[colors.textDark, 'rgba(11, 18, 32, 0.92)', 'rgba(90, 179, 193, 0.14)']}
               start={{ x: 0.12, y: 0 }}
               end={{ x: 0.9, y: 1 }}
               style={{
                 flex: 1,
-                borderTopLeftRadius: 28,
-                borderTopRightRadius: 28,
                 borderTopWidth: 1,
-                borderColor: colors.borderLight,
+                borderTopColor: 'rgba(255, 255, 255, 0.08)',
               }}
             />
           ),
@@ -166,9 +168,6 @@ function AppNavigator() {
             fontFamily: fonts.emphasis,
             fontWeight: 'normal',
           },
-          // Smooth screen transitions
-          animation: 'shift',
-          animationDuration: 300,
         })}
       >
         <Tab.Screen 

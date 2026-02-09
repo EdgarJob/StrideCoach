@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,6 +23,15 @@ export default function HomeScreen() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
+
+  // Ensure menu never "sticks" across tab changes (can make other tabs feel blank/unresponsive).
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setShowProfileMenu(false);
+      };
+    }, [])
+  );
 
   // Get time-appropriate greeting
   const getGreeting = () => {
@@ -152,6 +161,12 @@ export default function HomeScreen() {
   const healthBpm = healthConnected ? healthFormat.bpm(todayHealth?.heartRate) : '--';
   const healthActive = healthConnected ? healthFormat.active(todayHealth?.activeMinutes) : '--';
 
+  const navigateFromMenu = (routeName) => {
+    setShowProfileMenu(false);
+    // Give the modal a beat to dismiss before switching tabs (iOS can glitch otherwise).
+    setTimeout(() => navigation.navigate(routeName), 50);
+  };
+
   return (
     <PremiumBackground>
       {/* Header */}
@@ -195,13 +210,12 @@ export default function HomeScreen() {
         <Pressable style={styles.menuOverlay} onPress={() => setShowProfileMenu(false)}>
           <Pressable
             style={[styles.dropdownMenu, { top: insets.top + 76, right: 16 }]}
-            onPress={() => {}}
+            onPress={(e) => e.stopPropagation()}
           >
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => {
-                setShowProfileMenu(false);
-                navigation.navigate('Profile');
+                navigateFromMenu('Profile');
               }}
             >
               <Ionicons name="person-outline" size={18} color={colors.textDark} />
@@ -211,8 +225,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => {
-                setShowProfileMenu(false);
-                navigation.navigate('Plans');
+                navigateFromMenu('Plans');
               }}
             >
               <Ionicons name="calendar-outline" size={18} color={colors.textDark} />
@@ -222,8 +235,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => {
-                setShowProfileMenu(false);
-                navigation.navigate('Progress');
+                navigateFromMenu('Progress');
               }}
             >
               <Ionicons name="trending-up-outline" size={18} color={colors.textDark} />
