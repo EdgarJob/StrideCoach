@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAICoach } from '../contexts/AICoachContext';
+import { usePlan } from '../contexts/PlanContext';
 import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
@@ -35,11 +36,16 @@ export default function ChatScreen() {
     pendingPlanAction,
     isApplyingPlanAction,
     confirmPendingPlanAction,
-    dismissPendingPlanAction
+    dismissPendingPlanAction,
+    addAssistantMessage
   } = useAICoach();
-  
+  const { currentPlan, modifyCurrentPlan } = usePlan();
+
   const [inputText, setInputText] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showModifyConfirm, setShowModifyConfirm] = useState(false);
+  const [isModifying, setIsModifying] = useState(false);
+  const [modifyProgress, setModifyProgress] = useState('');
   const scrollViewRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -70,6 +76,39 @@ export default function ChatScreen() {
   const handleConfirmPlanAction = async () => {
     await confirmPendingPlanAction();
   };
+
+  const handleModifyPlan = async () => {
+    setShowModifyConfirm(false);
+    setIsModifying(true);
+    setModifyProgress('Analyzing conversation...');
+
+    const history = conversationHistory.map(m => ({
+      role: m.role, content: m.content
+    }));
+
+    setModifyProgress('Generating modified plan...');
+    const result = await modifyCurrentPlan(history);
+
+    if (result.success) {
+      setModifyProgress('Plan updated!');
+      setTimeout(() => {
+        setIsModifying(false);
+        setModifyProgress('');
+        addAssistantMessage(
+          "I've updated your workout plan based on our conversation! Head over to the Plans tab to see the changes."
+        );
+      }, 500);
+    } else {
+      setIsModifying(false);
+      setModifyProgress('');
+      addAssistantMessage(
+        "Sorry, I wasn't able to update your plan right now. Please try again.",
+        true
+      );
+    }
+  };
+
+  const showUpdateButton = currentPlan || conversationHistory.length >= 2;
 
   const quickQuestions = [
     "How am I doing this week?",
@@ -217,6 +256,28 @@ export default function ChatScreen() {
         </View>
       )}
 
+      {/* Update My Plan Button */}
+      {showUpdateButton && !isModifying && (
+        <View style={styles.updatePlanRow}>
+          <TouchableOpacity
+            style={styles.updatePlanButton}
+            onPress={() => setShowModifyConfirm(true)}
+            disabled={isLoading || isApplyingPlanAction || isModifying}
+          >
+            <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+            <Text style={styles.updatePlanText}>Update My Plan</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Plan Modification Progress */}
+      {isModifying && (
+        <View style={styles.modifyProgressContainer}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={styles.modifyProgressText}>{modifyProgress}</Text>
+        </View>
+      )}
+
       {/* Input Area */}
       <View style={[styles.inputContainer, { paddingBottom: Math.max(12, insets.bottom) }]}>
         <TextInput
@@ -244,6 +305,26 @@ export default function ChatScreen() {
           />
         </TouchableOpacity>
       </View>
+      {/* Modify Plan Confirmation */}
+      {showModifyConfirm && (
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmDialog}>
+            <Ionicons name="calendar" size={32} color={colors.primary} style={{ marginBottom: 12 }} />
+            <Text style={styles.confirmTitle}>Update Your Plan</Text>
+            <Text style={styles.confirmMessage}>
+              Apply the changes from this conversation to your workout plan?
+            </Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity style={styles.confirmCancelButton} onPress={() => setShowModifyConfirm(false)}>
+                <Text style={styles.confirmCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.confirmClearButton, { backgroundColor: colors.primary }]} onPress={handleModifyPlan}>
+                <Text style={styles.confirmClearText}>Update Plan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
       {/* Clear Chat Confirmation */}
       {showClearConfirm && (
         <View style={styles.confirmOverlay}>
@@ -607,5 +688,40 @@ const styles = StyleSheet.create({
     fontFamily: fonts.emphasis,
     fontWeight: 'normal',
     color: colors.white,
+  },
+  updatePlanRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    alignItems: 'flex-start',
+  },
+  updatePlanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.primaryLight,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  updatePlanText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
+    color: colors.primary,
+  },
+  modifyProgressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  modifyProgressText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: colors.textMedium,
+    fontFamily: fonts.body,
   },
 });

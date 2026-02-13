@@ -206,7 +206,22 @@ Guidelines:
 - For rest-day or schedule-change requests, make incremental changes by default (usually remove 1-2 workout days), unless user explicitly requests a very low-frequency plan
 - When changing availableDays, only change what is necessary for the request and avoid turning unrelated days off
 - Include day-count impact in summary when availableDays changes (example: "Workout days: 7 -> 5")
-- preferenceUpdates must only use these top-level keys: workoutTypes, availableDays, workoutDuration, difficultyLevel, primaryGoal, preferredTime, hasEquipment`;
+- preferenceUpdates must only use these top-level keys: workoutTypes, availableDays, workoutDuration, difficultyLevel, primaryGoal, preferredTime, hasEquipment
+
+PLAN MODIFICATION:
+You can help users modify their workout plan. When a user wants to change their plan:
+1. Discuss what changes they want
+2. Confirm the changes are clear and agreed upon
+3. Let them know they can tap the "Update My Plan" button to apply the changes
+4. Be specific about what will change (days, intensity, duration, workout types, etc.)
+
+Example changes you can help with:
+- Adding/removing workout days
+- Changing workout types (add yoga, switch to running, etc.)
+- Adjusting difficulty/intensity
+- Modifying workout duration
+- Restructuring specific weeks
+- Creating an entirely new plan based on discussion`;
 }
 
 function parseCoachResponse(rawContent: string): { message: string; planAction: any | null } {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { planService } from '../services/planService';
+import { supabase } from '../services/supabase';
 import { useAuth } from './AuthContext';
 import cacheService from '../services/cacheService';
 
@@ -327,6 +328,52 @@ export const PlanProvider = ({ children }) => {
     }
   };
 
+  // Modify current plan based on AI coach conversation
+  const modifyCurrentPlan = async (conversationHistory) => {
+    if (!profile) {
+      setError('User profile not found');
+      return { success: false, error: 'User profile not found' };
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Invalidate cache
+      await cacheService.invalidateWorkoutPlan();
+
+      // Generate modified plan
+      const result = await planService.modifyExistingPlan(profile, currentPlan, conversationHistory);
+
+      if (result.success) {
+        // Archive old plan if it exists
+        if (currentPlan?.id) {
+          await supabase.from('workout_plans')
+            .update({ status: 'archived' })
+            .eq('id', currentPlan.id);
+        }
+
+        // Save new plan
+        const saveResult = await planService.savePlan(result.plan);
+        if (saveResult.success) {
+          setCurrentPlan(saveResult.plan);
+          setIsFromCache(false);
+          await cacheService.cacheWorkoutPlan(saveResult.plan);
+          return { success: true, plan: saveResult.plan };
+        } else {
+          throw new Error(saveResult.error);
+        }
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      setError(error.message);
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Complete a workout
   const completeWorkout = async (weekNumber, dayNumber, completionData) => {
     if (!currentPlan) {
@@ -489,6 +536,7 @@ export const PlanProvider = ({ children }) => {
     isFromCache,
     generatePlan,
     applyCoachPlanUpdate,
+    modifyCurrentPlan,
     completeWorkout,
     loadCurrentPlan,
     getTodaysWorkout,

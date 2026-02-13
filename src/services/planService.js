@@ -1204,6 +1204,93 @@ export class PlanService {
     }
   }
 
+  // Modify an existing plan (or create new) based on AI coach conversation
+  async modifyExistingPlan(userProfile, currentPlan, conversationHistory) {
+    try {
+      const aiResult = await aiCoach.modifyPlan(userProfile, currentPlan, conversationHistory);
+
+      if (!aiResult.success) {
+        return { success: false, error: aiResult.error || 'AI failed to modify plan' };
+      }
+
+      // Build preferences from the old plan + what the AI generated
+      let mergedPreferences = {};
+
+      if (currentPlan?.preferences) {
+        // Start with old plan preferences
+        mergedPreferences = { ...currentPlan.preferences };
+      }
+
+      // Extract mentioned days from AI response to update availableDays
+      const mentionedDays = this.extractMentionedDays(aiResult.plan);
+      if (Object.keys(mentionedDays).length > 0) {
+        mergedPreferences.availableDays = mentionedDays;
+      }
+
+      // If no preferences at all, set basic defaults
+      if (!mergedPreferences.availableDays) {
+        mergedPreferences.availableDays = {
+          monday: true, tuesday: false, wednesday: true,
+          thursday: false, friday: true, saturday: false, sunday: false
+        };
+      }
+
+      // Parse the AI response using the existing parser
+      const newPlan = this.parsePlanResponse(aiResult.plan, userProfile, mergedPreferences);
+
+      // Preserve progress from old plan
+      if (currentPlan?.weeks) {
+        this.preserveProgress(currentPlan, newPlan);
+      }
+
+      return { success: true, plan: newPlan };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Preserve completed workout progress from old plan into new plan
+  preserveProgress(oldPlan, newPlan) {
+    if (!oldPlan?.weeks || !newPlan?.weeks) return;
+
+    for (const newWeek of newPlan.weeks) {
+      const oldWeek = oldPlan.weeks.find(w => w.week_number === newWeek.week_number);
+      if (!oldWeek?.days) continue;
+
+      for (const newDay of newWeek.days) {
+        const oldDay = oldWeek.days.find(d => d.day_name === newDay.day_name);
+        if (oldDay?.progress?.completed) {
+          newDay.progress = { ...oldDay.progress };
+        }
+      }
+    }
+  }
+
+  // Extract mentioned day names from AI-generated plan text
+  extractMentionedDays(planText) {
+    if (!planText) return {};
+
+    const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const availableDays = {};
+    const textLower = planText.toLowerCase();
+
+    for (const day of dayNames) {
+      // Look for **DayName** pattern (bold day headers in markdown)
+      const capitalDay = day.charAt(0).toUpperCase() + day.slice(1);
+      if (planText.includes(`**${capitalDay}**`) || planText.includes(`**${capitalDay}:`)) {
+        availableDays[day] = true;
+      } else {
+        availableDays[day] = false;
+      }
+    }
+
+    // If no days were found via bold patterns, don't return partial results
+    const foundDays = Object.values(availableDays).filter(Boolean).length;
+    if (foundDays === 0) return {};
+
+    return availableDays;
+  }
+
   // Complete a workout
   async completeWorkout(planId, weekNumber, dayNumber, completionData) {
     try {

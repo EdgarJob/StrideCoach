@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.edgarjobkerario.stridecoach",
+      "bundleIdentifier": "com.stridecoach.app",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -33,7 +33,7 @@
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_EXERCISE"
       ],
-      "package": "com.edgarjobkerario.stridecoach",
+      "package": "com.stridecoach.app",
       "versionCode": 1
     },
     "web": {

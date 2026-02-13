@@ -107,6 +107,32 @@ export class AICoachService {
     }
   }
 
+  // Modify an existing plan (or create new) based on conversation history
+  async modifyPlan(userProfile, currentPlan, conversationHistory) {
+    try {
+      const response = await this.callEdgeFunction('modify-plan', {
+        userProfile,
+        currentPlan,
+        conversationHistory
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Plan modification failed');
+      }
+
+      return {
+        success: true,
+        plan: response.plan,
+        usage: response.usage
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
   // Get daily motivation and tips via Edge Function
   async getDailyMotivation(userProfile, progressData = {}) {
     try {

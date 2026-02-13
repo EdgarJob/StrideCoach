@@ -337,6 +337,18 @@ export const AICoachProvider = ({ children }) => {
     setPendingPlanAction(null);
   }, []);
 
+  // Add a system/assistant message to the conversation (used by other contexts like plan modification)
+  const addAssistantMessage = useCallback((content, isError = false) => {
+    const message = {
+      id: Date.now(),
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+      isError
+    };
+    setConversationHistory(prev => [...prev, message]);
+  }, []);
+
   // Refresh daily motivation with optional progress data
   const refreshMotivation = useCallback((progressData = null) => {
     loadDailyMotivation(progressData);
@@ -355,6 +367,7 @@ export const AICoachProvider = ({ children }) => {
     confirmPendingPlanAction,
     dismissPendingPlanAction,
     clearConversation,
+    addAssistantMessage,
     refreshMotivation,
     loadDailyMotivation // Export for direct use with progress data
   }), [
@@ -369,6 +382,7 @@ export const AICoachProvider = ({ children }) => {
     confirmPendingPlanAction,
     dismissPendingPlanAction,
     clearConversation,
+    addAssistantMessage,
     refreshMotivation,
     loadDailyMotivation
   ]);
