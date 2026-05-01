@@ -21,11 +21,13 @@ import { fonts } from '../theme/typography';
 export default function AuthScreen() {
   const passwordInputRef = useRef(null);
   const [isLogin, setIsLogin] = useState(true);
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     displayName: '',
     age: '',
     height: '',
@@ -35,7 +37,7 @@ export default function AuthScreen() {
 
   const [message, setMessage] = useState(null); // { type: 'error' | 'success', text: string }
 
-  const { signIn, signUp, signInWithOAuth } = useAuth();
+  const { signIn, signUp, signInWithOAuth, resetPassword, updatePassword, passwordRecovery } = useAuth();
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -58,6 +60,64 @@ export default function AuthScreen() {
 
   const showError = (text) => setMessage({ type: 'error', text });
   const showSuccess = (text) => setMessage({ type: 'success', text });
+
+  const handleForgotPassword = async () => {
+    setMessage(null);
+
+    if (!formData.email) {
+      showError('Enter your email address first.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await resetPassword(formData.email);
+      if (error) {
+        showError(error.message || 'Could not send reset email. Please try again.');
+      } else {
+        showSuccess('Password reset email sent. Check your inbox for the reset link.');
+      }
+    } catch (error) {
+      showError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    setMessage(null);
+
+    if (!formData.password || !formData.confirmPassword) {
+      showError('Enter and confirm your new password.');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      showError('Your new password must be at least 6 characters.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      showError('The passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await updatePassword(formData.password);
+      if (error) {
+        showError(error.message || 'Could not update your password. Please try again.');
+      } else {
+        updateField('password', '');
+        updateField('confirmPassword', '');
+        showSuccess('Password updated. You can continue using StrideCoach.');
+      }
+    } catch (error) {
+      showError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOAuthSignIn = async (provider) => {
     setLoading(true);
@@ -156,7 +216,13 @@ export default function AuthScreen() {
             >
               <Text style={styles.title}>StrideCoach</Text>
               <Text style={styles.subtitle}>
-                {isLogin ? "Back on track. Let's keep it rolling." : 'Your plan, your pace, your coach.'}
+                {passwordRecovery
+                  ? 'Choose a fresh password and get moving again.'
+                  : forgotPassword
+                    ? "No stress. We'll send a reset link."
+                    : isLogin
+                      ? "Back on track. Let's keep it rolling."
+                      : 'Your plan, your pace, your coach.'}
               </Text>
               <View style={styles.heroChips}>
                 <View style={styles.heroChip}>
@@ -201,62 +267,98 @@ export default function AuthScreen() {
               )}
 
               {/* Email */}
-              <View style={styles.inputContainer}>
-                <Ionicons name="mail" size={18} color={colors.textMedium} style={styles.inputIcon} />
-                <TextInput
-                  key={`email-${isLogin ? 'login' : 'signup'}`}
-                  style={styles.input}
-                  placeholder="Email"
-                  value={formData.email}
-                  onChangeText={(text) => updateField('email', text)}
-                  onChange={(event) => syncAutofillField('email', event)}
-                  onEndEditing={(event) => syncAutofillField('email', event)}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  textContentType={isLogin ? 'username' : 'emailAddress'}
-                  autoComplete={isLogin ? 'username' : 'email'}
-                  importantForAutofill="yes"
-                  returnKeyType="next"
-                  blurOnSubmit={false}
-                  onSubmitEditing={() => passwordInputRef.current?.focus()}
-                />
-              </View>
+              {!passwordRecovery && (
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                  <TextInput
+                    key={`email-${isLogin ? 'login' : 'signup'}`}
+                    style={styles.input}
+                    placeholder="Email"
+                    value={formData.email}
+                    onChangeText={(text) => updateField('email', text)}
+                    onChange={(event) => syncAutofillField('email', event)}
+                    onEndEditing={(event) => syncAutofillField('email', event)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType={isLogin ? 'username' : 'emailAddress'}
+                    autoComplete={isLogin ? 'username' : 'email'}
+                    importantForAutofill="yes"
+                    returnKeyType={forgotPassword ? 'send' : 'next'}
+                    blurOnSubmit={forgotPassword}
+                    onSubmitEditing={forgotPassword ? handleForgotPassword : () => passwordInputRef.current?.focus()}
+                  />
+                </View>
+              )}
 
               {/* Password */}
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed" size={18} color={colors.textMedium} style={styles.inputIcon} />
-                <TextInput
-                  key={`password-${isLogin ? 'login' : 'signup'}`}
-                  ref={passwordInputRef}
-                  style={styles.input}
-                  placeholder="Password"
-                  value={formData.password}
-                  onChangeText={(text) => updateField('password', text)}
-                  onChange={(event) => syncAutofillField('password', event)}
-                  onEndEditing={(event) => syncAutofillField('password', event)}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  textContentType={isLogin ? 'password' : 'newPassword'}
-                  autoComplete={isLogin ? 'password' : 'new-password'}
-                  importantForAutofill="yes"
-                  returnKeyType="go"
-                  onSubmitEditing={handleSubmit}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.passwordToggle}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color={colors.textMedium}
-                  />
-                </TouchableOpacity>
-              </View>
+              {!forgotPassword && (
+                <>
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="lock-closed" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                    <TextInput
+                      key={`password-${passwordRecovery ? 'recovery' : isLogin ? 'login' : 'signup'}`}
+                      ref={passwordInputRef}
+                      style={styles.input}
+                      placeholder={passwordRecovery ? 'New Password' : 'Password'}
+                      value={formData.password}
+                      onChangeText={(text) => updateField('password', text)}
+                      onChange={(event) => syncAutofillField('password', event)}
+                      onEndEditing={(event) => syncAutofillField('password', event)}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      textContentType={isLogin && !passwordRecovery ? 'password' : 'newPassword'}
+                      autoComplete={isLogin && !passwordRecovery ? 'password' : 'new-password'}
+                      importantForAutofill="yes"
+                      returnKeyType={passwordRecovery ? 'next' : 'go'}
+                      onSubmitEditing={passwordRecovery ? undefined : handleSubmit}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                      style={styles.passwordToggle}
+                    >
+                      <Ionicons
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color={colors.textMedium}
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  {passwordRecovery && (
+                    <View style={styles.inputContainer}>
+                      <Ionicons name="shield-checkmark" size={18} color={colors.textMedium} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Confirm New Password"
+                        value={formData.confirmPassword}
+                        onChangeText={(text) => updateField('confirmPassword', text)}
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        textContentType="newPassword"
+                        autoComplete="new-password"
+                        returnKeyType="go"
+                        onSubmitEditing={handleUpdatePassword}
+                      />
+                    </View>
+                  )}
+
+                  {isLogin && !passwordRecovery && (
+                    <TouchableOpacity
+                      style={styles.forgotButton}
+                      onPress={() => {
+                        setForgotPassword(true);
+                        setMessage(null);
+                      }}
+                    >
+                      <Text style={styles.forgotButtonText}>Forgot password?</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
 
               {/* Profile fields for signup */}
-              {!isLogin && (
+              {!isLogin && !forgotPassword && !passwordRecovery && (
                 <>
                   <View style={styles.inputContainer}>
                     <Ionicons name="person" size={18} color={colors.textMedium} style={styles.inputIcon} />
@@ -320,16 +422,24 @@ export default function AuthScreen() {
               {/* Submit Button */}
               <TouchableOpacity
                 style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-                onPress={handleSubmit}
+                onPress={passwordRecovery ? handleUpdatePassword : forgotPassword ? handleForgotPassword : handleSubmit}
                 disabled={loading}
               >
                 <Text style={styles.submitButtonText}>
-                  {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+                  {loading
+                    ? 'Please wait...'
+                    : passwordRecovery
+                      ? 'Update Password'
+                      : forgotPassword
+                        ? 'Send Reset Link'
+                        : isLogin
+                          ? 'Sign In'
+                          : 'Create Account'}
                 </Text>
               </TouchableOpacity>
 
               {/* Divider */}
-              {isLogin && (
+              {!forgotPassword && !passwordRecovery && (
                 <>
                   <View style={styles.divider}>
                     <View style={styles.dividerLine} />
@@ -346,21 +456,43 @@ export default function AuthScreen() {
                     <Ionicons name="logo-google" size={20} color="#DB4437" />
                     <Text style={styles.oauthButtonText}>Continue with Google</Text>
                   </TouchableOpacity>
+
+                  {Platform.OS !== 'android' && (
+                    <TouchableOpacity
+                      style={[styles.oauthButton, styles.appleButton]}
+                      onPress={() => handleOAuthSignIn('apple')}
+                      disabled={loading}
+                    >
+                      <Ionicons name="logo-apple" size={20} color={colors.white} />
+                      <Text style={[styles.oauthButtonText, { color: colors.white }]}>Continue with Apple</Text>
+                    </TouchableOpacity>
+                  )}
                 </>
               )}
 
               {/* Toggle Login/Signup */}
-              <TouchableOpacity
-                style={styles.toggleButton}
-                onPress={() => setIsLogin(!isLogin)}
-              >
-                <Text style={styles.toggleButtonText}>
-                  {isLogin
-                    ? "Don't have an account? Sign up"
-                    : 'Already have an account? Sign in'
-                  }
-                </Text>
-              </TouchableOpacity>
+              {!passwordRecovery && (
+                <TouchableOpacity
+                  style={styles.toggleButton}
+                  onPress={() => {
+                    setMessage(null);
+                    if (forgotPassword) {
+                      setForgotPassword(false);
+                      setIsLogin(true);
+                    } else {
+                      setIsLogin(!isLogin);
+                    }
+                  }}
+                >
+                  <Text style={styles.toggleButtonText}>
+                    {forgotPassword
+                      ? 'Back to sign in'
+                      : isLogin
+                        ? "Don't have an account? Sign up"
+                        : 'Already have an account? Sign in'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -468,6 +600,18 @@ const styles = StyleSheet.create({
   passwordToggle: {
     padding: 8,
   },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+    marginBottom: 16,
+    paddingVertical: 4,
+  },
+  forgotButtonText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontFamily: fonts.emphasis,
+    fontWeight: 'normal',
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -536,6 +680,10 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     borderColor: '#DB4437',
+  },
+  appleButton: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
   },
   oauthButtonText: {
     marginLeft: 12,

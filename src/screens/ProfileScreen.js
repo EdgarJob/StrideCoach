@@ -1,25 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useHealth } from '../contexts/HealthContext';
-import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    onScroll,
-    onScrollBeginDrag,
-    onScrollEndDrag,
-    onMomentumScrollBegin,
-    onMomentumScrollEnd,
-  } = useTabBarMotion();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
@@ -87,20 +78,10 @@ export default function ProfileScreen() {
           style={styles.container}
           contentContainerStyle={[styles.content, { paddingBottom: Math.max(24, insets.bottom + 16) }]}
           showsVerticalScrollIndicator={false}
-          onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
-          onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
-          onScrollEndDrag={onScrollEndDrag}
-          onMomentumScrollBegin={onMomentumScrollBegin}
-          onMomentumScrollEnd={onMomentumScrollEnd}
           scrollEventThrottle={16}
         >
           {/* Header */}
-          <LinearGradient
-            colors={[colors.textDark, colors.primary]}
-            start={{ x: 0.1, y: 0 }}
-            end={{ x: 0.95, y: 1 }}
-            style={[styles.profileHeader, { paddingTop: insets.top + 16 }]}
-          >
+          <View style={[styles.profileHeader, { paddingTop: insets.top + 16 }]}>
             <View style={styles.profileHeaderRow}>
               <View style={styles.avatarRing}>
                 <View style={styles.avatar}>
@@ -118,7 +99,7 @@ export default function ProfileScreen() {
                 <Ionicons
                   name={healthDataConnected ? 'heart' : 'heart-outline'}
                   size={14}
-                  color={colors.white}
+                  color={healthDataConnected ? colors.success : colors.textMedium}
                   style={{ marginRight: 6 }}
                 />
                 <Text style={styles.chipText}>
@@ -126,7 +107,7 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
-          </LinearGradient>
+          </View>
 
           {/* Health Stats */}
           <View style={styles.card}>
@@ -300,8 +281,9 @@ const styles = StyleSheet.create({
   profileHeader: {
     paddingHorizontal: 16,
     paddingBottom: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.headerBorder,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5EA',
   },
   profileHeaderRow: {
     flexDirection: 'row',
@@ -311,9 +293,9 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: colors.cardBackground,
     borderWidth: 1,
-    borderColor: colors.headerBorder,
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -321,7 +303,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(0, 0, 0, 0.14)',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -333,13 +315,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: fonts.title,
     fontWeight: 'normal',
-    color: colors.white,
+    color: colors.textDark,
     letterSpacing: -0.2,
   },
   userEmail: {
     marginTop: 4,
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.82)',
+    color: colors.textMedium,
     fontFamily: fonts.body,
   },
   profileChips: {
@@ -353,18 +335,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.headerBorder,
-    backgroundColor: colors.headerOverlay,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.cardBackground,
   },
   chipOn: {
-    backgroundColor: 'rgba(16, 185, 129, 0.22)',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
   },
   chipOff: {
-    backgroundColor: colors.headerOverlay,
+    backgroundColor: colors.cardBackground,
   },
   chipText: {
     fontSize: 12,
-    color: colors.white,
+    color: colors.textDark,
     fontFamily: fonts.emphasis,
     fontWeight: 'normal',
   },

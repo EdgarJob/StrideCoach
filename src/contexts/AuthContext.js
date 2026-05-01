@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -37,6 +38,12 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true);
+      } else if (event === 'SIGNED_OUT') {
+        setPasswordRecovery(false);
+      }
+
       setUser(session?.user ?? null);
       setLoading(false); // Set loading to false immediately
       
@@ -60,6 +67,13 @@ export const AuthProvider = ({ children }) => {
       clearTimeout(timeout);
     };
   }, [loading]);
+
+  const getAuthRedirectUrl = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return Linking.createURL('/');
+  };
 
   // Load user profile from database
   const loadUserProfile = async (userId) => {
@@ -205,7 +219,7 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
-          redirectTo: Platform.OS === 'web' ? window.location.origin : Linking.createURL('/'),
+          redirectTo: getAuthRedirectUrl(),
           skipBrowserRedirect: false,
         },
       });
@@ -235,10 +249,42 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (data.user) {
+        setPasswordRecovery(false);
         await loadUserProfile(data.user.id);
       }
 
       return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  };
+
+  const resetPassword = async (email) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getAuthRedirectUrl(),
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  };
+
+  const updatePassword = async (password) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        throw error;
+      }
+
+      setPasswordRecovery(false);
+      return { data, error: null };
     } catch (error) {
       return { data: null, error };
     }
@@ -251,6 +297,7 @@ export const AuthProvider = ({ children }) => {
 
       setUser(null);
       setProfile(null);
+      setPasswordRecovery(false);
 
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -289,9 +336,12 @@ export const AuthProvider = ({ children }) => {
     user,
     profile,
     loading,
+    passwordRecovery,
     signUp,
     signIn,
     signInWithOAuth,
+    resetPassword,
+    updatePassword,
     signOut,
     updateProfile,
   };

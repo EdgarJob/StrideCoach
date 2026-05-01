@@ -13,7 +13,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
-import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,13 +21,6 @@ import PremiumBackground from '../components/PremiumBackground';
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const {
-    onScroll,
-    onScrollBeginDrag,
-    onScrollEndDrag,
-    onMomentumScrollBegin,
-    onMomentumScrollEnd,
-  } = useTabBarMotion();
-  const { 
     isLoading, 
     conversationHistory, 
     sendMessage: sendAIMessage, 
@@ -168,11 +160,6 @@ export default function ChatScreen() {
         contentContainerStyle={styles.messagesContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
-        onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
-        onScrollEndDrag={onScrollEndDrag}
-        onMomentumScrollBegin={onMomentumScrollBegin}
-        onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
       >
         {conversationHistory.length === 0 ? (
@@ -356,14 +343,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-    ...Platform.select({
-      web: { boxShadow: '0px 12px 30px rgba(15, 23, 42, 0.08)' },
-      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16 },
-    }),
-    elevation: 3,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5EA',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -594,9 +576,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0.5,
+    borderTopColor: '#E5E5EA',
   },
   textInput: {
     flex: 1,

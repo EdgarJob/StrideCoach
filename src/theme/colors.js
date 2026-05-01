@@ -9,11 +9,11 @@ const colors = {
 
   // Backgrounds
   // Slightly warmer/lower-contrast background for a more premium feel
-  background: '#F7F8FB',
-  bgTop: '#EAF7FF',
+  background: '#FFFFFF',
+  bgTop: '#FFFFFF',
   white: '#FFFFFF',
-  cardBackground: '#F3F6FA',
-  inputBackground: '#F3F6FA',
+  cardBackground: '#F9FAFB',
+  inputBackground: '#F5F5F5',
 
   // Text
   textDark: '#0B1220',

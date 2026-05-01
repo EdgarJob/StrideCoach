@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlan } from '../contexts/PlanContext';
-import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,13 +9,6 @@ import PremiumBackground from '../components/PremiumBackground';
 
 export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    onScroll,
-    onScrollBeginDrag,
-    onScrollEndDrag,
-    onMomentumScrollBegin,
-    onMomentumScrollEnd,
-  } = useTabBarMotion();
   const [selectedPeriod, setSelectedPeriod] = useState('week');
   const { currentPlan, getPlanProgress, getWeekProgress } = usePlan();
 
@@ -113,11 +105,6 @@ export default function ProgressScreen() {
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(24, insets.bottom + 16) }]}
         showsVerticalScrollIndicator={false}
-        onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
-        onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
-        onScrollEndDrag={onScrollEndDrag}
-        onMomentumScrollBegin={onMomentumScrollBegin}
-        onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
       >
       {/* Header */}

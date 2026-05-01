@@ -7,6 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "local-ai-proxy": "node scripts/lmstudio-proxy.mjs",
     "build:web": "expo export -p web",
     "install:legacy": "npm install --legacy-peer-deps"
   },

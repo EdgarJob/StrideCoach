@@ -3,12 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Modal, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { useAICoach } from '../contexts/AICoachContext';
 import { usePlan } from '../contexts/PlanContext';
 import { useHealth } from '../contexts/HealthContext';
-import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import WorkoutCalendar from '../components/WorkoutCalendar';
 import PremiumBackground from '../components/PremiumBackground';
 import colors from '../theme/colors';
@@ -17,13 +15,6 @@ import { fonts } from '../theme/typography';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const {
-    onScroll,
-    onScrollBeginDrag,
-    onScrollEndDrag,
-    onMomentumScrollBegin,
-    onMomentumScrollEnd,
-  } = useTabBarMotion();
   const { signOut, profile } = useAuth();
   const { dailyMotivation } = useAICoach();
   const { currentPlan, getTodaysWorkout, getPlanProgress, isFromCache, loadCurrentPlan } = usePlan();
@@ -178,35 +169,30 @@ export default function HomeScreen() {
   return (
     <PremiumBackground>
       {/* Header */}
-      <LinearGradient
-        colors={[colors.textDark, colors.primary]}
-        start={{ x: 0.12, y: 0 }}
-        end={{ x: 0.95, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
-      >
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
           <Text style={styles.greeting}>{getGreeting()}</Text>
           <Text style={styles.subtitle}>Ready for your workout today?</Text>
         </View>
-        
+
         {/* Profile Dropdown Menu */}
         <View style={styles.headerRight}>
-          <TouchableOpacity 
-            style={styles.profileButton} 
+          <TouchableOpacity
+            style={styles.profileButton}
             onPress={() => setShowProfileMenu(!showProfileMenu)}
           >
             <View style={styles.profileAvatar}>
               <Ionicons name="person" size={20} color={colors.white} />
             </View>
-            <Ionicons 
-              name={showProfileMenu ? "chevron-up" : "chevron-down"} 
-              size={16} 
-              color={colors.white} 
+            <Ionicons
+              name={showProfileMenu ? "chevron-up" : "chevron-down"}
+              size={16}
+              color={colors.textMedium}
               style={{ marginLeft: 4 }}
             />
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Dropdown Menu (Modal to ensure it renders above ScrollView on all platforms) */}
       <Modal
@@ -266,11 +252,6 @@ export default function HomeScreen() {
 
       <ScrollView
         style={styles.scrollContent}
-        onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
-        onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
-        onScrollEndDrag={onScrollEndDrag}
-        onMomentumScrollBegin={onMomentumScrollBegin}
-        onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
       >
 
@@ -490,8 +471,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5EA',
     zIndex: 1000,
   },
   headerLeft: {
@@ -508,15 +490,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: colors.cardBackground,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: colors.borderLight,
   },
   profileAvatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -577,13 +559,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: fonts.display,
     fontWeight: 'normal',
-    color: colors.white,
+    color: colors.textDark,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.white,
-    opacity: 0.9,
+    color: colors.textMedium,
     fontFamily: fonts.body,
   },
   progressCard: {

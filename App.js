@@ -1,13 +1,11 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, ActivityIndicator, Text, Animated, Platform, StyleSheet } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, ActivityIndicator, Text, Animated } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Sora_400Regular, Sora_600SemiBold, Sora_700Bold, Sora_800ExtraBold } from '@expo-google-fonts/sora';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
 // Import our screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -22,7 +20,6 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AICoachProvider } from './src/contexts/AICoachContext';
 import { PlanProvider } from './src/contexts/PlanContext';
 import { HealthProvider } from './src/contexts/HealthContext';
-import { TabBarMotionProvider, useTabBarMotion } from './src/contexts/TabBarMotionContext';
 import colors from './src/theme/colors';
 import { fonts } from './src/theme/typography';
 
@@ -34,7 +31,6 @@ const TAB_ICON_MAP = {
   Plans: { active: 'calendar', inactive: 'calendar-outline' },
   Progress: { active: 'trending-up', inactive: 'trending-up-outline' },
   Chat: { active: 'chatbubbles', inactive: 'chatbubbles-outline' },
-  // Use thicker icons here; the circle-outline can look too faint at small sizes.
   Profile: { active: 'person', inactive: 'person-outline' },
 };
 
@@ -55,115 +51,39 @@ function TabIcon({ routeName, focused, color }) {
   const iconSize = focused ? 26 : 24;
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View
-        style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 52,
-          height: 36,
-          borderRadius: 18,
-          backgroundColor: focused ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-          borderWidth: focused ? 1 : 0,
-          borderColor: focused ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
-          transform: [{ scale: scaleValue }],
-        }}
-      >
-        <Ionicons name={iconName} size={iconSize} color={color} />
-      </Animated.View>
-    </View>
-  );
-}
-
-function MotionTabBar({ bottomOffset, ...props }) {
-  const { translateY, opacity } = useTabBarMotion();
-
-  return (
     <Animated.View
-      pointerEvents="box-none"
-      style={[
-        styles.floatingTabBarWrap,
-        {
-          bottom: bottomOffset,
-          opacity,
-          transform: [{ translateY }],
-        },
-      ]}
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        transform: [{ scale: scaleValue }],
+      }}
     >
-      <BottomTabBar {...props} />
+      <Ionicons name={iconName} size={iconSize} color={color} />
     </Animated.View>
   );
 }
 
-function MainTabs({ bottomOffset, tabBarHeight }) {
-  const { scenePaddingBottom } = useTabBarMotion();
-
+function MainTabs() {
   return (
     <Tab.Navigator
-      detachInactiveScreens={false}
-      lazy={false}
-      sceneContainerStyle={{ backgroundColor: 'transparent', paddingBottom: scenePaddingBottom }}
-      tabBar={(props) => <MotionTabBar {...props} bottomOffset={bottomOffset} />}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused, color }) => (
           <TabIcon routeName={route.name} focused={focused} color={color} />
         ),
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.86)',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: '#8E8E93',
         tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          height: tabBarHeight,
-          paddingTop: 10,
-          paddingBottom: 10,
-          borderRadius: 24,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.14)',
-          // Charcoal instead of near-black: closer to Apple Music while keeping contrast.
-          backgroundColor: 'rgba(28, 28, 30, 0.78)',
-          shadowColor: '#0B1220',
-          shadowOffset: { width: 0, height: 18 },
-          shadowOpacity: 0.28,
-          shadowRadius: 26,
-          elevation: 24,
+          height: 60,
+          paddingTop: 8,
+          paddingBottom: 8,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 0.5,
+          borderTopColor: '#E5E5EA',
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        tabBarBackground: () => (
-          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-            {Platform.OS !== 'web' ? (
-              <BlurView tint="dark" intensity={40} style={StyleSheet.absoluteFill} />
-            ) : null}
-
-            {/* Keep it dark even over white screens; blur alone can wash out. */}
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(28, 28, 30, 0.56)' }]} />
-
-            {/* Subtle depth + brand hint (no bright fade on the right). */}
-            <LinearGradient
-              colors={[
-                'rgba(255, 255, 255, 0.10)',
-                'rgba(255, 255, 255, 0.04)',
-                'rgba(0, 0, 0, 0.22)',
-              ]}
-              locations={[0, 0.55, 1]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <LinearGradient
-              colors={[
-                'rgba(90, 179, 193, 0.14)',
-                'rgba(11, 18, 32, 0.0)',
-                'rgba(11, 18, 32, 0.0)',
-              ]}
-              locations={[0, 0.7, 1]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-
-            <View style={styles.tabBarHairline} />
-          </View>
-        ),
         tabBarItemStyle: {
           paddingTop: 2,
         },
@@ -221,19 +141,12 @@ function MainTabs({ bottomOffset, tabBarHeight }) {
 
 // Main App Navigator Component
 function AppNavigator() {
-  const { user, loading } = useAuth();
-  const insets = useSafeAreaInsets();
-  // Floating Apple Music-like pill above the home indicator.
-  const tabBarBottom = Math.max(insets.bottom, 10);
-  const tabBarHeight = 68;
-  const visibleScenePaddingBottom = tabBarBottom + tabBarHeight + 12;
-  const hiddenScenePaddingBottom = Math.max(24, insets.bottom + 12);
-  const hideDistance = tabBarHeight + tabBarBottom + 24;
+  const { user, loading, passwordRecovery } = useAuth();
 
   // Show loading screen while checking auth status
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <ActivityIndicator size="large" color="#5AB3C1" />
         <Text style={{ marginTop: 16, fontSize: 16, color: '#6B7280' }}>Loading...</Text>
       </View>
@@ -241,7 +154,7 @@ function AppNavigator() {
   }
 
   // Show auth screen if user is not logged in
-  if (!user) {
+  if (!user || passwordRecovery) {
     return <AuthScreen />;
   }
 
@@ -249,13 +162,7 @@ function AppNavigator() {
   return (
     <NavigationContainer>
       <StatusBar style="dark" />
-      <TabBarMotionProvider
-        hideDistance={hideDistance}
-        visibleScenePaddingBottom={visibleScenePaddingBottom}
-        hiddenScenePaddingBottom={hiddenScenePaddingBottom}
-      >
-        <MainTabs bottomOffset={tabBarBottom} tabBarHeight={tabBarHeight} />
-      </TabBarMotionProvider>
+      <MainTabs />
     </NavigationContainer>
   );
 }
@@ -292,20 +199,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  floatingTabBarWrap: {
-    position: 'absolute',
-    left: 14,
-    right: 14,
-    zIndex: 50,
-  },
-  tabBarHairline: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
-  },
-});

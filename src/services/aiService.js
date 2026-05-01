@@ -5,6 +5,121 @@ export class AICoachService {
   constructor() {
     this.conversationHistory = [];
     this.supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    this.aiProvider = process.env.EXPO_PUBLIC_AI_PROVIDER || 'supabase';
+    this.localAIBaseUrl = process.env.EXPO_PUBLIC_LOCAL_AI_BASE_URL || 'http://127.0.0.1:1234/v1';
+    this.localAIModel = process.env.EXPO_PUBLIC_LOCAL_AI_MODEL || 'qwen/qwen3.5-35b-a3b';
+  }
+
+  isLocalAIEnabled() {
+    return this.aiProvider === 'lmstudio' || this.aiProvider === 'local';
+  }
+
+  extractAssistantContent(message = {}) {
+    const content = typeof message.content === 'string' ? message.content.trim() : '';
+    if (content) return content;
+
+    const reasoning = typeof message.reasoning_content === 'string' ? message.reasoning_content : '';
+    const outputMatch = reasoning.match(/(?:Output|Final(?: Answer)?):\s*([\s\S]+)$/i);
+    if (outputMatch?.[1]?.trim()) return outputMatch[1].trim();
+
+    const revisedMatch = reasoning.match(/\*Revised:\*\s*"([^"]+)"/i);
+    if (revisedMatch?.[1]?.trim()) return revisedMatch[1].trim();
+
+    const draftMatches = [...reasoning.matchAll(/\*Draft \d+:\*\s*"([^"]+)"/gi)];
+    const lastDraft = draftMatches[draftMatches.length - 1]?.[1]?.trim();
+    if (lastDraft) return lastDraft;
+
+    return '';
+  }
+
+  parseCoachResponse(rawContent) {
+    let parsed = null;
+
+    try {
+      parsed = JSON.parse(rawContent);
+    } catch (_) {
+      const firstBrace = rawContent.indexOf('{');
+      const lastBrace = rawContent.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          parsed = JSON.parse(rawContent.slice(firstBrace, lastBrace + 1));
+        } catch (_) {
+          parsed = null;
+        }
+      }
+    }
+
+    const fallbackMessage = rawContent?.trim() || 'I can help with that. What would you like to adjust?';
+    return {
+      message: typeof parsed?.message === 'string' && parsed.message.trim() ? parsed.message.trim() : fallbackMessage,
+      planAction: this.sanitizePlanAction(parsed?.planAction)
+    };
+  }
+
+  sanitizePlanAction(planAction) {
+    if (!planAction || typeof planAction !== 'object' || planAction.type !== 'propose_plan_update') {
+      return null;
+    }
+
+    const allowedKeys = new Set([
+      'workoutTypes',
+      'availableDays',
+      'workoutDuration',
+      'difficultyLevel',
+      'primaryGoal',
+      'preferredTime',
+      'hasEquipment',
+    ]);
+    const preferenceUpdates = {};
+
+    Object.entries(planAction.preferenceUpdates || {}).forEach(([key, value]) => {
+      if (allowedKeys.has(key)) {
+        preferenceUpdates[key] = value;
+      }
+    });
+
+    if (Object.keys(preferenceUpdates).length === 0) return null;
+
+    return {
+      type: 'propose_plan_update',
+      summary: planAction.summary || 'Proposed workout plan changes',
+      confirmationPrompt: planAction.confirmationPrompt || 'Do you want me to apply these workout plan changes now?',
+      preferenceUpdates,
+    };
+  }
+
+  async callLocalAI(messages, options = {}) {
+    const response = await fetch(`${this.localAIBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.localAIModel,
+        messages,
+        temperature: options.temperature ?? 0.7,
+        max_tokens: options.maxTokens ?? 2000,
+        ...(options.responseFormat ? { response_format: options.responseFormat } : {}),
+      }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Local AI request failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error?.message || errorData.error || errorMessage;
+      } catch (_) {
+        errorMessage = await response.text();
+      }
+      throw new Error(`LM Studio HTTP ${response.status}: ${errorMessage}`);
+    }
+
+    const data = await response.json();
+    const assistantMessage = data.choices?.[0]?.message || {};
+    return {
+      content: this.extractAssistantContent(assistantMessage),
+      usage: data.usage || null,
+    };
   }
 
   // Generic method to call Edge Functions with retry logic
@@ -32,6 +147,7 @@ export class AICoachService {
 
         return await response.json();
       } catch (error) {
+        console.error(`Edge Function "${endpoint}" failed:`, error.message);
         // Retry on failure with exponential backoff
         if (i === retries - 1) throw error;
         // Exponential backoff: wait 1s, 2s, 4s
@@ -43,6 +159,36 @@ export class AICoachService {
   // Generate a personalized workout plan via Edge Function
   async generateWorkoutPlan(userProfile, preferences) {
     try {
+      if (this.isLocalAIEnabled()) {
+        const weekPlans = [];
+
+        for (let weekNumber = 1; weekNumber <= 4; weekNumber += 1) {
+          const result = await this.callLocalAI([
+            {
+              role: 'system',
+              content: 'You are StrideCoach, an expert fitness coach. Generate safe, concise, parsable workout plans. Output only markdown, no commentary.',
+            },
+            {
+              role: 'user',
+              content: this.buildWeeklyWorkoutPlanPrompt(userProfile, preferences, weekNumber),
+            },
+          ], { maxTokens: 3000, temperature: 0.65 });
+
+          const weekContent = result.content?.trim() || '';
+          weekPlans.push(
+            weekContent.startsWith(`### Week ${weekNumber}`)
+              ? weekContent
+              : `### Week ${weekNumber}\n${weekContent}`
+          );
+        }
+
+        return {
+          success: true,
+          plan: `## Daily Workout Breakdown\n\n${weekPlans.join('\n\n')}`,
+          usage: null,
+        };
+      }
+
       const response = await this.callEdgeFunction('generate-plan', {
         userProfile,
         preferences
@@ -68,6 +214,44 @@ export class AICoachService {
   // Chat with the AI coach via Edge Function
   async chatWithCoach(message, userProfile, currentPlan = null) {
     try {
+      if (this.isLocalAIEnabled()) {
+        const systemPrompt = `${this.buildSystemPrompt(userProfile, currentPlan)}
+
+You MUST return a JSON object with this exact shape:
+{
+  "message": "normal coach reply for the user",
+  "planAction": null OR {
+    "type": "propose_plan_update",
+    "summary": "short summary of proposed changes",
+    "confirmationPrompt": "short yes/no question asking for explicit confirmation",
+    "preferenceUpdates": { "availableDays": { "monday": true } }
+  }
+}
+
+Only set planAction when the user explicitly asks to create, edit, or adjust a workout plan.`;
+
+        const result = await this.callLocalAI([
+          { role: 'system', content: systemPrompt },
+          ...this.conversationHistory,
+          { role: 'user', content: message },
+        ], {
+          maxTokens: 2200,
+          temperature: 0.7,
+        });
+
+        const parsedResponse = this.parseCoachResponse(result.content);
+
+        this.conversationHistory.push({ role: 'user', content: message });
+        this.conversationHistory.push({ role: 'assistant', content: parsedResponse.message });
+
+        return {
+          success: true,
+          message: parsedResponse.message,
+          usage: result.usage,
+          planAction: parsedResponse.planAction || null,
+        };
+      }
+
       const response = await this.callEdgeFunction('chat-coach', {
         message,
         userProfile,
@@ -110,6 +294,59 @@ export class AICoachService {
   // Modify an existing plan (or create new) based on conversation history
   async modifyPlan(userProfile, currentPlan, conversationHistory) {
     try {
+      if (this.isLocalAIEnabled()) {
+        const recentMessages = (conversationHistory || [])
+          .slice(-20)
+          .map((msg) => `${msg.role === 'user' ? 'User' : 'Coach'}: ${msg.content}`)
+          .join('\n');
+
+        const weekPlans = [];
+
+        for (let weekNumber = 1; weekNumber <= 4; weekNumber += 1) {
+          const result = await this.callLocalAI([
+            {
+              role: 'system',
+              content: 'You are StrideCoach, an expert fitness coach. Generate safe, concise, parsable workout plans. Output only markdown.',
+            },
+            {
+              role: 'user',
+              content: `Create or modify Week ${weekNumber} of a complete 4-week workout plan from this context.
+
+USER PROFILE:
+${JSON.stringify(userProfile || {}, null, 2)}
+
+CURRENT PLAN:
+${JSON.stringify(currentPlan || null, null, 2)}
+
+CONVERSATION:
+${recentMessages}
+
+Output ONLY this one week in markdown using this exact structure:
+### Week ${weekNumber}
+**Monday**
+Warm-Up:
+Main Workout:
+Cool Down:
+
+Include every selected workout day for Week ${weekNumber}. Do not output any other week.`,
+            },
+          ], { maxTokens: 3000, temperature: 0.65 });
+
+          const weekContent = result.content?.trim() || '';
+          weekPlans.push(
+            weekContent.startsWith(`### Week ${weekNumber}`)
+              ? weekContent
+              : `### Week ${weekNumber}\n${weekContent}`
+          );
+        }
+
+        return {
+          success: true,
+          plan: `## Daily Workout Breakdown\n\n${weekPlans.join('\n\n')}`,
+          usage: null,
+        };
+      }
+
       const response = await this.callEdgeFunction('modify-plan', {
         userProfile,
         currentPlan,
@@ -139,6 +376,28 @@ export class AICoachService {
       // Ensure progressData is not null
       if (!progressData || typeof progressData !== 'object') {
         progressData = {};
+      }
+
+      if (this.isLocalAIEnabled()) {
+        const result = await this.callLocalAI([
+          {
+            role: 'system',
+            content: "You are StrideCoach's motivation engine. Write short, practical, upbeat fitness motivation. Output only the message.",
+          },
+          {
+            role: 'user',
+            content: `Generate a personalized daily motivation under 60 words.
+User: ${userProfile?.display_name || userProfile?.name || 'User'}
+Goal: ${JSON.stringify(userProfile?.goal || 'General fitness')}
+Progress: ${JSON.stringify(progressData || {})}`,
+          },
+        ], { maxTokens: 800, temperature: 0.8 });
+
+        return {
+          success: true,
+          motivation: result.content,
+          usage: result.usage,
+        };
       }
 
       const response = await this.callEdgeFunction('daily-motivation', {
@@ -290,6 +549,72 @@ GUIDELINES:
   }
 
   // Build workout plan prompt
+  buildWeeklyWorkoutPlanPrompt(userProfile, preferences, weekNumber) {
+    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const selectedDays = Object.entries(preferences?.availableDays || {})
+      .filter(([_, selected]) => selected)
+      .map(([day]) => day)
+      .sort((a, b) => dayOrder.indexOf(a.toLowerCase()) - dayOrder.indexOf(b.toLowerCase()))
+      .map((day) => day.charAt(0).toUpperCase() + day.slice(1));
+
+    const workoutTypes = Object.entries(preferences?.workoutTypes || {})
+      .filter(([_, selected]) => selected)
+      .map(([type]) => type.replace(/_/g, ' '))
+      .join(', ') || 'walking, strength';
+
+    const equipment = Object.entries(preferences?.hasEquipment || {})
+      .filter(([_, selected]) => selected)
+      .map(([item]) => item.replace(/_/g, ' '))
+      .join(', ') || 'none';
+
+    const days = selectedDays.length > 0 ? selectedDays : ['Monday', 'Wednesday', 'Friday'];
+    const dayTemplate = days
+      .map((day) => `**${day}**
+- Warm-Up:
+  - 1-2 concise warm-up movements
+- Main Workout:
+  - 3-5 concise exercises or walking/running blocks
+- Cool Down:
+  - 1-2 concise cool-down stretches`)
+      .join('\n\n');
+
+    return `Create ONLY Week ${weekNumber} of a 4-week progressive workout plan.
+
+User:
+- Name: ${userProfile?.display_name || 'New User'}
+- Age: ${userProfile?.age || 25}
+- Weight: ${userProfile?.weight_kg || 70} kg
+- Goal: ${preferences?.primaryGoal?.replace(/_/g, ' ') || userProfile?.goal?.type || 'general fitness'}
+- Difficulty: ${preferences?.difficultyLevel || 'beginner'}
+- Workout duration: ${preferences?.workoutDuration || 30} minutes
+- Workout types: ${workoutTypes}
+- Equipment: ${equipment}
+
+Rules:
+- Output ONLY markdown.
+- Output EXACTLY one week: ### Week ${weekNumber}
+- Include workouts ONLY for these days: ${days.join(', ')}
+- Do not include rest days.
+- Keep each day concise so the whole week fits.
+- Make Week ${weekNumber} progressive: Week 1 foundation, Week 2 build, Week 3 challenge, Week 4 peak or deload.
+
+Required format:
+### Week ${weekNumber}
+Focus: ${this.getWeekFocusLabel(weekNumber)}
+
+${dayTemplate}`;
+  }
+
+  getWeekFocusLabel(weekNumber) {
+    const focusByWeek = {
+      1: 'Foundation Building',
+      2: 'Progressive Overload',
+      3: 'Intensity Increase',
+      4: 'Peak Performance',
+    };
+    return focusByWeek[weekNumber] || 'General Fitness';
+  }
+
   buildWorkoutPlanPrompt(userProfile, preferences) {
     // Helper function to sort days in correct week order
     const sortDaysOfWeek = (days) => {

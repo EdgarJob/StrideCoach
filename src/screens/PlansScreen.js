@@ -13,7 +13,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlan } from '../contexts/PlanContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useTabBarMotion } from '../contexts/TabBarMotionContext';
 import colors from '../theme/colors';
 import { fonts } from '../theme/typography';
 import { useNavigation } from '@react-navigation/native';
@@ -26,13 +25,6 @@ import PremiumBackground from '../components/PremiumBackground';
 export default function PlansScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const {
-    onScroll,
-    onScrollBeginDrag,
-    onScrollEndDrag,
-    onMomentumScrollBegin,
-    onMomentumScrollEnd,
-  } = useTabBarMotion();
   const { profile } = useAuth();
   const {
     currentPlan,
@@ -246,11 +238,6 @@ export default function PlansScreen() {
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.planContainer}
-        onScroll={(e) => onScroll(e.nativeEvent.contentOffset.y)}
-        onScrollBeginDrag={(e) => onScrollBeginDrag(e.nativeEvent.contentOffset.y)}
-        onScrollEndDrag={onScrollEndDrag}
-        onMomentumScrollBegin={onMomentumScrollBegin}
-        onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
       >
         {/* Plan Header */}
@@ -591,14 +578,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-    ...Platform.select({
-      web: { boxShadow: '0px 12px 30px rgba(15, 23, 42, 0.08)' },
-      default: { shadowColor: '#0B1220', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16 },
-    }),
-    elevation: 3,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5EA',
   },
   headerTitle: {
     fontSize: 18,
